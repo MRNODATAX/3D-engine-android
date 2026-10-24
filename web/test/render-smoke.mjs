@@ -151,8 +151,33 @@ try {
     assert(!animError, `animasi gagal: ${animError?.message}`);
     const playing = after.find((e) => e.type === 'animation-playing');
     assert(playing?.duration > 0, 'klip animasi berdurasi nol');
-    await page.waitForTimeout(800);
-    console.log(`✓ animasi diputar: ${playing.name} (${playing.duration.toFixed(2)} detik)`);
+    await page.waitForTimeout(1500);
+    const animatedWidth = await page.evaluate(() => {
+      const source = document.getElementById('stage');
+      const scratch = document.createElement('canvas');
+      scratch.width = source.width;
+      scratch.height = source.height;
+      const ctx = scratch.getContext('2d');
+      ctx.drawImage(source, 0, 0);
+      const data = ctx.getImageData(0, 0, scratch.width, scratch.height).data;
+      let minX = Infinity, maxX = 0, minY = Infinity, maxY = 0;
+      for (let i = 0; i < data.length; i += 4) {
+        if (data[i + 3] <= 24) continue;
+        const px = (i / 4) % scratch.width;
+        const py = Math.floor(i / 4 / scratch.width);
+        if (px < minX) minX = px;
+        if (px > maxX) maxX = px;
+        if (py < minY) minY = py;
+        if (py > maxY) maxY = py;
+      }
+      return { width: maxX - minX, height: maxY - minY };
+    });
+    const animatedRatio = animatedWidth.width / Math.max(1, animatedWidth.height);
+    assert(
+      animatedRatio < 0.62,
+      `avatar kembali T-pose saat animasi berjalan (rasio ${animatedRatio.toFixed(2)})`,
+    );
+    console.log(`✓ animasi diputar: ${playing.name} (${playing.duration.toFixed(2)} detik), silhouette tetap ${animatedRatio.toFixed(2)}`);
   } else {
     console.log('… fixture .vrma tidak tersedia, uji animasi dilewati');
   }

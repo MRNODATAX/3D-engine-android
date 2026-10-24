@@ -289,15 +289,19 @@ function updateBlink(delta) {
 }
 
 function updateIdle(delta) {
-  // Napas prosedural ringan: hanya dipakai saat tidak ada animasi yang diputar.
-  if (state.animationName || !state.vrm) return;
-  state.idleTime += delta;
+  if (!state.vrm) return;
 
-  // Pose rileks diterapkan bertahap pada ~1 detik pertama agar tidak terlihat melompat.
+  // Pose rileks selalu menjadi lapisan dasar, termasuk saat animasi berjalan: klip .vrma
+  // sering hanya menggerakkan sebagian bone, sehingga lengan bisa tetap T-pose.
+  // Animasi menimpa bone yang benar-benar dianimasikannya pada mixer.update berikutnya.
   if (state.poseBlend < 1) {
     state.poseBlend = Math.min(1, state.poseBlend + delta);
-    applyRelaxedPose(state.vrm, Math.min(1, state.poseBlend));
   }
+  applyRelaxedPose(state.vrm, state.poseBlend);
+
+  // Napas prosedural hanya saat tidak ada animasi yang diputar.
+  if (state.animationName) return;
+  state.idleTime += delta;
   const chest = state.vrm.humanoid?.getNormalizedBoneNode('chest');
   const spine = state.vrm.humanoid?.getNormalizedBoneNode('spine');
   const sway = Math.sin(state.idleTime * 1.15 * state.speed) * 0.012;
