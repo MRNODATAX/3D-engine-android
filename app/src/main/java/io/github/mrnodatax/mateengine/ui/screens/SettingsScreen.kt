@@ -11,6 +11,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.FilterChip
+import androidx.compose.material3.FilterChipDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
@@ -78,6 +79,16 @@ fun SettingsScreen(
                                         selected = state.overlay.quality == value,
                                         onClick = { onQualityChange(value) },
                                         label = { Text(label) },
+                                        colors = FilterChipDefaults.filterChipColors(
+                                            selectedContainerColor = MaterialTheme.colorScheme.primaryContainer,
+                                            selectedLabelColor = MaterialTheme.colorScheme.onPrimaryContainer,
+                                        ),
+                                        border = FilterChipDefaults.filterChipBorder(
+                                            enabled = true,
+                                            selected = state.overlay.quality == value,
+                                            borderColor = MaterialTheme.colorScheme.outline,
+                                            selectedBorderColor = MaterialTheme.colorScheme.primaryContainer,
+                                        ),
                                     )
                                 }
                         }

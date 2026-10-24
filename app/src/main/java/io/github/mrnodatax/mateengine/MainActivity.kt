@@ -34,8 +34,10 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
+import androidx.compose.material3.NavigationBarItemDefaults
 import androidx.compose.material3.NavigationRail
 import androidx.compose.material3.NavigationRailItem
+import androidx.compose.material3.NavigationRailItemDefaults
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
@@ -107,6 +109,15 @@ private fun MateEngineApp() {
 
     // Hook khusus build debug untuk tangkapan layar otomatis di CI:
     //   am start ... --es screen avatar --ez seed_sample true
+    LaunchedEffect(Unit) {
+        // Hook debug: memulai overlay tanpa membuka izin manual (dipakai tangkapan layar CI).
+        if (BuildConfig.DEBUG &&
+            (context as? android.app.Activity)?.intent?.getBooleanExtra("start_overlay", false) == true
+        ) {
+            OverlayService.start(context)
+        }
+    }
+
     val initialScreen = remember {
         if (!BuildConfig.DEBUG) {
             Screen.Home
@@ -240,6 +251,13 @@ private fun MateEngineApp() {
                                         onClick = { screen = entry },
                                         icon = { Icon(entry.icon, contentDescription = null) },
                                         label = { Text(entry.label) },
+                                        colors = NavigationRailItemDefaults.colors(
+                                            selectedIconColor = MaterialTheme.colorScheme.onPrimaryContainer,
+                                            selectedTextColor = MaterialTheme.colorScheme.primary,
+                                            indicatorColor = MaterialTheme.colorScheme.primaryContainer,
+                                            unselectedIconColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                                            unselectedTextColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                                        ),
                                     )
                                 }
                             }
@@ -352,6 +370,13 @@ private fun MateEngineApp() {
                                         onClick = { screen = entry },
                                         icon = { Icon(entry.icon, contentDescription = null) },
                                         label = { Text(entry.label) },
+                                        colors = NavigationBarItemDefaults.colors(
+                                            selectedIconColor = MaterialTheme.colorScheme.onPrimaryContainer,
+                                            selectedTextColor = MaterialTheme.colorScheme.primary,
+                                            indicatorColor = MaterialTheme.colorScheme.primaryContainer,
+                                            unselectedIconColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                                            unselectedTextColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                                        ),
                                     )
                                 }
                             }

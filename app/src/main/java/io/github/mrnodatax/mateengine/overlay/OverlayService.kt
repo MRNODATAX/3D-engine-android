@@ -16,11 +16,15 @@ import android.os.Build
 import android.os.Handler
 import android.os.IBinder
 import android.os.Looper
+import android.util.Log
 import android.view.Gravity
 import android.view.MotionEvent
 import android.view.View
 import android.view.WindowManager
 import android.webkit.WebResourceRequest
+import android.webkit.ConsoleMessage
+import android.webkit.WebChromeClient
+import android.webkit.WebResourceError
 import android.webkit.WebResourceResponse
 import android.webkit.WebSettings
 import android.webkit.WebView
@@ -164,6 +168,7 @@ class OverlayService : Service() {
         rootView = container
         webView = view
         params = layoutParams
+        Log.i(TAG, "overlay window ditambahkan ${width}x$height di (${placement.x}, ${placement.y}), locked=${prefs.locked}")
 
         view.loadUrl("$ASSET_BASE/assets/renderer/index.html")
     }
@@ -192,7 +197,21 @@ class OverlayService : Service() {
                 mixedContentMode = WebSettings.MIXED_CONTENT_NEVER_ALLOW
             }
             addJavascriptInterface(RendererBridge { message -> mainHandler.post { handleRendererMessage(message) } }, "MateBridge")
+            webChromeClient = object : WebChromeClient() {
+                override fun onConsoleMessage(message: ConsoleMessage): Boolean {
+                    Log.w(TAG, "console ${message.messageLevel()}: ${message.message()} (${message.sourceId()}:${message.lineNumber()})")
+                    return true
+                }
+            }
             webViewClient = object : WebViewClientCompat() {
+                override fun onReceivedError(
+                    view: WebView,
+                    request: WebResourceRequest,
+                    error: WebResourceError,
+                ) {
+                    Log.e(TAG, "webview error ${error.errorCode} ${request.url}: ${error.description}")
+                }
+
                 override fun shouldInterceptRequest(
                     view: WebView,
                     request: WebResourceRequest,
@@ -250,6 +269,8 @@ class OverlayService : Service() {
 
     private fun handleRendererMessage(raw: String) {
         val payload = runCatching { JSONObject(raw) }.getOrNull() ?: return
+        // Log dipakai diagnosa di perangkat dan tangkapan layar CI.
+        Log.i(TAG, "renderer: ${payload.optString("type")} ${raw.take(220)}")
         when (payload.optString("type")) {
             "renderer-ready" -> {
                 rendererReady = true
@@ -277,6 +298,7 @@ class OverlayService : Service() {
             "animation-stopped" -> OverlayRuntime.update { it.copy(animationName = null) }
             "error" -> {
                 val message = payload.optString("message", "Renderer melaporkan kesalahan.")
+                Log.w(TAG, "renderer error ${payload.optString("code")}: $message")
                 OverlayRuntime.reportError(message)
                 notifyState(message)
             }
@@ -468,6 +490,7 @@ class OverlayService : Service() {
         const val ACTION_PLAY_ANIMATION = "io.github.mrnodatax.mateengine.action.PLAY_ANIMATION"
         const val ACTION_STOP_ANIMATION = "io.github.mrnodatax.mateengine.action.STOP_ANIMATION"
         const val EXTRA_ANIMATION_ID = "animation_id"
+        private const val TAG = "MateEngineRender"
 
         private const val ASSET_HOST = "appassets.androidplatform.net"
         private const val ASSET_BASE = "https://$ASSET_HOST"

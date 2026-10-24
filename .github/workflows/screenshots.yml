@@ -53,6 +53,19 @@ jobs:
             -gpu swiftshader_indirect -camera-back none -camera-front none
           script: bash scripts/capture-screenshots.sh
 
+      - name: Teruskan pesan error perangkat sebagai anotasi
+        if: always()
+        run: |
+          if [ -f /tmp/mate-log-tail.txt ]; then
+            grep -iE "fatal|exception|error|denied|refused" /tmp/mate-log-tail.txt | head -20 | while IFS= read -r line; do
+              echo "::warning::${line:0:900}"
+            done
+            echo "---- ringkas log ----"
+            grep -iE "mateengine" /tmp/mate-log-tail.txt | tail -20 || true
+          else
+            echo "::warning::Log perangkat tidak tersedia"
+          fi
+
       - name: Simpan tangkapan layar ke repositori
         if: always()
         run: |
@@ -71,5 +84,7 @@ jobs:
         if: always()
         with:
           name: screenshots-${{ github.sha }}
-          path: docs/screenshots
+          path: |
+            docs/screenshots
+            /tmp/mate-log-tail.txt
           if-no-files-found: warn

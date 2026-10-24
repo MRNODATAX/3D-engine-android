@@ -27,6 +27,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import io.github.mrnodatax.mateengine.ui.theme.SuccessColor
 import io.github.mrnodatax.mateengine.ui.theme.SuccessContainer
@@ -153,6 +154,8 @@ fun ToggleRow(
                     subtitle,
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    maxLines = 2,
+                    overflow = TextOverflow.Ellipsis,
                 )
             }
         }
@@ -195,6 +198,8 @@ fun ListRow(
                 style = MaterialTheme.typography.bodyMedium,
                 fontWeight = FontWeight.SemiBold,
                 color = if (selected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
             )
             if (subtitle != null) {
                 Text(
@@ -261,6 +266,48 @@ fun TwoPane(
         ) {
             primary()
             secondary()
+        }
+    }
+}
+
+
+/**
+ * Baris diagnosa: teks status mendapat lebar penuh, tombol aksi diletakkan di bawah agar
+ * keterangan tidak terhimpit menjadi satu kata per baris.
+ */
+@Composable
+fun DiagnosticRow(
+    title: String,
+    detail: String,
+    leading: @Composable () -> Unit,
+    actionLabel: String? = null,
+    onAction: (() -> Unit)? = null,
+) {
+    Column(Modifier.fillMaxWidth().padding(vertical = 10.dp)) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(12.dp),
+        ) {
+            leading()
+            Column(Modifier.weight(1f)) {
+                Text(
+                    title,
+                    style = MaterialTheme.typography.bodyMedium,
+                    fontWeight = FontWeight.SemiBold,
+                )
+                Text(
+                    detail,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
+        }
+        if (actionLabel != null && onAction != null) {
+            androidx.compose.material3.OutlinedButton(
+                onClick = onAction,
+                modifier = Modifier.padding(start = 52.dp, top = 6.dp),
+            ) { Text(actionLabel) }
         }
     }
 }

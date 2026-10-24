@@ -9,11 +9,9 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Build
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Warning
-import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
@@ -25,9 +23,9 @@ import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import io.github.mrnodatax.mateengine.ui.ChipTone
+import io.github.mrnodatax.mateengine.ui.DiagnosticRow
 import io.github.mrnodatax.mateengine.ui.IconTile
 import io.github.mrnodatax.mateengine.ui.InfoNote
-import io.github.mrnodatax.mateengine.ui.ListRow
 import io.github.mrnodatax.mateengine.ui.RowDivider
 import io.github.mrnodatax.mateengine.ui.SectionCard
 import io.github.mrnodatax.mateengine.ui.SectionLabel
@@ -73,19 +71,9 @@ fun DiagnosticsScreen(
                     SectionCard {
                         snapshot.items.forEachIndexed { index, item ->
                             val action = item.action
-                            val trailing: (@Composable () -> Unit)? = if (action == null) {
-                                null
-                            } else {
-                                {
-                                    OutlinedButton(onClick = { onAction(action) }) {
-                                        Icon(Icons.Filled.Build, contentDescription = null)
-                                        Text(item.actionLabel, modifier = Modifier.padding(start = 6.dp))
-                                    }
-                                }
-                            }
-                            ListRow(
+                            DiagnosticRow(
                                 title = item.title,
-                                subtitle = item.detail,
+                                detail = item.detail,
                                 leading = {
                                     IconTile(
                                         icon = when (item.status) {
@@ -97,7 +85,8 @@ fun DiagnosticsScreen(
                                         accent = item.status == DiagnosticStatus.OK,
                                     )
                                 },
-                                trailing = trailing,
+                                actionLabel = if (action == null) null else item.actionLabel,
+                                onAction = if (action == null) null else ({ onAction(action) }),
                             )
                             if (index != snapshot.items.lastIndex) RowDivider()
                         }
