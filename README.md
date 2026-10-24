@@ -28,6 +28,25 @@ food system, touch region/headpat, head tracking, chibi, bloom/AO.
 > Aplikasi **tidak** membundel avatar bawaan Mate Engine. Model Yorshka berlisensi *All Rights
 > Reserved* dan tidak boleh didistribusikan ulang.
 
+## Unduh dan pasang (build uji)
+
+Build uji terbaru: [Release `v0.1.0-test`](https://github.com/MRNODATAX/3D-engine-android/releases/tag/v0.1.0-test)
+(`MateEngine-v0.1.0-test-debug.apk`, ditandatangani kunci debug).
+
+1. Unduh APK di perangkat, lalu izinkan pemasangan dari sumber tidak dikenal untuk aplikasi
+   pengelola berkas/browser yang dipakai.
+2. Buka **Mate Engine**, buka **Diagnosa**, periksa izin overlay, notifikasi, dan versi WebView.
+3. **Avatar → Impor .vrm**, pilih model VRM milikmu.
+4. **Beranda → Jalankan avatar**, izinkan "tampil di atas aplikasi lain", lalu tekan Home.
+5. Bila avatar tidak muncul, salin **ringkasan diagnosa** dan lampirkan saat melapor.
+
+Build debug memakai `applicationId` `io.github.mrnodatax.mateengine.debug`, sehingga tidak
+menimpa build rilis bertanda tangan dan datanya terpisah. Karena masih debug, APK ini bukan
+untuk distribusi luas.
+
+Bukti pengujian otomatis dan daftar yang **belum** terverifikasi ada di
+[docs/verification.md](docs/verification.md).
+
 ## Arsitektur
 
 ```
