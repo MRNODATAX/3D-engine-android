@@ -27,6 +27,18 @@ adb shell pm grant "$PKG" android.permission.POST_NOTIFICATIONS || true
 adb shell cmd uimode night no || true
 adb logcat -c || true
 
+# Dialog ANR peluncur muncul di emulator perangkat lunak dan menutupi bukti.
+# Tutup lewat tombol "Wait"/"Tunggu" bila ada; kegagalan di sini tidak menghentikan skrip.
+dismiss_dialogs() {
+  local label
+  for label in "Wait" "Tunggu" "Close app"; do
+    if adb shell dumpsys window 2>/dev/null | grep -qi "Application Not Responding\|isn't responding"; then
+      tap_text "$label" >/dev/null 2>&1 && { echo "== dialog sistem ditutup lewat '$label'"; sleep 1; return 0; }
+    fi
+  done
+  return 0
+}
+
 shoot() {
   local name="$1"
   local wait="${WAIT:-9}"
@@ -34,15 +46,10 @@ shoot() {
   adb shell am force-stop "$PKG" || true
   adb shell am start -W -n "$ACTIVITY" --ez seed_sample true "$@" >/dev/null
   sleep "$wait"
+  dismiss_dialogs
   adb exec-out screencap -p > "$OUT/$name.png"
   echo "== tersimpan $OUT/$name.png"
 }
-
-shoot 01-beranda --es screen home
-shoot 02-avatar --es screen avatar
-shoot 03-animasi --es screen animation
-shoot 04-diagnosa --es screen diagnostics
-shoot 05-pengaturan --es screen settings
 
 service_running() {
   adb shell dumpsys activity services "$PKG" 2>/dev/null | grep -q "OverlayService"
@@ -80,6 +87,13 @@ PYTAP
   set -- $coords
   adb shell input tap "$1" "$2"
 }
+
+shoot 01-beranda --es screen home
+shoot 02-avatar --es screen avatar
+shoot 03-animasi --es screen animation
+shoot 04-diagnosa --es screen diagnostics
+shoot 05-pengaturan --es screen settings
+shoot 11-chat --es screen chat
 
 echo "== menjalankan overlay lewat tombol aplikasi (bukti visual sebelum tap)"
 adb shell am force-stop "$PKG" || true

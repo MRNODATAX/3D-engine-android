@@ -59,6 +59,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.Lifecycle
@@ -81,13 +82,15 @@ import io.github.mrnodatax.mateengine.util.DiagnosticAction
 import io.github.mrnodatax.mateengine.util.Diagnostics
 import kotlinx.coroutines.launch
 
-private enum class Screen(val label: String, val icon: ImageVector) {
+private enum class Screen(val label: String, val icon: ImageVector, val navLabel: String = label) {
     Home(T.navHome, Icons.Filled.Home),
     Avatar(T.navAvatar, Icons.Filled.Person),
     Chat(T.navChat, Icons.Filled.Email),
     Animation(T.navAnimation, Icons.Filled.PlayArrow),
     Diagnostics(T.navDiagnostics, Icons.Filled.Build),
-    Settings(T.navSettings, Icons.Filled.Settings),
+    // Enam tujuan membuat label bawah sempit; "Setelan" menggantikan "Pengaturan"
+    // hanya pada bilah navigasi, judul halaman tetap "Pengaturan".
+    Settings(T.navSettings, Icons.Filled.Settings, T.navSettingsShort),
 }
 
 /** Penanda layar awal dari intent; dipakai juga saat activity menerima intent baru (singleTask). */
@@ -282,7 +285,15 @@ private fun MateEngineApp() {
                                         selected = screen == entry,
                                         onClick = { screen = entry },
                                         icon = { Icon(entry.icon, contentDescription = null) },
-                                        label = { Text(entry.label) },
+                                        label = {
+                                            Text(
+                                                entry.navLabel,
+                                                maxLines = 1,
+                                                softWrap = false,
+                                                overflow = TextOverflow.Ellipsis,
+                                                style = MaterialTheme.typography.labelSmall,
+                                            )
+                                        },
                                         colors = NavigationRailItemDefaults.colors(
                                             selectedIconColor = MaterialTheme.colorScheme.onPrimaryContainer,
                                             selectedTextColor = MaterialTheme.colorScheme.primary,
@@ -416,7 +427,15 @@ private fun MateEngineApp() {
                                         selected = screen == entry,
                                         onClick = { screen = entry },
                                         icon = { Icon(entry.icon, contentDescription = null) },
-                                        label = { Text(entry.label) },
+                                        label = {
+                                            Text(
+                                                entry.navLabel,
+                                                maxLines = 1,
+                                                softWrap = false,
+                                                overflow = TextOverflow.Ellipsis,
+                                                style = MaterialTheme.typography.labelSmall,
+                                            )
+                                        },
                                         colors = NavigationBarItemDefaults.colors(
                                             selectedIconColor = MaterialTheme.colorScheme.onPrimaryContainer,
                                             selectedTextColor = MaterialTheme.colorScheme.primary,

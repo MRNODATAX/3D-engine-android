@@ -12,6 +12,7 @@ object T {
     const val navAnimation = "Animasi"
     const val navDiagnostics = "Diagnosa"
     const val navSettings = "Pengaturan"
+    const val navSettingsShort = "Setelan"
 
     const val tagline = "Avatar VRM di atas aplikasi lain"
 
