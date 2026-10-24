@@ -64,11 +64,15 @@ jobs:
         if: always()
         run: |
           if [ -f /tmp/mate-log-tail.txt ]; then
-            grep -iE "MateEngineRender|fatal|exception|denied|refused" /tmp/mate-log-tail.txt | head -25 | while IFS= read -r line; do
-              echo "::warning::${line:0:900}"
+            grep -iE "MateEngineRender" /tmp/mate-log-tail.txt | head -25 | while IFS= read -r line; do
+              echo "::warning::${line:0:600}"
             done
-            echo "---- ringkas log ----"
-            grep -iE "mateengine" /tmp/mate-log-tail.txt | tail -20 || true
+            echo "---- crash & service ----"
+            if [ -f /tmp/mate-diag.txt ]; then
+              sed -n '/--- crash log ---/,$p' /tmp/mate-diag.txt | head -30 | while IFS= read -r line; do
+                echo "::warning::${line:0:600}"
+              done
+            fi
           else
             echo "::warning::Log perangkat tidak tersedia"
           fi
@@ -107,4 +111,5 @@ jobs:
           path: |
             docs/screenshots
             /tmp/mate-log-tail.txt
+            /tmp/mate-diag.txt
           if-no-files-found: warn
