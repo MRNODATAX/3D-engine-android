@@ -28,6 +28,11 @@ food system, touch region/headpat, head tracking, chibi, bloom/AO.
 > Aplikasi **tidak** membundel avatar bawaan Mate Engine. Model Yorshka berlisensi *All Rights
 > Reserved* dan tidak boleh didistribusikan ulang.
 
+## Tangkapan layar
+
+[`docs/screenshots.html`](docs/screenshots.html) memuat tangkapan layar asli APK yang berjalan di
+emulator Android 14 (diambil otomatis lewat `adb screencap` di CI, bukan mockup).
+
 ## Unduh dan pasang (build uji)
 
 Build uji terbaru: [Release `v0.1.0-test`](https://github.com/MRNODATAX/3D-engine-android/releases/tag/v0.1.0-test)

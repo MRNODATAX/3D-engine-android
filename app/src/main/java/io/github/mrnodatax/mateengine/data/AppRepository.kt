@@ -136,7 +136,9 @@ class AppRepository private constructor(context: Context) {
                     avatars = listOf(avatar) + current.avatars.filterNot { it.id == avatar.id },
                     animations = animations + current.animations.filterNot { item -> animations.any { it.id == item.id } },
                     selectedAvatarId = avatar.id,
-                    selectedAnimationId = animations.firstOrNull()?.id ?: current.selectedAnimationId,
+                    // Animasi tidak dipilih otomatis: overlay harus menampilkan idle saat tangkapan layar,
+                    // dan animasi tetap bisa diputar manual dari halaman Animasi.
+                    selectedAnimationId = current.selectedAnimationId,
                 ),
             )
             Unit
