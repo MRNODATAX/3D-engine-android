@@ -36,6 +36,7 @@ data class OverlayPrefs(
     val locked: Boolean = false,
     val offsetX: Int = -1,
     val offsetY: Int = -1,
+    val memorySaver: Boolean = true,
 )
 
 data class AppState(

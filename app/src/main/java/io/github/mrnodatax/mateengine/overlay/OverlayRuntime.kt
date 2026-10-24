@@ -13,6 +13,17 @@ data class OverlaySnapshot(
     val webgl2: Boolean? = null,
     val fps: Int = 0,
     val lastError: String? = null,
+    val workMs: Int = 0,
+    val renderScale: Float = 1f,
+    val qualityLevel: String = "high",
+    val triangles: Int = 0,
+    val drawCalls: Int = 0,
+    val textures: Int = 0,
+    val bones: Int = 0,
+    val springJoints: Int = 0,
+    val texturesResized: Int = 0,
+    val talking: Boolean = false,
+    val lastTrimAt: Long = 0L,
 )
 
 object OverlayRuntime {
@@ -37,6 +48,7 @@ object OverlayRuntime {
             rendererReady = false,
             fps = 0,
             animationName = null,
+            talking = false,
         )
     }
 }

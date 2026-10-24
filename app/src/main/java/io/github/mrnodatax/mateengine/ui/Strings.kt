@@ -8,6 +8,7 @@ object T {
     // Navigasi
     const val navHome = "Beranda"
     const val navAvatar = "Avatar"
+    const val navChat = "Chat"
     const val navAnimation = "Animasi"
     const val navDiagnostics = "Diagnosa"
     const val navSettings = "Pengaturan"

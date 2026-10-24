@@ -272,6 +272,7 @@ class AppRepository private constructor(context: Context) {
                 put("locked", state.overlay.locked)
                 put("offsetX", state.overlay.offsetX)
                 put("offsetY", state.overlay.offsetY)
+                put("memorySaver", state.overlay.memorySaver)
             })
             put("loopAnimation", state.loopAnimation)
             put("shuffleAnimation", state.shuffleAnimation)
@@ -351,6 +352,7 @@ class AppRepository private constructor(context: Context) {
                     locked = overlayJson?.optBoolean("locked", false) ?: false,
                     offsetX = overlayJson?.optInt("offsetX", -1) ?: -1,
                     offsetY = overlayJson?.optInt("offsetY", -1) ?: -1,
+                    memorySaver = overlayJson?.optBoolean("memorySaver", true) ?: true,
                 ),
                 loopAnimation = json.optBoolean("loopAnimation", true),
                 shuffleAnimation = json.optBoolean("shuffleAnimation", false),

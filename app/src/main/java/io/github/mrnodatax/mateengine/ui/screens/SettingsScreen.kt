@@ -33,6 +33,7 @@ import io.github.mrnodatax.mateengine.ui.SectionCard
 import io.github.mrnodatax.mateengine.ui.SectionLabel
 import io.github.mrnodatax.mateengine.ui.SliderField
 import io.github.mrnodatax.mateengine.ui.StatusChip
+import io.github.mrnodatax.mateengine.ui.ToggleRow
 import io.github.mrnodatax.mateengine.ui.T
 import io.github.mrnodatax.mateengine.ui.TwoPane
 
@@ -44,6 +45,8 @@ fun SettingsScreen(
     buildType: String,
     onFpsChange: (Int) -> Unit,
     onQualityChange: (String) -> Unit,
+    onMemorySaverChange: (Boolean) -> Unit,
+    onTrimMemory: () -> Unit,
     onClearCache: () -> Unit,
     onDeleteAll: () -> Unit,
     onOpenDesktopRelease: () -> Unit,
@@ -92,7 +95,20 @@ fun SettingsScreen(
                                     )
                                 }
                         }
-                        InfoNote("FPS rendah menghemat baterai. Kualitas rendah memaksa pixel ratio 1.")
+                        RowDivider()
+                        ToggleRow(
+                            title = "Penghemat memori",
+                            subtitle = "Pangkas cache renderer setiap 10 menit dan saat sistem menekan memori.",
+                            checked = state.overlay.memorySaver,
+                            onCheckedChange = onMemorySaverChange,
+                        )
+                        RowDivider()
+                        ListRow(
+                            title = "Pangkas sekarang",
+                            subtitle = "Membuang cache animasi dan memicu GC. Avatar dirender ulang sesaat.",
+                            trailing = { OutlinedButton(onClick = onTrimMemory) { Text("Pangkas") } },
+                        )
+                        InfoNote("Resolusi render turun otomatis bila frame terlalu lambat, lalu naik lagi saat lega.")
                     }
 
                     SectionCard {

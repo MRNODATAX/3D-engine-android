@@ -37,6 +37,8 @@ import io.github.mrnodatax.mateengine.R
 import io.github.mrnodatax.mateengine.data.AppRepository
 import io.github.mrnodatax.mateengine.data.AvatarAsset
 import io.github.mrnodatax.mateengine.data.OverlayPrefs
+import io.github.mrnodatax.mateengine.chat.ChatRepository
+import io.github.mrnodatax.mateengine.voice.VoicePack
 import org.json.JSONObject
 import java.io.File
 
@@ -60,6 +62,22 @@ class OverlayService : Service() {
     private var rendererReady = false
     private var loadedAvatarFileName: String? = null
     private var notificationManager: NotificationManager? = null
+    private var memorySaver = true
+    private var lastFpsReportAt = 0L
+    private var lastTrimAt = 0L
+    private val voicePack by lazy { VoicePack(this) }
+
+    /**
+     * Pemangkasan memori berkala, setara peran `MemoryTrim.cs` di Mate Engine tetapi
+     * memakai mekanisme Android: renderer membuang cache animasi/daftar render, JVM
+     * melakukan GC bila pengguna mengaktifkan penghemat memori.
+     */
+    private val trimTask = object : Runnable {
+        override fun run() {
+            if (memorySaver) trimMemory(forced = false)
+            mainHandler.postDelayed(this, TRIM_INTERVAL_MS)
+        }
+    }
 
     private val configurationReceiver = object : BroadcastReceiver() {
         override fun onReceive(context: Context?, intent: Intent?) {
@@ -75,7 +93,10 @@ class OverlayService : Service() {
         createChannel()
         startInForeground(repository.state.value.selectedAvatar?.displayName)
         OverlayRuntime.update { it.copy(running = true, rendererReady = false, lastError = null) }
+        voicePack.initialize()
+        memorySaver = repository.state.value.overlay.memorySaver
         showOverlay()
+        mainHandler.postDelayed(trimTask, TRIM_INITIAL_DELAY_MS)
         Log.i(TAG, "service onCreate selesai, overlay=${rootView != null}")
         registerReceiver(configurationReceiver, IntentFilter(Intent.ACTION_CONFIGURATION_CHANGED))
     }
@@ -92,6 +113,9 @@ class OverlayService : Service() {
             ACTION_RELOAD_AVATAR -> reloadAvatar()
             ACTION_PLAY_ANIMATION -> playAnimation(intent?.getStringExtra(EXTRA_ANIMATION_ID))
             ACTION_STOP_ANIMATION -> evaluate("window.MateEngine.stopAnimation()")
+            ACTION_SPEAK -> speak(intent?.getStringExtra(EXTRA_SPEECH_TEXT), intent?.getIntExtra(EXTRA_SPEECH_MS, 2600) ?: 2600)
+            ACTION_STOP_SPEAKING -> evaluate("window.MateEngine.stopTalking()")
+            ACTION_TRIM_MEMORY -> trimMemory(forced = true)
             else -> Unit
         }
         return START_NOT_STICKY
@@ -110,7 +134,9 @@ class OverlayService : Service() {
         webView = null
         rootView = null
         params = null
+        mainHandler.removeCallbacks(trimTask)
         OverlayRuntime.markStopped()
+        voicePack.release()
         super.onDestroy()
     }
 
@@ -266,6 +292,8 @@ class OverlayService : Service() {
         evaluate("window.MateEngine.setTargetFps(${prefs.targetFps})")
         evaluate("window.MateEngine.setQuality(${JSONObject.quote(prefs.quality)})")
         evaluate("window.MateEngine.setAnimationSpeed(${repository.state.value.animationSpeedPercent / 100f})")
+        memorySaver = prefs.memorySaver
+        voicePack.setEnabled(ChatRepository.get(this).state.value.settings.voicePackEnabled)
         notifyState(notificationText())
     }
 
@@ -294,7 +322,45 @@ class OverlayService : Service() {
                 }
             }
             "avatar-loading" -> OverlayRuntime.update { it.copy(lastError = null) }
-            "fps" -> OverlayRuntime.update { it.copy(fps = payload.optInt("value")) }
+            "fps" -> {
+                val value = payload.optInt("value")
+                val workMs = payload.optInt("workMs")
+                OverlayRuntime.update { it.copy(fps = value, workMs = workMs) }
+                // Notifikasi diperbarui paling sering sekali per 10 detik agar tidak memicu
+                // pembaruan window terus-menerus.
+                val now = System.currentTimeMillis()
+                if (now - lastFpsReportAt >= 10_000) {
+                    lastFpsReportAt = now
+                    notifyState(notificationText())
+                }
+            }
+            "stats" -> OverlayRuntime.update {
+                it.copy(
+                    triangles = payload.optInt("triangles"),
+                    drawCalls = payload.optInt("calls"),
+                    textures = payload.optInt("textures"),
+                    bones = payload.optInt("bones"),
+                    springJoints = payload.optInt("springJoints"),
+                    renderScale = payload.optDouble("renderScale", 1.0).toFloat(),
+                    qualityLevel = payload.optString("qualityLevel", "high"),
+                    workMs = payload.optInt("workMs"),
+                )
+            }
+            "quality-change" -> {
+                OverlayRuntime.update {
+                    it.copy(
+                        renderScale = payload.optDouble("scale", 1.0).toFloat(),
+                        qualityLevel = payload.optString("level", "high"),
+                    )
+                }
+                Log.i(TAG, "kualitas render: ${payload.optString("direction")} ke ${payload.optDouble("scale")} (${payload.optString("level")})")
+            }
+            "textures" -> {
+                OverlayRuntime.update { it.copy(texturesResized = payload.optInt("resized")) }
+                Log.i(TAG, "tekstur diperkecil: ${payload.optInt("resized")}, dipertahankan: ${payload.optInt("kept")}, batas ${payload.optInt("maxSize")}px")
+            }
+            "talking" -> OverlayRuntime.update { it.copy(talking = true) }
+            "memory-trimmed" -> Log.i(TAG, "memori dipangkas: $raw")
             "animation-playing" -> {
                 val name = payload.optString("name").takeIf { it.isNotBlank() }
                 OverlayRuntime.update { it.copy(animationName = name) }
@@ -358,6 +424,42 @@ class OverlayService : Service() {
             "${JSONObject.quote("$ASSET_BASE/animations/${animation.fileName}")}, " +
             "${JSONObject.quote(animation.displayName)}, {loop: $loop})"
         evaluate(script)
+    }
+
+    // ---------------------------------------------------------------- suara & memori
+
+    /**
+     * Menandai avatar sedang "berbicara": ekspresi mulut beranimasi singkat dan,
+     * bila VoicePack aktif, klip stream chat diputar (peran `chatBotStreamClip`).
+     */
+    private fun speak(text: String?, durationMs: Int) {
+        val chat = ChatRepository.get(this)
+        if (chat.state.value.settings.voicePackEnabled) voicePack.play(VoicePack.Event.CHAT_STREAM)
+        evaluate("window.MateEngine.startTalking(${durationMs.coerceIn(400, 20000)})")
+        OverlayRuntime.update { it.copy(talking = true) }
+        if (!text.isNullOrBlank()) Log.i(TAG, "ucapan diputar untuk ${text.length} karakter")
+    }
+
+    private fun trimMemory(forced: Boolean) {
+        lastTrimAt = System.currentTimeMillis()
+        evaluate("window.MateEngine.trimMemory()")
+        val runtime = OverlayRuntime.state.value
+        runCatching { Runtime.getRuntime().gc() }
+        OverlayRuntime.update { it.copy(lastTrimAt = lastTrimAt) }
+        if (forced) {
+            OverlayRuntime.reportError("Pemangkasan memori dijalankan. FPS ${runtime.fps}, tekstur ${runtime.textures}.")
+        }
+        Log.i(TAG, "trim memori (forced=$forced) pada $lastTrimAt")
+    }
+
+    override fun onTrimMemory(level: Int) {
+        super.onTrimMemory(level)
+        // Padanan Android untuk MemoryTrim.cs: sistem menekan memori -> lepaskan cache renderer.
+        if (level >= TRIM_MEMORY_RUNNING_LOW) {
+            Log.i(TAG, "onTrimMemory level=$level, memangkas renderer")
+            evaluate("window.MateEngine.trimMemory()")
+            runCatching { webView?.clearCache(true) }
+        }
     }
 
     // ---------------------------------------------------------------- notification
@@ -493,7 +595,14 @@ class OverlayService : Service() {
         const val ACTION_RELOAD_AVATAR = "io.github.mrnodatax.mateengine.action.RELOAD_AVATAR"
         const val ACTION_PLAY_ANIMATION = "io.github.mrnodatax.mateengine.action.PLAY_ANIMATION"
         const val ACTION_STOP_ANIMATION = "io.github.mrnodatax.mateengine.action.STOP_ANIMATION"
+        const val ACTION_SPEAK = "io.github.mrnodatax.mateengine.action.SPEAK_REPLY"
+        const val ACTION_STOP_SPEAKING = "io.github.mrnodatax.mateengine.action.STOP_SPEAKING"
+        const val ACTION_TRIM_MEMORY = "io.github.mrnodatax.mateengine.action.TRIM_MEMORY"
         const val EXTRA_ANIMATION_ID = "animation_id"
+        const val EXTRA_SPEECH_TEXT = "speech_text"
+        const val EXTRA_SPEECH_MS = "speech_ms"
+        private const val TRIM_INITIAL_DELAY_MS = 10_000L
+        private const val TRIM_INTERVAL_MS = 600_000L
         private const val TAG = "MateEngineRender"
 
         private const val ASSET_HOST = "appassets.androidplatform.net"
@@ -528,6 +637,26 @@ class OverlayService : Service() {
                     .setAction(ACTION_PLAY_ANIMATION)
                     .putExtra(EXTRA_ANIMATION_ID, animationId),
             )
+        }
+
+        fun speak(context: Context, text: String?, durationMs: Int) {
+            if (!OverlayRuntime.state.value.running) return
+            context.startService(
+                Intent(context, OverlayService::class.java)
+                    .setAction(ACTION_SPEAK)
+                    .putExtra(EXTRA_SPEECH_TEXT, text)
+                    .putExtra(EXTRA_SPEECH_MS, durationMs),
+            )
+        }
+
+        fun stopSpeaking(context: Context) {
+            if (!OverlayRuntime.state.value.running) return
+            context.startService(Intent(context, OverlayService::class.java).setAction(ACTION_STOP_SPEAKING))
+        }
+
+        fun trimMemory(context: Context) {
+            if (!OverlayRuntime.state.value.running) return
+            context.startService(Intent(context, OverlayService::class.java).setAction(ACTION_TRIM_MEMORY))
         }
 
         fun stopAnimation(context: Context) {

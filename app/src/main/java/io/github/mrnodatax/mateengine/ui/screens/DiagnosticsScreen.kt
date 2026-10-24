@@ -32,6 +32,8 @@ import io.github.mrnodatax.mateengine.ui.SectionLabel
 import io.github.mrnodatax.mateengine.ui.StatusChip
 import io.github.mrnodatax.mateengine.ui.T
 import io.github.mrnodatax.mateengine.ui.TwoPane
+import io.github.mrnodatax.mateengine.overlay.OverlaySnapshot
+import io.github.mrnodatax.mateengine.ui.LabeledValue
 import io.github.mrnodatax.mateengine.util.DiagnosticAction
 import io.github.mrnodatax.mateengine.util.DiagnosticStatus
 import io.github.mrnodatax.mateengine.util.DiagnosticsSnapshot
@@ -39,6 +41,7 @@ import io.github.mrnodatax.mateengine.util.DiagnosticsSnapshot
 @Composable
 fun DiagnosticsScreen(
     snapshot: DiagnosticsSnapshot,
+    runtime: OverlaySnapshot,
     onAction: (DiagnosticAction) -> Unit,
     onCopied: () -> Unit,
 ) {
@@ -93,6 +96,31 @@ fun DiagnosticsScreen(
                     }
                 },
                 secondary = {
+                    SectionLabel("Performa renderer")
+                    SectionCard {
+                        if (!runtime.running) {
+                            Text(
+                                "Overlay belum berjalan, jadi angka performa belum tersedia.",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            )
+                        } else {
+                            LabeledValue("FPS terukur", runtime.fps.toString())
+                            LabeledValue("Kerja frame", "${runtime.workMs} ms")
+                            LabeledValue("Resolusi render", "${(runtime.renderScale * 100).toInt()}% · ${runtime.qualityLevel}")
+                            LabeledValue("Triangles", runtime.triangles.toString())
+                            LabeledValue("Draw call", runtime.drawCalls.toString())
+                            LabeledValue("Tekstur", "${runtime.textures} (diperkecil ${runtime.texturesResized})")
+                            LabeledValue("Tulang", runtime.bones.toString())
+                            LabeledValue("Spring joint", runtime.springJoints.toString())
+                            Text(
+                                "Angka berasal dari WebGLRenderer.info dan pengukuran waktu frame di perangkat ini.",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            )
+                        }
+                    }
+
                     SectionLabel(T.diagnosticsReport)
                     SectionCard {
                         Text(T.diagnosticsReportBody, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)

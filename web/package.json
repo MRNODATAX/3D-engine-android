@@ -6,7 +6,9 @@
   "type": "module",
   "scripts": {
     "build": "node build.mjs",
-    "test:render": "node test/render-smoke.mjs"
+    "test:render": "node test/render-smoke.mjs",
+    "test:perf": "node test/perf.test.mjs",
+    "test": "node test/perf.test.mjs"
   },
   "dependencies": {
     "@pixiv/three-vrm": "3.5.5",

@@ -13,6 +13,7 @@ import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import { VRMLoaderPlugin, VRMUtils } from '@pixiv/three-vrm';
 import { VRMAnimationLoaderPlugin, createVRMAnimationClip } from '@pixiv/three-vrm-animation';
 import { applyRelaxedPose, captureRestPose } from './pose.js';
+import { collectStats, createGovernor, downscaleTextures } from './perf.js';
 
 const CONFIG = {
   maxPixelRatio: 2,
@@ -46,6 +47,13 @@ const state = {
   lastFrameTime: 0,
   framesThisSecond: 0,
   fpsReportAt: 0,
+  governor: createGovernor({ targetFps: CONFIG.targetFps }),
+  renderScale: 1,
+  workMsAvg: 0,
+  statsReportAt: 0,
+  textureInfo: null,
+  talking: 0,
+  talkSeed: 0,
   animationName: null,
   loop: true,
   speed: 1,
@@ -213,9 +221,21 @@ async function loadAvatar(url) {
       }
     });
 
+    // Optimasi tekstur: batas resolusi mengikuti kualitas render yang dipilih.
+    const textureCap = state.quality === 'low' ? 512 : state.quality === 'medium' ? 1024 : 2048;
+    state.textureInfo = downscaleTextures(vrm.scene, textureCap);
+    post('textures', {
+      resized: state.textureInfo.resized,
+      kept: state.textureInfo.skipped,
+      maxSize: state.textureInfo.maxSize,
+    });
+
     state.scene.add(vrm.scene);
     state.vrm = vrm;
     state.avatarInfo = describeVrm(vrm);
+    state.governor.reset();
+    state.renderScale = 1;
+    applyPixelRatio();
     state.mixer = new THREE.AnimationMixer(vrm.scene);
     frameModel(vrm);
     state.ready = true;
@@ -291,6 +311,24 @@ function updateBlink(delta) {
   }
 }
 
+/**
+ * Animasi bicara sederhana: mulut (`aa`) bergerak dan ekspresi senang muncul sebentar.
+ * Dipakai saat balasan chat diterima; bukan pengganti animasi ucapan sungguhan.
+ */
+function updateTalking(delta) {
+  const expression = state.vrm?.expressionManager;
+  if (!expression) return;
+  if (state.talking > 0) {
+    state.talking -= delta * 1000;
+    state.talkSeed += delta * 12;
+    const openness = 0.25 + Math.abs(Math.sin(state.talkSeed)) * 0.45;
+    expression.setValue('aa', Math.min(1, openness));
+    if (state.talking <= 0) {
+      expression.setValue('aa', 0);
+    }
+  }
+}
+
 function updateIdle(delta) {
   if (!state.vrm) return;
 
@@ -320,24 +358,64 @@ function animate(now) {
   const delta = Math.min(0.05, Math.max(0.001, (now - state.lastFrameTime) / 1000));
   state.lastFrameTime = now;
 
+  const workStart = performance.now();
   updateBlink(delta);
   updateIdle(delta);
+  updateTalking(delta);
   if (state.mixer) state.mixer.update(delta);
   if (state.vrm) state.vrm.update(delta);
 
   state.renderer.render(state.scene, state.camera);
+  const workMs = performance.now() - workStart;
+  state.workMsAvg = state.workMsAvg === 0 ? workMs : state.workMsAvg * 0.9 + workMs * 0.1;
+
+  // Governor adaptif: turunkan resolusi bila kerja frame melebihi anggaran.
+  const decision = state.governor.sample(workMs);
+  if (decision.changed !== 0) {
+    state.renderScale = decision.scale;
+    applyPixelRatio();
+    post('quality-change', {
+      scale: state.renderScale,
+      level: state.governor.level,
+      direction: decision.changed < 0 ? 'turun' : 'naik',
+      avgWorkMs: Math.round(decision.avgWorkMs || workMs),
+    });
+  }
+
   state.framesThisSecond += 1;
   if (now - state.fpsReportAt >= 1000) {
-    post('fps', { value: state.framesThisSecond });
+    post('fps', { value: state.framesThisSecond, workMs: Math.round(state.workMsAvg) });
     state.framesThisSecond = 0;
     state.fpsReportAt = now;
   }
+  if (now - state.statsReportAt >= 2000) {
+    state.statsReportAt = now;
+    post('stats', {
+      ...collectStats(state.renderer, state.vrm),
+      fpsTarget: state.targetFps,
+      renderScale: Number(state.renderScale.toFixed(2)),
+      qualityLevel: state.governor.level,
+      workMs: Math.round(state.workMsAvg),
+    });
+  }
+}
+
+function qualityCap() {
+  if (state.quality === 'low') return 1;
+  if (state.quality === 'medium') return 1.5;
+  return CONFIG.maxPixelRatio;
+}
+
+function applyPixelRatio() {
+  if (!state.renderer) return;
+  const base = Math.min(window.devicePixelRatio || 1, qualityCap());
+  state.renderer.setPixelRatio(Math.max(0.5, base * state.renderScale));
 }
 
 function resize() {
   if (!state.renderer) return;
   const { width, height } = canvasSize();
-  state.renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, state.quality === 'low' ? 1 : CONFIG.maxPixelRatio));
+  applyPixelRatio();
   state.renderer.setSize(width, height, false);
   state.camera.aspect = width / height;
   state.camera.updateProjectionMatrix();
@@ -345,10 +423,6 @@ function resize() {
 
 function setQuality(quality) {
   state.quality = ['low', 'medium', 'high'].includes(quality) ? quality : 'medium';
-  if (!state.renderer) return;
-  state.renderer.setPixelRatio(
-    Math.min(window.devicePixelRatio || 1, state.quality === 'low' ? 1 : state.quality === 'medium' ? 1.5 : CONFIG.maxPixelRatio),
-  );
   resize();
 }
 
@@ -366,6 +440,7 @@ window.MateEngine = {
   },
   setTargetFps: (fps) => {
     state.targetFps = Math.max(5, Math.min(60, Number(fps) || 30));
+    state.governor.setTargetFps(state.targetFps);
   },
   setQuality,
   setAnimationSpeed: (speed) => {
@@ -384,6 +459,36 @@ window.MateEngine = {
       animation: state.animationName,
     };
   },
+  startTalking: (durationMs) => {
+    state.talking = Math.max(400, Math.min(20000, Number(durationMs) || 2500));
+    state.talkSeed = 0;
+    const expression = state.vrm?.expressionManager;
+    if (expression) {
+      expression.setValue('happy', 0.6);
+      setTimeout(() => expression.setValue('happy', 0), 1200);
+    }
+    post('talking', { duration: state.talking });
+  },
+  stopTalking: () => {
+    state.talking = 0;
+    state.vrm?.expressionManager?.setValue('aa', 0);
+  },
+  trimMemory: () => {
+    const released = { animations: 0, lists: true };
+    try {
+      state.mixer?.stopAllAction();
+      if (state.mixer) {
+        state.mixer.uncacheRoot(state.vrm?.scene);
+        released.animations = 1;
+      }
+      state.renderer?.renderLists?.dispose?.();
+      THREE.Cache.clear();
+    } catch (error) {
+      /* pembersihan bersifat best-effort */
+    }
+    post('memory-trimmed', released);
+  },
+  stats: () => ({ ...collectStats(state.renderer, state.vrm), renderScale: state.renderScale, workMs: state.workMsAvg }),
   status: () => ({
     ready: state.ready,
     avatar: state.avatarInfo,

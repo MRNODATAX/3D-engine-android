@@ -26,6 +26,9 @@ jobs:
         run: npm ci
       - name: Ambil fixture uji berlisensi
         run: bash scripts/fetch-test-vrm.sh web/test-fixtures
+      - name: Uji logika performa
+        working-directory: web
+        run: npm run test:perf
       - name: Build bundle renderer
         working-directory: web
         run: npm run build

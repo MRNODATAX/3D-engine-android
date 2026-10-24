@@ -26,6 +26,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Build
+import androidx.compose.material.icons.automirrored.filled.Chat
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.PlayArrow
@@ -69,7 +70,9 @@ import io.github.mrnodatax.mateengine.overlay.OverlayRuntime
 import io.github.mrnodatax.mateengine.overlay.OverlayService
 import io.github.mrnodatax.mateengine.ui.T
 import io.github.mrnodatax.mateengine.ui.screens.AnimationScreen
+import io.github.mrnodatax.mateengine.chat.ChatController
 import io.github.mrnodatax.mateengine.ui.screens.AvatarScreen
+import io.github.mrnodatax.mateengine.ui.screens.ChatScreen
 import io.github.mrnodatax.mateengine.ui.screens.DiagnosticsScreen
 import io.github.mrnodatax.mateengine.ui.screens.HomeScreen
 import io.github.mrnodatax.mateengine.ui.screens.SettingsScreen
@@ -81,6 +84,7 @@ import kotlinx.coroutines.launch
 private enum class Screen(val label: String, val icon: ImageVector) {
     Home(T.navHome, Icons.Filled.Home),
     Avatar(T.navAvatar, Icons.Filled.Person),
+    Chat(T.navChat, Icons.AutoMirrored.Filled.Chat),
     Animation(T.navAnimation, Icons.Filled.PlayArrow),
     Diagnostics(T.navDiagnostics, Icons.Filled.Build),
     Settings(T.navSettings, Icons.Filled.Settings),
@@ -153,6 +157,9 @@ private fun MateEngineApp() {
     var importingAvatar by remember { mutableStateOf(false) }
     var importingAnimation by remember { mutableStateOf(false) }
     var diagnosticsVersion by remember { mutableIntStateOf(0) }
+    val chatController = remember { ChatController(context) }
+    val chatUi by chatController.ui.collectAsStateWithLifecycle()
+    DisposableEffect(chatController) { onDispose { chatController.shutdown() } }
 
     // Izin bisa dicabut kapan saja dari setelan sistem: periksa ulang saat aplikasi kembali aktif.
     DisposableEffect(context) {
@@ -318,6 +325,15 @@ private fun MateEngineApp() {
                                         state.selectedAnimation?.let { OverlayService.playAnimation(context, it.id) }
                                     },
                                 )
+                                Screen.Chat -> ChatScreen(
+                                    ui = chatUi,
+                                    onSaveApiKey = { chatController.saveApiKey(it) },
+                                    onClearApiKey = { chatController.clearApiKey() },
+                                    onSavePersona = { chatController.savePersona(it) },
+                                    onSettingsChange = { chatController.updateSettings(it) },
+                                    onSend = { text -> chatController.send(text, scope) },
+                                    onClearHistory = { chatController.clearHistory() },
+                                )
                                 Screen.Avatar -> AvatarScreen(
                                     state = state,
                                     importing = importingAvatar,
@@ -349,6 +365,7 @@ private fun MateEngineApp() {
                                 )
                                 Screen.Diagnostics -> DiagnosticsScreen(
                                     snapshot = diagnostics,
+                                    runtime = runtime,
                                     onAction = onDiagnosticAction,
                                     onCopied = { scope.launch { snackbar.showSnackbar(T.copied) } },
                                 )
@@ -365,6 +382,11 @@ private fun MateEngineApp() {
                                         repository.updateOverlay { it.copy(quality = value) }
                                         if (runtime.running) OverlayService.applySettings(context)
                                     },
+                                    onMemorySaverChange = { value ->
+                                        repository.updateOverlay { it.copy(memorySaver = value) }
+                                        if (runtime.running) OverlayService.applySettings(context)
+                                    },
+                                    onTrimMemory = { OverlayService.trimMemory(context) },
                                     onClearCache = {
                                         repository.clearRenderCache()
                                         scope.launch { snackbar.showSnackbar(T.clearCacheDone) }
