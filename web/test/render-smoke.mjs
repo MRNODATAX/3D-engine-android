@@ -98,10 +98,12 @@ try {
     `rotasi lengan berubah sendiri (${poseEarly.leftUpperArmZ.toFixed(2)} -> ${poseLate.leftUpperArmZ.toFixed(2)}), pose terakumulasi`,
   );
   assert(
-    Math.abs(poseLate.leftUpperArmZ + 1.15) < 0.25,
-    `pose rileks tidak sesuai harapan (z=${poseLate.leftUpperArmZ.toFixed(2)})`,
+    Math.abs(poseLate.offsetZ + 1.15) < 0.25,
+    `offset pose rileks tidak sesuai harapan (offset z=${poseLate.offsetZ?.toFixed(2)})`,
   );
-  console.log(`✓ pose stabil: leftUpperArm.z ${poseLate.leftUpperArmZ.toFixed(2)} setelah 5 detik`);
+  console.log(
+    `✓ pose stabil: offset lengan ${poseLate.offsetZ.toFixed(2)} rad (rotasi ${poseLate.leftUpperArmZ.toFixed(2)}, istirahat ${poseLate.restZ.toFixed(2)})`,
+  );
 
   const pixels = await page.evaluate(() => {
     const source = document.getElementById('stage');
@@ -202,6 +204,8 @@ try {
 } catch (error) {
   failures += 1;
   console.error(`✗ ${error.message}`);
+  // Anotasi agar penyebab kegagalan terbaca dari API checks tanpa unduh log.
+  console.log(`::error::${String(error.message).replace(/\r?\n/g, " ").slice(0, 900)}`);
 } finally {
   await browser?.close();
   server.close();

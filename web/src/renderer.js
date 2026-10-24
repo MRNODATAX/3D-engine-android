@@ -374,8 +374,11 @@ window.MateEngine = {
   },
   debugPose: () => {
     const bone = state.vrm?.humanoid?.getNormalizedBoneNode('leftUpperArm');
+    const rest = state.restPose.leftUpperArm || null;
     return {
       leftUpperArmZ: bone ? bone.rotation.z : null,
+      restZ: rest ? rest.z : null,
+      offsetZ: bone && rest ? bone.rotation.z - rest.z : null,
       hasRestPose: Object.keys(state.restPose).length > 0,
       blend: state.poseBlend,
       animation: state.animationName,
