@@ -64,7 +64,7 @@ jobs:
         if: always()
         run: |
           if [ -f /tmp/mate-log-tail.txt ]; then
-            grep -iE "fatal|exception|error|denied|refused" /tmp/mate-log-tail.txt | head -20 | while IFS= read -r line; do
+            grep -iE "MateEngineRender|fatal|exception|denied|refused" /tmp/mate-log-tail.txt | head -25 | while IFS= read -r line; do
               echo "::warning::${line:0:900}"
             done
             echo "---- ringkas log ----"

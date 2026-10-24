@@ -76,11 +76,13 @@ class OverlayService : Service() {
         startInForeground(repository.state.value.selectedAvatar?.displayName)
         OverlayRuntime.update { it.copy(running = true, rendererReady = false, lastError = null) }
         showOverlay()
+        Log.i(TAG, "service onCreate selesai, overlay=${rootView != null}")
         registerReceiver(configurationReceiver, IntentFilter(Intent.ACTION_CONFIGURATION_CHANGED))
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         val action = intent?.action ?: ACTION_START
+        Log.i(TAG, "service onStartCommand action=$action")
         when (action) {
             ACTION_STOP -> {
                 stopSelf()
@@ -98,6 +100,7 @@ class OverlayService : Service() {
     override fun onBind(intent: Intent?): IBinder? = null
 
     override fun onDestroy() {
+        Log.i(TAG, "service onDestroy")
         runCatching { unregisterReceiver(configurationReceiver) }
         webView?.let { view ->
             (view.parent as? FrameLayout)?.removeView(view)
@@ -160,6 +163,7 @@ class OverlayService : Service() {
         runCatching {
             windowManager.addView(container, layoutParams)
         }.onFailure { error ->
+            Log.e(TAG, "gagal menambah overlay", error)
             OverlayRuntime.reportError("Overlay ditolak sistem: ${error.message ?: error::class.simpleName}")
             stopSelf()
             return

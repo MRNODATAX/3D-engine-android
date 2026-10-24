@@ -43,6 +43,9 @@ shoot 03-animasi --es screen animation
 shoot 04-diagnosa --es screen diagnostics
 shoot 05-pengaturan --es screen settings
 
+echo "== status sebelum overlay"
+adb shell dumpsys activity services "$PKG" | head -20 || true
+
 echo "== memulai overlay lewat hook debug aplikasi sendiri"
 adb shell am force-stop "$PKG" || true
 adb shell am start -W -n "$ACTIVITY" --ez seed_sample true --ez start_overlay true --es screen home >/dev/null
@@ -59,6 +62,8 @@ done
 sleep 4
 adb exec-out screencap -p > "$OUT/06-overlay.png"
 echo "== tersimpan $OUT/06-overlay.png"
+echo "== status service setelah tangkapan"
+adb shell dumpsys activity services "$PKG" | grep -E "ServiceRecord|app=" | head -5 || true
 
 echo "== status overlay di halaman Diagnosa"
 adb shell am start -n "$ACTIVITY" --es screen home >/dev/null
@@ -72,7 +77,7 @@ adb exec-out screencap -p > "$OUT/08-diagnosa-berjalan.png"
 echo "== tersimpan $OUT/08-diagnosa-berjalan.png"
 
 adb logcat -d > "$LOG" || true
-grep -E "mateengine|MateEngineRender|chromium|WebView|AndroidRuntime" "$LOG" | tail -200 > /tmp/mate-log-tail.txt || true
+grep -E "mateengine|MateEngineRender|chromium|WebView|AndroidRuntime" "$LOG" | tail -400 > /tmp/mate-log-tail.txt || true
 echo "== potongan log"
 tail -40 /tmp/mate-log-tail.txt || true
 
