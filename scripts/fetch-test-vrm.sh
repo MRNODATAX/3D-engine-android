@@ -29,3 +29,9 @@ if [ ! -f "$VRMA_OUT" ]; then
   echo "$VRMA_SHA  $VRMA_OUT" | sha256sum -c -
   echo "animasi uji tersimpan: $VRMA_OUT ($(du -h "$VRMA_OUT" | cut -f1))"
 fi
+
+# Untuk build Android, animasi juga disertakan sebagai aset aplikasi (dipakai tangkapan layar CI).
+if [[ "$OUT_DIR" == *"app/src/main/assets"* ]]; then
+  cp "$VRMA_OUT" "$OUT_DIR/test.vrma"
+  echo "animasi uji disalin ke aset: $OUT_DIR/test.vrma"
+fi

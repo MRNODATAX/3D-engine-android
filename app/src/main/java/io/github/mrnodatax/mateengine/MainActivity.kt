@@ -105,7 +105,17 @@ private fun MateEngineApp() {
     val scope = rememberCoroutineScope()
     val snackbar = remember { SnackbarHostState() }
 
-    var screen by remember { mutableStateOf(Screen.Home) }
+    // Hook khusus build debug untuk tangkapan layar otomatis di CI:
+    //   am start ... --es screen avatar --ez seed_sample true
+    val initialScreen = remember {
+        if (!BuildConfig.DEBUG) {
+            Screen.Home
+        } else {
+            val requested = (context as? android.app.Activity)?.intent?.getStringExtra("screen")
+            Screen.entries.firstOrNull { it.name.equals(requested, ignoreCase = true) } ?: Screen.Home
+        }
+    }
+    var screen by remember { mutableStateOf(initialScreen) }
     var overlayGranted by remember { mutableStateOf(Settings.canDrawOverlays(context)) }
     var importingAvatar by remember { mutableStateOf(false) }
     var importingAnimation by remember { mutableStateOf(false) }
@@ -122,6 +132,12 @@ private fun MateEngineApp() {
         val lifecycleOwner = context as? androidx.lifecycle.LifecycleOwner
         lifecycleOwner?.lifecycle?.addObserver(observer)
         onDispose { lifecycleOwner?.lifecycle?.removeObserver(observer) }
+    }
+
+    LaunchedEffect(Unit) {
+        val seed = BuildConfig.DEBUG &&
+            (context as? android.app.Activity)?.intent?.getBooleanExtra("seed_sample", false) == true
+        if (seed) repository.seedSampleFromAssets()
     }
 
     val notificationPermissionLauncher = rememberLauncherForActivityResult(

@@ -92,6 +92,57 @@ class AppRepository private constructor(context: Context) {
         }
     }
 
+    /**
+     * Hanya dipakai build debug/CI untuk menyiapkan data tangkapan layar.
+     * Berkas contoh dibaca dari aset aplikasi, bukan dari penyimpanan pengguna.
+     */
+    suspend fun seedSampleFromAssets(): Result<Unit> = withContext(Dispatchers.IO) {
+        runCatching {
+            fun copyAsset(assetPath: String, targetDir: File, targetName: String): File {
+                val target = File(targetDir, targetName)
+                appContext.assets.open(assetPath).use { input ->
+                    target.outputStream().use { output -> input.copyTo(output) }
+                }
+                return target
+            }
+
+            val modelFile = copyAsset("testmodels/vrm1-twist-sample.vrm", avatarDir, "sample-vrm1-twist.vrm")
+            val metadata = VrmMetaReader.read(modelFile) ?: error("metadata model contoh tidak terbaca")
+            val avatar = AvatarAsset(
+                id = "sample-avatar",
+                displayName = metadata.name,
+                fileName = modelFile.name,
+                sizeBytes = modelFile.length(),
+                importedAt = System.currentTimeMillis(),
+                metadata = metadata,
+            )
+
+            val animations = runCatching {
+                val vrma = copyAsset("testmodels/test.vrma", animationDir, "sample-idle.vrma")
+                listOf(
+                    AnimationAsset(
+                        id = "sample-animation",
+                        displayName = "idle-loop",
+                        fileName = vrma.name,
+                        sizeBytes = vrma.length(),
+                        importedAt = System.currentTimeMillis(),
+                    ),
+                )
+            }.getOrDefault(emptyList())
+
+            val current = _state.value
+            update(
+                current.copy(
+                    avatars = listOf(avatar) + current.avatars.filterNot { it.id == avatar.id },
+                    animations = animations + current.animations.filterNot { item -> animations.any { it.id == item.id } },
+                    selectedAvatarId = avatar.id,
+                    selectedAnimationId = animations.firstOrNull()?.id ?: current.selectedAnimationId,
+                ),
+            )
+            Unit
+        }
+    }
+
     fun selectAvatar(id: String?) {
         val current = _state.value
         if (current.avatars.none { it.id == id } && id != null) return
