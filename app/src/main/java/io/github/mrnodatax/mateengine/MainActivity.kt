@@ -56,6 +56,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
@@ -169,7 +170,7 @@ private fun MateEngineApp() {
             Uri.parse("package:${context.packageName}"),
         )
         runCatching { context.startActivity(intent) }
-            .onFailure { snackbar.showSnackbar("Setelan izin overlay tidak tersedia di perangkat ini.") }
+            .onFailure { scope.launch { snackbar.showSnackbar("Setelan izin overlay tidak tersedia di perangkat ini.") } }
     }
 
     fun startOverlay() {
@@ -179,7 +180,7 @@ private fun MateEngineApp() {
         }
         if (state.selectedAvatar == null) {
             screen = Screen.Avatar
-            snackbar.showSnackbar("Impor model .vrm terlebih dahulu.")
+            scope.launch { snackbar.showSnackbar("Impor model .vrm terlebih dahulu.") }
             return
         }
         ensureNotificationPermission()
@@ -189,7 +190,7 @@ private fun MateEngineApp() {
     val onDiagnosticAction: (DiagnosticAction) -> Unit = { action ->
         Diagnostics.intentFor(context, action)?.let { intent ->
             runCatching { context.startActivity(intent) }
-                .onFailure { snackbar.showSnackbar("Setelan tidak tersedia di perangkat ini.") }
+                .onFailure { scope.launch { snackbar.showSnackbar("Setelan tidak tersedia di perangkat ini.") } }
         }
     }
 
