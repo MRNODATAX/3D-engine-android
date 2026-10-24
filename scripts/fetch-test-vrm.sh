@@ -15,7 +15,16 @@ fi
 
 mkdir -p "$OUT_DIR"
 TMP="$(mktemp)"
-curl -fsSL -H "Accept: application/vnd.github.raw" ${GITHUB_TOKEN:+-H "Authorization: token $GITHUB_TOKEN"} "$URL" -o "$TMP"
+# Token dipakai agar tidak kena batas laju API GitHub di CI.
+if ! curl -fsSL --retry 3 --retry-delay 3 \
+    -H "Accept: application/vnd.github.raw" \
+    ${GITHUB_TOKEN:+-H "Authorization: token $GITHUB_TOKEN"} \
+    "$URL" -o "$TMP"; then
+  echo "GAGAL mengunduh model uji dari $URL" >&2
+  echo "Periksa koneksi, atau set GITHUB_TOKEN agar tidak terkena batas laju API." >&2
+  rm -f "$TMP"
+  exit 1
+fi
 echo "$SHA  $TMP" | sha256sum -c -
 mv "$TMP" "$OUT"
 echo "model uji tersimpan: $OUT ($(du -h "$OUT" | cut -f1))"
@@ -25,7 +34,10 @@ VRMA_URL="https://api.github.com/repos/pixiv/three-vrm/contents/packages/three-v
 VRMA_OUT="$ROOT/web/test-fixtures/test.vrma"
 if [ ! -f "$VRMA_OUT" ]; then
   mkdir -p "$(dirname "$VRMA_OUT")"
-  curl -fsSL -H "Accept: application/vnd.github.raw" ${GITHUB_TOKEN:+-H "Authorization: token $GITHUB_TOKEN"} "$VRMA_URL" -o "$VRMA_OUT"
+  curl -fsSL --retry 3 --retry-delay 3 \
+    -H "Accept: application/vnd.github.raw" \
+    ${GITHUB_TOKEN:+-H "Authorization: token $GITHUB_TOKEN"} \
+    "$VRMA_URL" -o "$VRMA_OUT"
   echo "$VRMA_SHA  $VRMA_OUT" | sha256sum -c -
   echo "animasi uji tersimpan: $VRMA_OUT ($(du -h "$VRMA_OUT" | cut -f1))"
 fi

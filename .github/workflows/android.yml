@@ -57,6 +57,8 @@ jobs:
         with:
           gradle-version: "8.7"
       - name: Ambil model uji (tidak disimpan di Git)
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
         run: bash scripts/fetch-test-vrm.sh app/src/main/assets/testmodels
       - name: Uji unit JVM
         run: bash scripts/ci-gradle.sh :app:testDebugUnitTest
@@ -97,6 +99,8 @@ jobs:
         with:
           gradle-version: "8.7"
       - name: Ambil model uji (tidak disimpan di Git)
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
         run: bash scripts/fetch-test-vrm.sh app/src/main/assets/testmodels
       - name: Siapkan keystore bila secret tersedia
         id: keystore

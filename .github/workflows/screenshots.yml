@@ -38,6 +38,8 @@ jobs:
           ls -l /dev/kvm
 
       - name: Ambil model uji berlisensi
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
         run: bash scripts/fetch-test-vrm.sh app/src/main/assets/testmodels
 
       - name: Bangun APK debug
