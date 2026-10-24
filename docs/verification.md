@@ -95,3 +95,17 @@ Tidak ada perangkat Android fisik maupun emulator pada lingkungan pengembangan, 
 6. Impor `.vrma`, putar, lalu uji berhenti, loop, dan kecepatan.
 7. Kunci posisi: sentuhan harus diteruskan ke aplikasi di bawah.
 8. Biarkan layar mati 5 menit: catat apakah service bertahan; laporkan bersama ringkasan Diagnosa.
+
+
+## Putaran chat + performa
+
+| Temuan | Perbaikan | Bukti |
+| --- | --- | --- |
+| Tab keenam memotong label navigasi ("Diagnos a", "Pengatur an") | `maxLines = 1`, `labelSmall`, label bilah "Setelan" | `docs/screenshots/11-chat.png` |
+| Dialog "Pixel Launcher isn't responding" menutupi Diagnosa | `dismiss_dialogs()` menekan "Wait"/"Tunggu" sebelum screencap | `docs/screenshots/04-diagnosa.png` |
+| Opsi suara/model tidak terjangkau di layar sempit | dialog "Opsi chat" + ikon opsi di kartu | `11-chat.png` |
+| Build gagal: `Icons.AutoMirrored.Filled.Chat` dan `ChipTone.Positive` tidak ada | ikon dari `material-icons-core`, nada `ChipTone.Success` | run `40104797845` |
+
+Status verifikasi fitur baru ada di [`chat-dan-performa.md`](chat-dan-performa.md): chat dengan kunci
+asli dan TTS perangkat **belum** diuji, karena CI tidak memiliki kunci Gemini maupun mesin TTS
+bahasa Indonesia.

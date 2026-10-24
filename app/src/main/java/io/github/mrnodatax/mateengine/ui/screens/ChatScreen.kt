@@ -15,12 +15,15 @@ import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Send
+import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
@@ -72,6 +75,8 @@ fun ChatScreen(
     var draft by remember { mutableStateOf("") }
     var editingKey by remember { mutableStateOf(false) }
     var editingPersona by remember { mutableStateOf(false) }
+    // Di layar sempit tidak ada kolom kedua, jadi opsi suara/model dibuka lewat dialog.
+    var showOptions by remember { mutableStateOf(false) }
     val listState = rememberLazyListState()
 
     LaunchedEffect(ui.messages.size) {
@@ -116,6 +121,11 @@ fun ChatScreen(
                                     Icon(Icons.Filled.Edit, contentDescription = null, modifier = Modifier.size(16.dp))
                                     Text("  Persona")
                                 }
+                                if (!wide) {
+                                    IconButton(onClick = { showOptions = true }) {
+                                        Icon(Icons.Filled.Settings, contentDescription = "Opsi chat")
+                                    }
+                                }
                                 IconButton(onClick = onClearHistory) {
                                     Icon(Icons.Filled.Delete, contentDescription = "Hapus riwayat")
                                 }
@@ -147,7 +157,7 @@ fun ChatScreen(
                         Row(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .padding(top = 8.dp),
+                                .padding(top = 8.dp, bottom = 12.dp),
                             verticalAlignment = Alignment.Bottom,
                             horizontalArrangement = Arrangement.spacedBy(8.dp),
                         ) {
@@ -184,57 +194,39 @@ fun ChatScreen(
                     }
                 },
                 secondary = {
-                    SectionLabel("Suara & gerak")
-                    SectionCard {
-                        ToggleRow(
-                            title = "Suara balasan (TTS)",
-                            subtitle = "Memakai mesin TTS perangkat. Bahasa Indonesia bila tersedia.",
-                            checked = ui.settings.ttsEnabled,
-                            onCheckedChange = { onSettingsChange(ui.settings.copy(ttsEnabled = it)) },
+                    // Layar sempit memakai dialog "Opsi chat"; kolom ini hanya untuk lebar >= 720dp.
+                    if (wide) {
+                        ChatOptions(
+                            ui = ui,
+                            onSettingsChange = onSettingsChange,
+                            onClearApiKey = onClearApiKey,
                         )
-                        RowDivider()
-                        ToggleRow(
-                            title = "VoicePack event",
-                            subtitle = "Bunyi klik, geser, bubble, dan \"sedang mengetik\" dari pack di files/voicepack.",
-                            checked = ui.settings.voicePackEnabled,
-                            onCheckedChange = { onSettingsChange(ui.settings.copy(voicePackEnabled = it)) },
-                        )
-                        InfoNote(
-                            "Avatar mulut bergerak saat balasan tiba. Animasi tubuh tetap memakai berkas .vrma milikmu.",
-                        )
-                    }
-
-                    SectionLabel("Model Gemini")
-                    SectionCard {
-                        Text(
-                            "Model ${ui.settings.model}",
-                            style = MaterialTheme.typography.bodyMedium,
-                            fontWeight = FontWeight.Medium,
-                        )
-                        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                            ChatSettings.SUGGESTED_MODELS.forEach { model ->
-                                FilterChip(
-                                    selected = ui.settings.model == model,
-                                    onClick = { onSettingsChange(ui.settings.copy(model = model)) },
-                                    label = { Text(model.removePrefix("gemini-").replace('-', ' ')) },
-                                    colors = FilterChipDefaults.filterChipColors(
-                                        selectedContainerColor = MaterialTheme.colorScheme.primaryContainer,
-                                        selectedLabelColor = MaterialTheme.colorScheme.onPrimaryContainer,
-                                    ),
-                                )
-                            }
-                        }
-                        InfoNote(
-                            "Bila nama model ditolak, server mengembalikan galat dan pesan aslinya ditampilkan.",
-                        )
-                    }
-
-                    if (ui.hasApiKey) {
-                        OutlinedButton(onClick = onClearApiKey) { Text("Hapus kunci dari perangkat") }
                     }
                 },
             )
         }
+    }
+
+    if (showOptions) {
+        AlertDialog(
+            onDismissRequest = { showOptions = false },
+            title = { Text("Opsi chat") },
+            text = {
+                Column(
+                    modifier = Modifier
+                        .heightIn(max = 460.dp)
+                        .verticalScroll(rememberScrollState()),
+                    verticalArrangement = Arrangement.spacedBy(12.dp),
+                ) {
+                    ChatOptions(
+                        ui = ui,
+                        onSettingsChange = onSettingsChange,
+                        onClearApiKey = onClearApiKey,
+                    )
+                }
+            },
+            confirmButton = { TextButton(onClick = { showOptions = false }) { Text("Tutup") } },
+        )
     }
 
     if (editingKey) {
@@ -392,4 +384,60 @@ private fun PersonaDialog(persona: Persona, onDismiss: () -> Unit, onSave: (Pers
         },
         dismissButton = { TextButton(onClick = onDismiss) { Text("Batal") } },
     )
+}
+
+@Composable
+private fun ChatOptions(
+    ui: ChatUiState,
+    onSettingsChange: (ChatSettings) -> Unit,
+    onClearApiKey: () -> Unit,
+) {
+    SectionLabel("Suara & gerak")
+    SectionCard {
+        ToggleRow(
+            title = "Suara balasan (TTS)",
+            subtitle = "Memakai mesin TTS perangkat. Bahasa Indonesia bila tersedia.",
+            checked = ui.settings.ttsEnabled,
+            onCheckedChange = { onSettingsChange(ui.settings.copy(ttsEnabled = it)) },
+        )
+        RowDivider()
+        ToggleRow(
+            title = "VoicePack event",
+            subtitle = "Bunyi klik, geser, bubble, dan \"sedang mengetik\" dari pack di files/voicepack.",
+            checked = ui.settings.voicePackEnabled,
+            onCheckedChange = { onSettingsChange(ui.settings.copy(voicePackEnabled = it)) },
+        )
+        InfoNote(
+            "Avatar mulut bergerak saat balasan tiba. Animasi tubuh tetap memakai berkas .vrma milikmu.",
+        )
+    }
+
+    SectionLabel("Model Gemini")
+    SectionCard {
+        Text(
+            "Model ${ui.settings.model}",
+            style = MaterialTheme.typography.bodyMedium,
+            fontWeight = FontWeight.Medium,
+        )
+        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            ChatSettings.SUGGESTED_MODELS.forEach { model ->
+                FilterChip(
+                    selected = ui.settings.model == model,
+                    onClick = { onSettingsChange(ui.settings.copy(model = model)) },
+                    label = { Text(model.removePrefix("gemini-").replace('-', ' ')) },
+                    colors = FilterChipDefaults.filterChipColors(
+                        selectedContainerColor = MaterialTheme.colorScheme.primaryContainer,
+                        selectedLabelColor = MaterialTheme.colorScheme.onPrimaryContainer,
+                    ),
+                )
+            }
+        }
+        InfoNote(
+            "Bila nama model ditolak, server mengembalikan galat dan pesan aslinya ditampilkan.",
+        )
+    }
+
+    if (ui.hasApiKey) {
+        OutlinedButton(onClick = onClearApiKey) { Text("Hapus kunci dari perangkat") }
+    }
 }

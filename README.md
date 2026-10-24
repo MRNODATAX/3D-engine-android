@@ -20,10 +20,19 @@ Sudah berjalan di kode dan diuji otomatis:
 - kedip dan napas prosedural saat tidak ada animasi;
 - halaman Diagnosa yang membaca izin, pembatasan baterai, versi WebView, dan status service apa adanya;
 - semua teks bahasa Indonesia, tema terang/gelap mengikuti sistem, tata letak adaptif
-  (navigation bar di ponsel, navigation rail di jendela lebar).
+  (navigation bar di ponsel, navigation rail di jendela lebar);
+- **chat waifu** memakai Gemini API key milikmu sendiri (kunci dienkripsi di Android Keystore),
+  persona siap pakai yang bisa diedit, riwayat lokal, reaksi mulut avatar, TTS opsional;
+- **optimasi performa**: batas FPS, resolusi render adaptif, downscale tekstur, statistik nyata
+  (triangles/draw call/tulang), dan pemangkasan memori berkala.
 
-Belum ada: duduk di jendela/taskbar, screenshot transparan, timer/alarm, AI chat, Workshop,
+Belum ada: duduk di jendela/taskbar, screenshot transparan, timer/alarm, Workshop,
 food system, touch region/headpat, head tracking, chibi, bloom/AO.
+
+> Chat butuh koneksi internet dan kunci Gemini milikmu. Kunci tidak pernah dibundel di APK dan
+> tidak dikirim ke server mana pun selain `generativelanguage.googleapis.com`.
+
+Rincian provenance, lisensi aset, dan status verifikasi: [`docs/chat-dan-performa.md`](docs/chat-dan-performa.md).
 
 > Aplikasi **tidak** membundel avatar bawaan Mate Engine. Model Yorshka berlisensi *All Rights
 > Reserved* dan tidak boleh didistribusikan ulang.
@@ -133,12 +142,19 @@ pemasangan dan verifikasi perilaku di HP dilakukan oleh pemilik perangkat.
 - Overlay Android selalu berbentuk persegi; sentuhan pada piksel transparan tetap ditangkap overlay.
 - Beberapa ROM (HyperOS, ColorOS, Funtouch, One UI) membatasi overlay atau service latar. Halaman
   Diagnosa menunjukkan kondisi sebenarnya dan jalan menuju setelan terkait.
-- Renderer berjalan di WebView; performa bergantung pada WebView dan GPU perangkat.
+- Renderer berjalan di WebView; performa bergantung pada WebView dan GPU perangkat. Resolusi render
+  turun otomatis saat frame terlalu lambat, lalu naik lagi ketika lega.
+- Chat Gemini butuh kunci dari Google AI Studio. Bila kuota habis atau kunci salah, aplikasi
+  menampilkan pesan server apa adanya, bukan jawaban palsu.
+- Suara bawaan adalah nada sintetis buatan sendiri. Klip suara dan voice pack Mate Engine
+  (termasuk pack Miku) **tidak** disertakan karena lisensinya melarang redistribusi.
 
 ## Lisensi dan kredit
 
 - Kode port ini mengikuti ketentuan proyek asal; Mate Engine desktop berlisensi AGPL v3 &
   MateProv2. Nama dan identitas produk mengacu pada Mate Engine karya `shinyflvre`.
+- Pola perilaku yang diport dari Mate Engine (bukan berkasnya): VoicePack berbasis event,
+  batas FPS, pemangkasan memori, statistik model, dan penyimpanan prompt persona.
 - `three` (MIT), `@pixiv/three-vrm` (MIT), VRM 1.0 specification (VRM Consortium).
 - Model uji: `VRM1_Constraint_Twist_Sample` © pixiv Inc., lisensi VRM 1.0 dengan
   `allowRedistribution: true`; hanya dipakai sebagai fixture pengujian, bukan avatar produk.
