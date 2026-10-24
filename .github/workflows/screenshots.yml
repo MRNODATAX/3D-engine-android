@@ -9,6 +9,9 @@ on:
       # Renderer yang berubah bisa mengubah hasil overlay; jalankan ulang otomatis.
       - "web/src/**"
       - "app/src/main/assets/renderer/**"
+      # Perubahan UI juga mengubah hasil tangkapan layar.
+      - "app/src/main/java/**"
+      - "app/src/main/res/**"
 
 permissions:
   contents: write
