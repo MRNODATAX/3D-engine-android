@@ -246,6 +246,9 @@ private fun MateEngineApp() {
     Surface(Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
         BoxWithConstraints(Modifier.fillMaxSize()) {
             val wide = maxWidth >= 720.dp
+            // Pada jendela lebar tapi pendek (lanskap ponsel), judul rail disembunyikan
+            // agar semua item navigasi tetap terlihat tanpa menggulir.
+            val showRailTitle = maxHeight >= 560.dp
             val diagnostics = remember(diagnosticsVersion) { Diagnostics.snapshot(context) }
 
             Scaffold(
@@ -266,7 +269,7 @@ private fun MateEngineApp() {
                                     .verticalScroll(rememberScrollState()),
                                 horizontalAlignment = Alignment.CenterHorizontally,
                             ) {
-                                AppTitleBlock()
+                                if (showRailTitle) AppTitleBlock()
                                 Screen.entries.forEach { entry ->
                                     NavigationRailItem(
                                         selected = screen == entry,

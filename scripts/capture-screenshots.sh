@@ -162,6 +162,8 @@ sleep 4
 shoot 09-beranda-gelap --es screen home
 
 echo "== tata letak lebar (lanskap)"
+adb shell cmd uimode night no || true
+sleep 3
 adb shell settings put system accelerometer_rotation 0
 adb shell settings put system user_rotation 1
 sleep 4
