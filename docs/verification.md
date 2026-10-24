@@ -51,6 +51,10 @@ Temuan nyata dari putaran ini, dan perbaikannya:
 | Avatar tetap T-pose (model tanpa animasi, dan klip `.vrma` hanya menganimasikan sebagian bone) | `applyRelaxedPose()` sebagai lapisan dasar tiap frame |
 | Perintah ganti layar tidak berpengaruh karena `singleTask` | `onNewIntent` + `DebugNavigation` |
 | Unduhan fixture gagal karena batas laju API GitHub | Token dikirim pada langkah unduh + pesan galat eksplisit |
+| Pose rileks terakumulasi tiap frame sehingga lengan terangkat | Rotasi absolut terhadap pose istirahat + uji regresi `debugPose()` |
+| Transisi pose berbasis frame berhenti di tengah karena WebView di-throttle | Pose diterapkan penuh saat model dimuat |
+| Tombol "Muat ulang"/"Putar" masih lavender bawaan Material | `filledTonalButtonColors` dengan `surfaceVariant`/`primaryContainer` |
+| Overlay tidak muncul pada beberapa putaran CI | Skrip kini memverifikasi service lewat `dumpsys`, memakai tap `uiautomator` dengan cadangan terhitung, dan menyimpan `diagnostik-emulator.txt` |
 
 Bukti status layanan: pada `docs/screenshots/07-beranda-saat-overlay.png` dan
 `08-diagnosa-berjalan.png`, kartu status menampilkan "Sedang tampil", "Renderer siap", dan FPS

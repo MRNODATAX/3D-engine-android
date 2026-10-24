@@ -35,8 +35,8 @@ emulator Android 14 (diambil otomatis lewat `adb screencap` di CI, bukan mockup)
 
 ## Unduh dan pasang (build uji)
 
-Build uji terbaru: [Release `v0.1.0-test`](https://github.com/MRNODATAX/3D-engine-android/releases/tag/v0.1.0-test)
-(`MateEngine-v0.1.0-test-debug.apk`, ditandatangani kunci debug).
+Build uji terbaru: [Release `v0.1.2-test`](https://github.com/MRNODATAX/3D-engine-android/releases/tag/v0.1.2-test)
+(`MateEngine-v0.1.2-test-debug.apk`, ditandatangani kunci debug).
 
 1. Unduh APK di perangkat, lalu izinkan pemasangan dari sumber tidak dikenal untuk aplikasi
    pengelola berkas/browser yang dipakai.
