@@ -7,7 +7,7 @@ PKG="io.github.mrnodatax.mateengine.debug"
 ACTIVITY="$PKG/io.github.mrnodatax.mateengine.MainActivity"
 OUT="docs/screenshots"
 LOG="/tmp/mate-logcat.txt"
-DIAG="/tmp/mate-diag.txt"
+DIAG="$OUT/diagnostik-emulator.txt"
 APK="app/build/outputs/apk/debug/app-debug.apk"
 
 mkdir -p "$OUT"
@@ -48,11 +48,21 @@ service_running() {
   adb shell dumpsys activity services "$PKG" 2>/dev/null | grep -q "OverlayService"
 }
 
-# Tap berdasarkan teks tombol (uiautomator), bukan koordinat tetap yang mudah meleset.
+screen_size() {
+  adb shell wm size | sed -n 's/.*: \([0-9]*\)x\([0-9]*\).*/\1 \2/p' | head -1
+}
+
+# Tap tombol berdasarkan teks (uiautomator) dengan beberapa percobaan; uiautomator
+# kadang gagal "could not get idle state" pada aplikasi Compose.
 tap_text() {
   local label="$1"
-  adb shell uiautomator dump /sdcard/ui.xml >/dev/null 2>&1 || return 1
+  local attempt
+  for attempt in 1 2 3; do
+    adb shell uiautomator dump /sdcard/ui.xml >/dev/null 2>&1 && break
+    sleep 2
+  done
   adb shell cat /sdcard/ui.xml > /tmp/ui.xml 2>/dev/null || return 1
+  cp /tmp/ui.xml "$OUT/ui-dump.xml" 2>/dev/null || true
   local coords
   coords=$(python3 - "$label" <<'PYTAP'
 import re, sys
@@ -71,20 +81,26 @@ PYTAP
   adb shell input tap "$1" "$2"
 }
 
-echo "== menjalankan overlay lewat tombol aplikasi"
+echo "== menjalankan overlay lewat tombol aplikasi (bukti visual sebelum tap)"
 adb shell am force-stop "$PKG" || true
 adb shell am start -W -n "$ACTIVITY" --ez seed_sample true --es screen home >/dev/null
 sleep 9
 
+# Koordinat cadangan dihitung dari ukuran layar: tombol berada di ~32% lebar, ~34% tinggi.
+read -r SCREEN_W SCREEN_H <<<"$(screen_size)"
+TAP_X=$((SCREEN_W * 32 / 100))
+TAP_Y=$((SCREEN_H * 34 / 100))
+echo "== ukuran layar ${SCREEN_W}x${SCREEN_H}, cadangan tap di ($TAP_X, $TAP_Y)"
+
 if ! tap_text "Jalankan avatar"; then
-  echo "::warning::Tombol tidak ditemukan lewat uiautomator, memakai koordinat cadangan"
-  adb shell input tap 343 815
+  echo "::warning::Tombol tidak ditemukan lewat uiautomator, memakai koordinat terhitung"
+  adb shell input tap "$TAP_X" "$TAP_Y"
 fi
 sleep 8
 
 if ! service_running; then
   echo "== servis belum terlihat, coba sekali lagi"
-  tap_text "Jalankan avatar" || adb shell input tap 343 815
+  tap_text "Jalankan avatar" || adb shell input tap "$TAP_X" "$TAP_Y"
   sleep 8
 fi
 
