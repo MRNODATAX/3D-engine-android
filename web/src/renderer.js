@@ -12,7 +12,7 @@ import * as THREE from 'three';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import { VRMLoaderPlugin, VRMUtils } from '@pixiv/three-vrm';
 import { VRMAnimationLoaderPlugin, createVRMAnimationClip } from '@pixiv/three-vrm-animation';
-import { applyRelaxedPose } from './pose.js';
+import { applyRelaxedPose, captureRestPose } from './pose.js';
 
 const CONFIG = {
   maxPixelRatio: 2,
@@ -39,6 +39,7 @@ const state = {
   blinkTimer: 0,
   blinkPhase: 0,
   poseBlend: 0,
+  restPose: {},
   blinkDuration: 0.16,
   idleTime: 0,
   frameBudget: 1 / 30,
@@ -220,6 +221,7 @@ async function loadAvatar(url) {
     state.ready = true;
     state.idleTime = 0;
     state.poseBlend = 0;
+    state.restPose = captureRestPose(vrm);
     post('avatar-ready', { info: state.avatarInfo });
   } catch (error) {
     fail('load-failed', `Gagal memuat avatar: ${error?.message || error}`, true);
@@ -297,7 +299,7 @@ function updateIdle(delta) {
   if (state.poseBlend < 1) {
     state.poseBlend = Math.min(1, state.poseBlend + delta);
   }
-  applyRelaxedPose(state.vrm, state.poseBlend);
+  applyRelaxedPose(state.vrm, state.poseBlend, state.restPose);
 
   // Napas prosedural hanya saat tidak ada animasi yang diputar.
   if (state.animationName) return;
@@ -369,6 +371,15 @@ window.MateEngine = {
   setAnimationSpeed: (speed) => {
     state.speed = Math.max(0.5, Math.min(2, Number(speed) || 1));
     if (state.currentAction) state.currentAction.timeScale = state.speed;
+  },
+  debugPose: () => {
+    const bone = state.vrm?.humanoid?.getNormalizedBoneNode('leftUpperArm');
+    return {
+      leftUpperArmZ: bone ? bone.rotation.z : null,
+      hasRestPose: Object.keys(state.restPose).length > 0,
+      blend: state.poseBlend,
+      animation: state.animationName,
+    };
   },
   status: () => ({
     ready: state.ready,

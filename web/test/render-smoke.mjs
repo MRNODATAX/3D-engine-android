@@ -88,6 +88,21 @@ try {
   console.log(`✓ avatar-ready: ${ready.info.name} (${ready.info.version}, ${ready.info.humanoidBones} bone, ${ready.info.springJoints} spring)`);
 
   await page.waitForTimeout(1200);
+  // Regresi: pose rileks tidak boleh terakumulasi tiap frame.
+  const poseEarly = await page.evaluate(() => window.MateEngine.debugPose());
+  await page.waitForTimeout(4000);
+  const poseLate = await page.evaluate(() => window.MateEngine.debugPose());
+  assert(poseEarly.hasRestPose, 'pose istirahat tidak tertangkap');
+  assert(
+    Math.abs(poseLate.leftUpperArmZ - poseEarly.leftUpperArmZ) < 0.05,
+    `rotasi lengan berubah sendiri (${poseEarly.leftUpperArmZ.toFixed(2)} -> ${poseLate.leftUpperArmZ.toFixed(2)}), pose terakumulasi`,
+  );
+  assert(
+    Math.abs(poseLate.leftUpperArmZ + 1.15) < 0.25,
+    `pose rileks tidak sesuai harapan (z=${poseLate.leftUpperArmZ.toFixed(2)})`,
+  );
+  console.log(`✓ pose stabil: leftUpperArm.z ${poseLate.leftUpperArmZ.toFixed(2)} setelah 5 detik`);
+
   const pixels = await page.evaluate(() => {
     const source = document.getElementById('stage');
     const scratch = document.createElement('canvas');
