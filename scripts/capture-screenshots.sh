@@ -44,12 +44,17 @@ shoot 04-diagnosa --es screen diagnostics
 shoot 05-pengaturan --es screen settings
 
 echo "== status sebelum overlay"
-adb shell dumpsys activity services "$PKG" | head -20 || true
+adb shell dumpsys activity services "$PKG" | head -10 || true
 
-echo "== memulai overlay lewat hook debug aplikasi sendiri"
+echo "== menekan tombol Jalankan avatar seperti pengguna sungguhan"
 adb shell am force-stop "$PKG" || true
-adb shell am start -W -n "$ACTIVITY" --ez seed_sample true --ez start_overlay true --es screen home >/dev/null
+adb shell am start -W -n "$ACTIVITY" --ez seed_sample true --es screen home >/dev/null
+sleep 9
+adb exec-out screencap -p > /tmp/before-tap.png
+# Tombol "Jalankan avatar" pada kartu status (profil Pixel 6, 1080x2400).
+adb shell input tap 340 975
 sleep 8
+adb shell dumpsys activity services "$PKG" | grep -E "ServiceRecord|isForeground" | head -5 || true
 adb shell input keyevent KEYCODE_HOME
 echo "== menunggu renderer memuat model (maks 90 detik)"
 for i in $(seq 1 18); do
