@@ -26,7 +26,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Build
-import androidx.compose.material.icons.automirrored.filled.Chat
+import androidx.compose.material.icons.filled.Email
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.PlayArrow
@@ -84,7 +84,7 @@ import kotlinx.coroutines.launch
 private enum class Screen(val label: String, val icon: ImageVector) {
     Home(T.navHome, Icons.Filled.Home),
     Avatar(T.navAvatar, Icons.Filled.Person),
-    Chat(T.navChat, Icons.AutoMirrored.Filled.Chat),
+    Chat(T.navChat, Icons.Filled.Email),
     Animation(T.navAnimation, Icons.Filled.PlayArrow),
     Diagnostics(T.navDiagnostics, Icons.Filled.Build),
     Settings(T.navSettings, Icons.Filled.Settings),

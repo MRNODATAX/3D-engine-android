@@ -105,7 +105,7 @@ fun ChatScreen(
                                 }
                                 StatusChip(
                                     text = if (ui.hasApiKey) "Kunci tersimpan" else "Kunci belum ada",
-                                    tone = if (ui.hasApiKey) ChipTone.Positive else ChipTone.Warning,
+                                    tone = if (ui.hasApiKey) ChipTone.Success else ChipTone.Warning,
                                 )
                             }
                             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
