@@ -10,6 +10,8 @@ LOG="/tmp/mate-logcat.txt"
 APK="app/build/outputs/apk/debug/app-debug.apk"
 
 mkdir -p "$OUT"
+# Buang gambar lama agar nama berkas yang tidak lagi dipakai tidak tertinggal.
+rm -f "$OUT"/*.png
 adb wait-for-device
 
 adb shell settings put global window_animation_scale 0

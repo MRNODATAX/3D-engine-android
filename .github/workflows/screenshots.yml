@@ -6,6 +6,9 @@ on:
     paths:
       - ".github/workflows/screenshots.yml"
       - "scripts/capture-screenshots.sh"
+      # Renderer yang berubah bisa mengubah hasil overlay; jalankan ulang otomatis.
+      - "web/src/**"
+      - "app/src/main/assets/renderer/**"
 
 permissions:
   contents: write
