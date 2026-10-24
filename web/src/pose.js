@@ -9,8 +9,9 @@
 export const RELAXED_POSE = {
   leftUpperArm: { z: -1.15 },
   rightUpperArm: { z: 1.15 },
-  leftLowerArm: { y: -0.22 },
-  rightLowerArm: { y: 0.22 },
+  // Sedikit tekukan siku; bila terlalu besar, tangan bergeser ke depan perut.
+  leftLowerArm: { y: -0.07 },
+  rightLowerArm: { y: 0.07 },
   leftShoulder: { z: -0.06 },
   rightShoulder: { z: 0.06 },
 };
