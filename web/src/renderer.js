@@ -220,8 +220,9 @@ async function loadAvatar(url) {
     frameModel(vrm);
     state.ready = true;
     state.idleTime = 0;
-    state.poseBlend = 0;
     state.restPose = captureRestPose(vrm);
+    state.poseBlend = 1;
+    applyRelaxedPose(vrm, 1, state.restPose);
     post('avatar-ready', { info: state.avatarInfo });
   } catch (error) {
     fail('load-failed', `Gagal memuat avatar: ${error?.message || error}`, true);
@@ -296,10 +297,9 @@ function updateIdle(delta) {
   // Pose rileks selalu menjadi lapisan dasar, termasuk saat animasi berjalan: klip .vrma
   // sering hanya menggerakkan sebagian bone, sehingga lengan bisa tetap T-pose.
   // Animasi menimpa bone yang benar-benar dianimasikannya pada mixer.update berikutnya.
-  if (state.poseBlend < 1) {
-    state.poseBlend = Math.min(1, state.poseBlend + delta);
-  }
-  applyRelaxedPose(state.vrm, state.poseBlend, state.restPose);
+  // Diterapkan penuh (tidak bertahap) karena WebView overlay di-throttle saat tidak terlihat,
+  // sehingga transisi berbasis frame bisa berhenti di tengah pose.
+  applyRelaxedPose(state.vrm, 1, state.restPose);
 
   // Napas prosedural hanya saat tidak ada animasi yang diputar.
   if (state.animationName) return;
