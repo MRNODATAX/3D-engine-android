@@ -59,11 +59,11 @@ jobs:
       - name: Ambil model uji (tidak disimpan di Git)
         run: bash scripts/fetch-test-vrm.sh app/src/main/assets/testmodels
       - name: Uji unit JVM
-        run: gradle :app:testDebugUnitTest --no-daemon --stacktrace
+        run: bash scripts/ci-gradle.sh :app:testDebugUnitTest
       - name: Bangun APK debug
-        run: gradle :app:assembleDebug --no-daemon --stacktrace
+        run: bash scripts/ci-gradle.sh :app:assembleDebug
       - name: Bangun APK release (unsigned bila secret signing belum diisi)
-        run: gradle :app:assembleRelease --no-daemon --stacktrace
+        run: bash scripts/ci-gradle.sh :app:assembleRelease
       - name: Kumpulkan artefak
         run: |
           mkdir -p out
@@ -113,7 +113,7 @@ jobs:
           ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
         run: |
           bash scripts/fetch-test-vrm.sh app/src/main/assets/testmodels
-          gradle :app:assembleRelease --no-daemon --stacktrace
+          bash scripts/ci-gradle.sh :app:assembleRelease
           cp app/build/outputs/apk/release/app-release.apk "MateEngine-${GITHUB_REF_NAME}.apk"
       - name: Terbitkan GitHub Release
         env:
