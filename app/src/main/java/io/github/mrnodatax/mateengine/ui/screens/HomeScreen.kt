@@ -136,7 +136,14 @@ fun HomeScreen(
                                     + if (runtime.animationName == animation.displayName) " · diputar" else "",
                                 leading = { IconTile(Icons.Filled.PlayArrow, accent = true) },
                                 trailing = {
-                                    FilledTonalButton(onClick = onPlayAnimation, enabled = runtime.running) {
+                                    FilledTonalButton(
+                                        onClick = onPlayAnimation,
+                                        enabled = runtime.running,
+                                        colors = androidx.compose.material3.ButtonDefaults.filledTonalButtonColors(
+                                            containerColor = MaterialTheme.colorScheme.primaryContainer,
+                                            contentColor = MaterialTheme.colorScheme.onPrimaryContainer,
+                                        ),
+                                    ) {
                                         Text(T.play)
                                     }
                                 },
@@ -239,7 +246,13 @@ private fun StatusCard(
                 }
             }
             if (runtime.running && hasModel) {
-                FilledTonalButton(onClick = onStart) { Text("Muat ulang") }
+                FilledTonalButton(
+                    onClick = onStart,
+                    colors = androidx.compose.material3.ButtonDefaults.filledTonalButtonColors(
+                        containerColor = MaterialTheme.colorScheme.surfaceVariant,
+                        contentColor = MaterialTheme.colorScheme.onSurface,
+                    ),
+                ) { Text("Muat ulang") }
             }
         }
     }

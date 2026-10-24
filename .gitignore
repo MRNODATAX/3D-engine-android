@@ -18,3 +18,7 @@ web/test-results/
 *.jks
 *.keystore
 keystore.properties
+
+# Artefak bantu tangkapan layar (bukti sementara, bukan dokumentasi)
+docs/screenshots/_sebelum-tap.png
+docs/screenshots/ui-dump.xml
