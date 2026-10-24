@@ -26,12 +26,12 @@ import android.webkit.ConsoleMessage
 import android.webkit.WebChromeClient
 import android.webkit.WebResourceError
 import android.webkit.WebResourceResponse
+import android.webkit.WebViewClient
 import android.webkit.WebSettings
 import android.webkit.WebView
 import android.widget.FrameLayout
 import androidx.core.app.NotificationCompat
 import androidx.webkit.WebViewAssetLoader
-import androidx.webkit.WebViewClientCompat
 import io.github.mrnodatax.mateengine.MainActivity
 import io.github.mrnodatax.mateengine.R
 import io.github.mrnodatax.mateengine.data.AppRepository
@@ -203,7 +203,7 @@ class OverlayService : Service() {
                     return true
                 }
             }
-            webViewClient = object : WebViewClientCompat() {
+            webViewClient = object : WebViewClient() {
                 override fun onReceivedError(
                     view: WebView,
                     request: WebResourceRequest,
