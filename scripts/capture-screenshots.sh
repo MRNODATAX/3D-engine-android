@@ -50,12 +50,32 @@ echo "== menekan tombol Jalankan avatar seperti pengguna sungguhan"
 adb shell am force-stop "$PKG" || true
 adb shell am start -W -n "$ACTIVITY" --ez seed_sample true --es screen home >/dev/null
 sleep 9
-adb exec-out screencap -p > /tmp/before-tap.png
-# Tombol "Jalankan avatar" pada kartu status (profil Pixel 6, 1080x2400).
-adb shell input tap 340 975
-sleep 8
+
+service_running() {
+  adb shell dumpsys activity services "$PKG" 2>/dev/null | grep -q "OverlayService"
+}
+
+# Koordinat tombol "Jalankan avatar" pada kartu status (Pixel 6, 1080x2400).
+ADB_TAP_X=343
+ADB_TAP_Y=815
+adb shell input tap "$ADB_TAP_X" "$ADB_TAP_Y"
+sleep 7
+if ! service_running; then
+  echo "== service belum terlihat, mencoba titik kedua"
+  adb shell input tap "$ADB_TAP_X" 905
+  sleep 7
+fi
+if ! service_running; then
+  echo "::warning::Tombol tidak memulai service, memakai jalur intent debug sebagai cadangan"
+  adb shell am start -n "$ACTIVITY" --ez seed_sample true --ez start_overlay true --es screen home >/dev/null
+  sleep 7
+fi
+if ! service_running; then
+  echo "::error::Service overlay tidak berjalan; tangkapan overlay tidak akan menampilkan apa pun"
+fi
 adb shell dumpsys activity services "$PKG" | grep -E "ServiceRecord|isForeground" | head -5 || true
 adb shell input keyevent KEYCODE_HOME
+
 echo "== menunggu renderer memuat model (maks 90 detik)"
 for i in $(seq 1 18); do
   sleep 5
