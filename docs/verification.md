@@ -61,6 +61,17 @@ Bukti status layanan: pada `docs/screenshots/07-beranda-saat-overlay.png` dan
 terukur — nilai tersebut hanya dapat muncul bila renderer benar-benar berjalan dan mengirim
 laporan lewat jembatan JavaScript.
 
+### Status akhir putaran ini
+
+- `Android build` hijau pada commit terakhir: uji unit, `assembleDebug`, `assembleRelease`.
+- Uji render Chromium: VRM asli termuat, latar transparan, pose stabil (offset lengan tidak
+  berubah setelah 5 detik), `.vrma` terputar.
+- `Screenshots` di emulator: 10 gambar, termasuk overlay di atas launcher dan status
+  "Sedang tampil · Renderer siap · 8–9 fps" dari renderer sungguhan.
+- APK: Release `v0.1.2-test`, `MateEngine-v0.1.2-test-debug.apk` (16,1 MB, tanda tangan debug).
+- Log perangkat menyimpan bukti `avatar-loading` → `avatar-ready` untuk
+  `sample-vrm1-twist.vrm` dan laporan `fps` berkala.
+
 ## Apa yang belum dibuktikan
 
 Tidak ada perangkat Android fisik maupun emulator pada lingkungan pengembangan, jadi hal berikut
