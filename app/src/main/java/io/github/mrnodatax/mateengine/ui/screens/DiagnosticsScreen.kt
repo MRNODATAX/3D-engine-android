@@ -72,6 +72,17 @@ fun DiagnosticsScreen(
 
                     SectionCard {
                         snapshot.items.forEachIndexed { index, item ->
+                            val action = item.action
+                            val trailing: (@Composable () -> Unit)? = if (action == null) {
+                                null
+                            } else {
+                                {
+                                    OutlinedButton(onClick = { onAction(action) }) {
+                                        Icon(Icons.Filled.Build, contentDescription = null)
+                                        Text(item.actionLabel, modifier = Modifier.padding(start = 6.dp))
+                                    }
+                                }
+                            }
                             ListRow(
                                 title = item.title,
                                 subtitle = item.detail,
@@ -86,14 +97,7 @@ fun DiagnosticsScreen(
                                         accent = item.status == DiagnosticStatus.OK,
                                     )
                                 },
-                                trailing = item.action?.let { action ->
-                                    {
-                                        OutlinedButton(onClick = { onAction(action) }) {
-                                            Icon(Icons.Filled.Build, contentDescription = null)
-                                            Text(item.actionLabel, modifier = Modifier.padding(start = 6.dp))
-                                        }
-                                    }
-                                },
+                                trailing = trailing,
                             )
                             if (index != snapshot.items.lastIndex) RowDivider()
                         }

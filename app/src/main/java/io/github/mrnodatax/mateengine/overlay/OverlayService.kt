@@ -76,17 +76,15 @@ class OverlayService : Service() {
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
-        when (intent?.action) {
+        val action = intent?.action ?: ACTION_START
+        when (action) {
             ACTION_STOP -> {
                 stopSelf()
                 return START_NOT_STICKY
             }
             ACTION_APPLY_SETTINGS -> applySettings()
             ACTION_RELOAD_AVATAR -> reloadAvatar()
-            ACTION_PLAY_ANIMATION -> {
-                val id = intent.getStringExtra(EXTRA_ANIMATION_ID)
-                playAnimation(id)
-            }
+            ACTION_PLAY_ANIMATION -> playAnimation(intent?.getStringExtra(EXTRA_ANIMATION_ID))
             ACTION_STOP_ANIMATION -> evaluate("window.MateEngine.stopAnimation()")
             else -> Unit
         }
@@ -123,19 +121,23 @@ class OverlayService : Service() {
             OverlayGeometry.defaultPlacement(width, height, metrics.widthPixels, metrics.heightPixels, density)
         }
 
+        var windowFlags = WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE or
+            WindowManager.LayoutParams.FLAG_NOT_TOUCH_MODAL or
+            WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN
+        if (prefs.locked) {
+            windowFlags = windowFlags or WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE
+        }
+
         val layoutParams = WindowManager.LayoutParams(
             width,
             height,
             WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY,
-            WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE or
-                WindowManager.LayoutParams.FLAG_NOT_TOUCH_MODAL or
-                WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN,
+            windowFlags,
             PixelFormat.TRANSLUCENT,
         ).apply {
             gravity = Gravity.TOP or Gravity.START
             x = placement.x
             y = placement.y
-            if (prefs.locked) addFlags(WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE)
             alpha = prefs.opacityPercent / 100f
             title = "MateEngine avatar"
         }
