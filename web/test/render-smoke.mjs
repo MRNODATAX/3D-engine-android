@@ -89,8 +89,10 @@ try {
 
   await page.waitForTimeout(1200);
   // Regresi: pose rileks tidak boleh terakumulasi tiap frame.
+  // Tunggu blend selesai (1 detik) agar pembacaan tidak menangkap transisi.
+  await page.waitForFunction(() => window.MateEngine.debugPose().blend >= 1, null, { timeout: 20000 });
   const poseEarly = await page.evaluate(() => window.MateEngine.debugPose());
-  await page.waitForTimeout(4000);
+  await page.waitForTimeout(3000);
   const poseLate = await page.evaluate(() => window.MateEngine.debugPose());
   assert(poseEarly.hasRestPose, 'pose istirahat tidak tertangkap');
   assert(
