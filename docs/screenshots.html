@@ -132,6 +132,7 @@
   </p>
   <div class="facts">
     <span class="fact"><span class="dot"></span>APK debug 0.1.0 (1)</span>
+    <span class="fact"><span class="dot"></span><a href="https://github.com/MRNODATAX/3D-engine-android/releases/tag/v0.1.2-test">Unduh APK uji v0.1.2-test</a></span>
     <span class="fact"><span class="dot"></span>Android 14 · API 34 · x86_64</span>
     <span class="fact"><span class="dot"></span>1080 × 2400 · 420 dpi</span>
     <span class="fact warn"><span class="dot"></span>Perangkat fisik belum diuji</span>
@@ -190,7 +191,7 @@
       <figcaption>
         <span class="tag overlay">Overlay</span>
         <h2>Avatar di atas aplikasi lain</h2>
-        <p>Diambil setelah layanan overlay berjalan dan tombol Home ditekan. Tidak ada panel atau kartu di belakang avatar; piksel kosong benar-benar transparan. Pose lengan berasal dari pose rileks prosedural karena model uji tersimpan dalam T-pose.</p>
+        <p>Diambil setelah menekan tombol <em>Jalankan avatar</em> di aplikasi dan menekan Home. Tidak ada panel atau kartu di belakang avatar; piksel kosong benar-benar transparan. Pose lengan berasal dari pose rileks prosedural karena model uji tersimpan dalam T-pose.</p>
       </figcaption>
     </figure>
 
@@ -240,6 +241,15 @@
         <li>Metadata VRM asli terbaca dan ditampilkan.</li>
         <li>Layanan overlay dapat dijalankan dan dilaporkan statusnya.</li>
         <li>Navigasi, tema, dan tata letak lebar berfungsi.</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h2>Urutan pengambilan</h2>
+      <ul>
+        <li>Pasang APK debug, izinkan overlay, isi data contoh lewat hook debug.</li>
+        <li>Ambil 5 halaman aplikasi (Beranda, Avatar, Animasi, Diagnosa, Pengaturan).</li>
+        <li>Tekan tombol <em>Jalankan avatar</em> seperti pengguna, verifikasi service lewat <code>dumpsys</code>, tekan Home, lalu tangkap overlay.</li>
+        <li>Terakhir: tema gelap dan tata letak lanskap.</li>
       </ul>
     </div>
     <div class="card warn">
