@@ -1,14 +1,14 @@
 --- services ---
 ACTIVITY MANAGER SERVICES (dumpsys activity services)
   User 0 active services:
-  * ServiceRecord{ce145f2 u0 io.github.mrnodatax.mateengine.debug/org.chromium.content.app.SandboxedProcessService0:0}
+  * ServiceRecord{ae9d3a6 u0 io.github.mrnodatax.mateengine.debug/org.chromium.content.app.SandboxedProcessService0:0}
     intent={cmp=io.github.mrnodatax.mateengine.debug/org.chromium.content.app.SandboxedProcessService0:0}
     packageName=io.github.mrnodatax.mateengine.debug
     processName=com.google.android.webview:sandboxed_process0:org.chromium.content.app.SandboxedProcessService0:0
-    baseDir=/data/app/~~K7I0N3svyLagH0c1A_cb5g==/com.google.android.webview-WSXXvYU1_R7hybTVV1IMDQ==/WebViewGoogle.apk
+    baseDir=/data/app/~~XuwY6W9Gx_7XuO0P26Jbhg==/com.google.android.webview-EC4kOuTMTipC8Hws3M25LQ==/WebViewGoogle.apk
     dataDir=/data/user/0/com.google.android.webview
-    app=ProcessRecord{92906c7 6469:com.google.android.webview:sandboxed_process0:org.chromium.content.app.SandboxedProcessService0:0/u0a192i0}
-    isolationHostProc=ProcessRecord{92906c7 6469:com.google.android.webview:sandboxed_process0:org.chromium.content.app.SandboxedProcessService0:0/u0a192i0}
+    app=ProcessRecord{74344ed 6300:com.google.android.webview:sandboxed_process0:org.chromium.content.app.SandboxedProcessService0:0/u0a192i0}
+    isolationHostProc=ProcessRecord{74344ed 6300:com.google.android.webview:sandboxed_process0:org.chromium.content.app.SandboxedProcessService0:0/u0a192i0}
     mAllowWhileInUsePermissionInFgsReason=PROC_STATE_TOP
     allowUiJobScheduling=false
     recentCallingPackage=io.github.mrnodatax.mateengine.debug
@@ -16,31 +16,31 @@ ACTIVITY MANAGER SERVICES (dumpsys activity services)
     allowStartForeground=PROC_STATE_TOP
     startForegroundCount=0
     infoAllowStartForeground=[callingPackage: io.github.mrnodatax.mateengine.debug; callingUid: 10192; uidState: TOP ; uidBFSL: [BFSL]; intent: Intent { cmp=io.github.mrnodatax.mateengine.debug/org.chromium.content.app.SandboxedProcessService0:0 (has extras) }; code:PROC_STATE_TOP; tempAllowListReason:<null>; targetSdkVersion:34; callerTargetSdkVersion:34; startForegroundCount:0; bindFromPackage:null: isBindService:true]
-    createTime=-8s75ms startingBgTimeout=--
-    lastActivity=-7s873ms restartTime=-8s4ms createdFromFg=true
+    createTime=-7s909ms startingBgTimeout=--
+    lastActivity=-7s539ms restartTime=-7s747ms createdFromFg=true
     Bindings:
-    * IntentBindRecord{ae53c0e CREATE}:
+    * IntentBindRecord{d72dea4 CREATE}:
       intent={cmp=io.github.mrnodatax.mateengine.debug/org.chromium.content.app.SandboxedProcessService0:0}
-      binder=android.os.BinderProxy@cbb062f
+      binder=android.os.BinderProxy@96f40d
       requested=true received=true hasBound=true doRebind=false
-      * Client AppBindRecord{ede243c ProcessRecord{e71aac9 6372:io.github.mrnodatax.mateengine.debug/u0a192}}
+      * Client AppBindRecord{db00fc2 ProcessRecord{3453305 6055:io.github.mrnodatax.mateengine.debug/u0a192}}
         Per-process Connections:
-          ConnectionRecord{8d0de14 u0 CR IMP io.github.mrnodatax.mateengine.debug/org.chromium.content.app.SandboxedProcessService0:0:@72fa067 flags=0x80000041}
-          ConnectionRecord{bb1941d u0 CR WPRI io.github.mrnodatax.mateengine.debug/org.chromium.content.app.SandboxedProcessService0:0:@b72b4f4 flags=0x80000021}
+          ConnectionRecord{415602b u0 CR WPRI io.github.mrnodatax.mateengine.debug/org.chromium.content.app.SandboxedProcessService0:0:@141107a flags=0x80000021}
+          ConnectionRecord{bbd2254 u0 CR IMP io.github.mrnodatax.mateengine.debug/org.chromium.content.app.SandboxedProcessService0:0:@34d4da7 flags=0x80000041}
     All Connections:
-      ConnectionRecord{8d0de14 u0 CR IMP io.github.mrnodatax.mateengine.debug/org.chromium.content.app.SandboxedProcessService0:0:@72fa067 flags=0x80000041}
-      ConnectionRecord{bb1941d u0 CR WPRI io.github.mrnodatax.mateengine.debug/org.chromium.content.app.SandboxedProcessService0:0:@b72b4f4 flags=0x80000021}
+      ConnectionRecord{415602b u0 CR WPRI io.github.mrnodatax.mateengine.debug/org.chromium.content.app.SandboxedProcessService0:0:@141107a flags=0x80000021}
+      ConnectionRecord{bbd2254 u0 CR IMP io.github.mrnodatax.mateengine.debug/org.chromium.content.app.SandboxedProcessService0:0:@34d4da7 flags=0x80000041}
 
-  * ServiceRecord{ce885c3 u0 io.github.mrnodatax.mateengine.debug/io.github.mrnodatax.mateengine.overlay.OverlayService}
+  * ServiceRecord{2c6f9c u0 io.github.mrnodatax.mateengine.debug/io.github.mrnodatax.mateengine.overlay.OverlayService}
     intent={act=io.github.mrnodatax.mateengine.action.START_OVERLAY cmp=io.github.mrnodatax.mateengine.debug/io.github.mrnodatax.mateengine.overlay.OverlayService}
     packageName=io.github.mrnodatax.mateengine.debug
     processName=io.github.mrnodatax.mateengine.debug
-    baseDir=/data/app/~~0AFKH7c53cRWKk6w8RG5aQ==/io.github.mrnodatax.mateengine.debug-naBPSnLaRijrN_Q8FYasgQ==/base.apk
+    baseDir=/data/app/~~VATd0Hi3ccykmYoXTYL8sA==/io.github.mrnodatax.mateengine.debug-bf8qu0s6ypVSD7bxizk1DQ==/base.apk
     dataDir=/data/user/0/io.github.mrnodatax.mateengine.debug
-    app=ProcessRecord{e71aac9 6372:io.github.mrnodatax.mateengine.debug/u0a192}
+    app=ProcessRecord{3453305 6055:io.github.mrnodatax.mateengine.debug/u0a192}
     mAllowWhileInUsePermissionInFgsReason=PROC_STATE_TOP
 --- appops ---
-SYSTEM_ALERT_WINDOW: allow; time=+7s985ms ago (running)
+SYSTEM_ALERT_WINDOW: allow; time=+7s683ms ago (running)
 --- package perms ---
       android.permission.SYSTEM_ALERT_WINDOW
       android.permission.FOREGROUND_SERVICE
