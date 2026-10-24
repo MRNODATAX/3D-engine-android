@@ -86,14 +86,29 @@ private enum class Screen(val label: String, val icon: ImageVector) {
     Settings(T.navSettings, Icons.Filled.Settings),
 }
 
+/** Penanda layar awal dari intent; dipakai juga saat activity menerima intent baru (singleTask). */
+private object DebugNavigation {
+    val requestedScreen = androidx.compose.runtime.mutableStateOf<String?>(null)
+}
+
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
+        DebugNavigation.requestedScreen.value = intent?.getStringExtra("screen")
         setContent {
             MateEngineTheme {
                 MateEngineApp()
             }
+        }
+    }
+
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        setIntent(intent)
+        if (BuildConfig.DEBUG) {
+            // Tangkapan layar CI berpindah halaman tanpa mematikan service overlay.
+            DebugNavigation.requestedScreen.value = intent.getStringExtra("screen")
         }
     }
 }
@@ -122,11 +137,18 @@ private fun MateEngineApp() {
         if (!BuildConfig.DEBUG) {
             Screen.Home
         } else {
-            val requested = (context as? android.app.Activity)?.intent?.getStringExtra("screen")
+            val requested = DebugNavigation.requestedScreen.value
+                ?: (context as? android.app.Activity)?.intent?.getStringExtra("screen")
             Screen.entries.firstOrNull { it.name.equals(requested, ignoreCase = true) } ?: Screen.Home
         }
     }
     var screen by remember { mutableStateOf(initialScreen) }
+    val requestedScreen by DebugNavigation.requestedScreen
+    LaunchedEffect(requestedScreen) {
+        if (!BuildConfig.DEBUG) return@LaunchedEffect
+        val target = Screen.entries.firstOrNull { it.name.equals(requestedScreen, ignoreCase = true) }
+        if (target != null) screen = target
+    }
     var overlayGranted by remember { mutableStateOf(Settings.canDrawOverlays(context)) }
     var importingAvatar by remember { mutableStateOf(false) }
     var importingAnimation by remember { mutableStateOf(false) }

@@ -61,10 +61,15 @@ adb exec-out screencap -p > "$OUT/06-overlay.png"
 echo "== tersimpan $OUT/06-overlay.png"
 
 echo "== status overlay di halaman Diagnosa"
-adb shell am start -W -n "$ACTIVITY" --es screen diagnostics >/dev/null
-sleep 8
-adb exec-out screencap -p > "$OUT/07-diagnosa-berjalan.png"
-echo "== tersimpan $OUT/07-diagnosa-berjalan.png"
+adb shell am start -n "$ACTIVITY" --es screen home >/dev/null
+sleep 4
+adb exec-out screencap -p > "$OUT/07-beranda-saat-overlay.png"
+echo "== tersimpan $OUT/07-beranda-saat-overlay.png"
+
+adb shell am start -n "$ACTIVITY" --es screen diagnostics >/dev/null
+sleep 5
+adb exec-out screencap -p > "$OUT/08-diagnosa-berjalan.png"
+echo "== tersimpan $OUT/08-diagnosa-berjalan.png"
 
 adb logcat -d > "$LOG" || true
 grep -E "mateengine|MateEngineRender|chromium|WebView|AndroidRuntime" "$LOG" | tail -200 > /tmp/mate-log-tail.txt || true
@@ -78,13 +83,13 @@ echo "== tema gelap"
 adb shell am force-stop "$PKG" || true
 adb shell cmd uimode night yes
 sleep 4
-shoot 08-beranda-gelap --es screen home
+shoot 09-beranda-gelap --es screen home
 
 echo "== tata letak lebar (lanskap)"
 adb shell settings put system accelerometer_rotation 0
 adb shell settings put system user_rotation 1
 sleep 4
-shoot 09-beranda-lebar --es screen home
+shoot 10-beranda-lebar --es screen home
 
 adb shell settings put system user_rotation 0
 adb shell cmd uimode night no || true

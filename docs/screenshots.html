@@ -190,21 +190,30 @@
       <figcaption>
         <span class="tag overlay">Overlay</span>
         <h2>Avatar di atas aplikasi lain</h2>
-        <p>Diambil setelah layanan overlay berjalan dan tombol Home ditekan. Bila avatar tidak terlihat, berarti renderer belum selesai memuat model — lihat catatan batasan di bawah.</p>
+        <p>Diambil setelah layanan overlay berjalan dan tombol Home ditekan. Tidak ada panel atau kartu di belakang avatar; piksel kosong benar-benar transparan. Pose lengan berasal dari pose rileks prosedural karena model uji tersimpan dalam T-pose.</p>
       </figcaption>
     </figure>
 
     <figure class="shot" data-kind="app" data-orientation="portrait">
-      <div class="frame"><img src="screenshots/07-diagnosa-berjalan.png" alt="Halaman Diagnosa saat layanan overlay aktif, menampilkan status service dan FPS terakhir."></div>
+      <div class="frame"><img src="screenshots/07-beranda-saat-overlay.png" alt="Halaman Beranda saat overlay berjalan: status Sedang tampil, FPS terukur, tombol Hentikan dan Muat ulang."></div>
+      <figcaption>
+        <span class="tag">Beranda · berjalan</span>
+        <h2>Status dari renderer, bukan karangan</h2>
+        <p>FPS dan "Renderer siap" hanya terisi setelah renderer mengirim laporan lewat jembatan JavaScript. Angka 8 fps berasal dari emulator dengan renderer perangkat lunak.</p>
+      </figcaption>
+    </figure>
+
+    <figure class="shot" data-kind="app" data-orientation="portrait">
+      <div class="frame"><img src="screenshots/08-diagnosa-berjalan.png" alt="Halaman Diagnosa saat layanan overlay aktif, menampilkan status service dan FPS terakhir."></div>
       <figcaption>
         <span class="tag">Diagnosa · berjalan</span>
         <h2>Bukti service hidup</h2>
-        <p>Status service dan FPS hanya terisi bila renderer benar-benar mengirim laporan lewat jembatan JavaScript.</p>
+        <p>Baris "Service overlay" berubah menjadi berjalan setelah renderer siap; bila layanan mati, statusnya kembali "Tidak berjalan".</p>
       </figcaption>
     </figure>
 
     <figure class="shot" data-kind="app" data-orientation="portrait">
-      <div class="frame"><img src="screenshots/08-beranda-gelap.png" alt="Halaman Beranda dalam tema gelap."></div>
+      <div class="frame"><img src="screenshots/09-beranda-gelap.png" alt="Halaman Beranda dalam tema gelap."></div>
       <figcaption>
         <span class="tag">Tema gelap</span>
         <h2>Mengikuti sistem</h2>
@@ -213,7 +222,7 @@
     </figure>
 
     <figure class="shot" data-kind="app" data-orientation="landscape">
-      <div class="frame"><img src="screenshots/09-beranda-lebar.png" alt="Tata letak lebar: navigation rail di kiri dan konten dua kolom."></div>
+      <div class="frame"><img src="screenshots/10-beranda-lebar.png" alt="Tata letak lebar: navigation rail di kiri dan konten dua kolom."></div>
       <figcaption>
         <span class="tag">Jendela lebar</span>
         <h2>Navigation rail + dua kolom</h2>
@@ -240,6 +249,7 @@
         <li>Kualitas render pada GPU ponsel; emulator memakai renderer perangkat lunak (SwiftShader).</li>
         <li>Ketahanan layanan saat layar mati atau Recent Apps dibersihkan.</li>
         <li>Interaksi drag pada layar sentuh nyata.</li>
+        <li>Kualitas animasi pada perangkat keras sungguhan; emulator memakai SwiftShader sehingga FPS rendah.</li>
       </ul>
     </div>
     <div class="card">

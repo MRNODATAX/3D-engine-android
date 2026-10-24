@@ -117,6 +117,14 @@ try {
   });
 
   const coverage = pixels.opaque / pixels.total;
+  const silhouetteWidth = pixels.maxX - pixels.minX;
+  const silhouetteHeight = pixels.maxY - pixels.minY;
+  const widthRatio = silhouetteWidth / silhouetteHeight;
+  assert(
+    widthRatio < 0.62,
+    `silhouette terlalu lebar (${widthRatio.toFixed(2)}), kemungkinan avatar masih T-pose`,
+  );
+  console.log(`✓ pose rileks: rasio lebar/tinggi silhouette ${widthRatio.toFixed(2)}`);
   assert(pixels.opaque > 5000, `piksel avatar terlalu sedikit (${pixels.opaque})`);
   assert(pixels.transparent / pixels.total > 0.4, `latar tidak transparan (${(pixels.transparent / pixels.total * 100).toFixed(1)}% transparan)`);
   console.log(`✓ raster: ${pixels.opaque} piksel avatar (${(coverage * 100).toFixed(1)}% area), ${(pixels.transparent / pixels.total * 100).toFixed(1)}% transparan`);

@@ -12,6 +12,7 @@ import * as THREE from 'three';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import { VRMLoaderPlugin, VRMUtils } from '@pixiv/three-vrm';
 import { VRMAnimationLoaderPlugin, createVRMAnimationClip } from '@pixiv/three-vrm-animation';
+import { applyRelaxedPose } from './pose.js';
 
 const CONFIG = {
   maxPixelRatio: 2,
@@ -37,6 +38,7 @@ const state = {
   quality: 'medium',
   blinkTimer: 0,
   blinkPhase: 0,
+  poseBlend: 0,
   blinkDuration: 0.16,
   idleTime: 0,
   frameBudget: 1 / 30,
@@ -217,6 +219,7 @@ async function loadAvatar(url) {
     frameModel(vrm);
     state.ready = true;
     state.idleTime = 0;
+    state.poseBlend = 0;
     post('avatar-ready', { info: state.avatarInfo });
   } catch (error) {
     fail('load-failed', `Gagal memuat avatar: ${error?.message || error}`, true);
@@ -289,6 +292,12 @@ function updateIdle(delta) {
   // Napas prosedural ringan: hanya dipakai saat tidak ada animasi yang diputar.
   if (state.animationName || !state.vrm) return;
   state.idleTime += delta;
+
+  // Pose rileks diterapkan bertahap pada ~1 detik pertama agar tidak terlihat melompat.
+  if (state.poseBlend < 1) {
+    state.poseBlend = Math.min(1, state.poseBlend + delta);
+    applyRelaxedPose(state.vrm, Math.min(1, state.poseBlend));
+  }
   const chest = state.vrm.humanoid?.getNormalizedBoneNode('chest');
   const spine = state.vrm.humanoid?.getNormalizedBoneNode('spine');
   const sway = Math.sin(state.idleTime * 1.15 * state.speed) * 0.012;
