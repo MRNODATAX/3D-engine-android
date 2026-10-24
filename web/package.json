@@ -1,0 +1,20 @@
+{
+  "name": "mate-engine-android-renderer",
+  "private": true,
+  "version": "0.1.0",
+  "description": "Renderer VRM untuk overlay Android Mate Engine (three.js + @pixiv/three-vrm)",
+  "type": "module",
+  "scripts": {
+    "build": "node build.mjs",
+    "test:render": "node test/render-smoke.mjs"
+  },
+  "dependencies": {
+    "@pixiv/three-vrm": "3.5.5",
+    "@pixiv/three-vrm-animation": "3.5.5",
+    "three": "0.179.1"
+  },
+  "devDependencies": {
+    "esbuild": "0.25.9",
+    "playwright": "1.55.0"
+  }
+}

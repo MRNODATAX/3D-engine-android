@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Mate Engine</string>
+    <string name="notification_channel_name">Avatar overlay</string>
+    <string name="notification_channel_description">Notifikasi wajib saat avatar tampil di atas aplikasi lain</string>
+    <string name="notification_title">Avatar sedang tampil</string>
+    <string name="notification_no_model">Belum ada model dipilih</string>
+    <string name="notification_stop">Hentikan</string>
+    <string name="notification_play_animation">Putar animasi</string>
+</resources>
