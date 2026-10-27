@@ -161,10 +161,19 @@ function frameModel(vrm) {
   box.getCenter(center);
 
   const height = Math.max(size.y, 0.1);
-  // Bingkai memakai tinggi total kotak model (termasuk rambut) dan jarak yang memberi margin
-  // atas-bawah, supaya kepala tidak terpotong saat jendela overlay tinggi (skala 100%).
+  // Jarak kamera dihitung dari FOV dan aspek: tinggi yang terlihat pada jarak d adalah
+  // 2·d·tan(fov/2). Tanpa ini, avatar terpotong saat jendela tinggi (skala 100%).
   state.frameHeight = height;
-  state.camera.position.set(center.x, center.y, center.z + height * 1.6);
+  const fovRad = (state.camera.fov * Math.PI) / 180;
+  const distanceForHeight = (targetHeight) => targetHeight / (2 * Math.tan(fovRad / 2));
+  const distanceForWidth = (targetWidth) =>
+    targetWidth / (2 * Math.tan(fovRad / 2) * Math.max(0.1, state.camera.aspect));
+  // Margin 12% dan jaminan muat secara lebar maupun tinggi.
+  const distance = Math.max(
+    distanceForHeight(height * 1.12),
+    distanceForWidth(Math.max(size.x, 0.1) * 1.25),
+  );
+  state.camera.position.set(center.x, center.y, center.z + distance);
   state.camera.lookAt(center.x, center.y, center.z);
   state.camera.updateProjectionMatrix();
   // Skala model TIDAK lagi diterapkan di sini: ukuran avatar ditentukan oleh ukuran window
