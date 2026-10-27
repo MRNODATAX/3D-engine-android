@@ -141,6 +141,41 @@ if ! service_running; then
 fi
 adb shell input keyevent KEYCODE_HOME
 
+# ---- bukti gerak: dua tangkapan 1,8 detik terpisah + jejak angka dari renderer ----
+adb logcat -c || true
+adb exec-out screencap -p > "$OUT/12-gerak-a.png"
+sleep 1.8
+adb exec-out screencap -p > "$OUT/12-gerak-b.png"
+sleep 5
+{
+  echo "--- jejak gerak renderer (5 detik terakhir) ---"
+  adb logcat -d | grep -o 'motion {.*}' | tail -4
+} >> "$DIAG" 2>&1 || true
+if cmp -s "$OUT/12-gerak-a.png" "$OUT/12-gerak-b.png"; then
+  echo "::error::Dua tangkapan identik: avatar tidak bergerak sama sekali"
+else
+  echo "== bukti gerak: dua tangkapan berbeda (avatar bergerak)"
+fi
+
+# ---- bukti skala: 100% vs 40% tinggi layar ----
+shoot_scale() {
+  local percent="$1" name="$2"
+  adb shell am force-stop "$PKG" || true
+  adb shell am start -W -n "$ACTIVITY" --ez seed_sample true --ez start_overlay true \
+    --ei scale "$percent" --es screen home >/dev/null
+  sleep 9
+  for i in $(seq 1 12); do
+    sleep 5
+    if adb logcat -d | grep -q "MateEngineRender.*avatar-ready"; then break; fi
+  done
+  sleep 2
+  adb exec-out screencap -p > "$OUT/$name.png"
+  echo "== tersimpan $OUT/$name.png (skala ${percent}%)"
+}
+shoot_scale 100 13-overlay-skala-100
+shoot_scale 40 14-overlay-skala-40
+
+
 echo "== menunggu renderer memuat model (maks 90 detik)"
 for i in $(seq 1 18); do
   sleep 5

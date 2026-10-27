@@ -178,6 +178,11 @@ private fun MateEngineApp() {
     }
 
     LaunchedEffect(Unit) {
+        // Ekstra debug untuk tangkapan layar bukti skala: --ei scale 100
+        val debugScale = (context as? android.app.Activity)?.intent?.getIntExtra("scale", -1) ?: -1
+        if (BuildConfig.DEBUG && debugScale > 0) {
+            repository.updateOverlay { it.copy(scalePercent = debugScale.coerceIn(25, 100)) }
+        }
         val seed = BuildConfig.DEBUG &&
             (context as? android.app.Activity)?.intent?.getBooleanExtra("seed_sample", false) == true
         if (seed) repository.seedSampleFromAssets()

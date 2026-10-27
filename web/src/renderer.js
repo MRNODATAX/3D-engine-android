@@ -411,6 +411,14 @@ function animate(now) {
     state.framesThisSecond = 0;
     state.fpsReportAt = now;
   }
+  // Jejak gerak: dipakai uji emulator untuk membuktikan sendi benar-benar bergerak.
+  if (now - (state.motionLogAt || 0) >= 5000) {
+    state.motionLogAt = now;
+    const debug = state.motion.debug();
+    console.info('motion ' + JSON.stringify(debug));
+    post('motion-state', debug);
+  }
+
   if (now - state.statsReportAt >= 2000) {
     state.statsReportAt = now;
     post('stats', {
