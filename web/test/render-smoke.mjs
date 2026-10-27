@@ -211,32 +211,48 @@ try {
   const builtin = await page.evaluate(async () => {
     const list = window.MateEngine.builtinClips();
     const wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+    // Tunggu keadaan tertentu (bukan sekadar menebak lewat durasi): mesin lambat di CI.
+    const until = async (predicate, timeout = 15000) => {
+      const started = performance.now();
+      while (performance.now() - started < timeout) {
+        if (predicate()) return true;
+        await wait(100);
+      }
+      return false;
+    };
+
+    // 0) hentikan klip fixture yang diputar oleh uji animasi sebelumnya, lalu tunggu idle.
+    window.MateEngine.stopAnimation();
+    await until(() => window.MateEngine.poseMetrics()?.builtinClip === 'idle_loop');
+    await wait(800);
 
     // 1) idle otomatis tanpa perintah apa pun
-    await wait(1200);
     const autoIdle = window.MateEngine.poseMetrics();
+    const autoIdleSettled = await until(() => window.MateEngine.poseMetrics()?.builtinClip === 'idle_loop');
 
     // 2) bicara -> klip talk, lalu jalan -> klip walk, lalu tari -> klip dance
     window.MateEngine.startTalking(1500);
-    await wait(900);
+    await until(() => window.MateEngine.poseMetrics()?.builtinClip === 'idle_talk');
     const talking = window.MateEngine.poseMetrics();
     window.MateEngine.stopTalking();
-    await wait(600);
+    await until(() => window.MateEngine.poseMetrics()?.builtinClip === 'idle_loop');
 
     window.MateEngine.setLocomotion('walk');
-    await wait(900);
+    await until(() => window.MateEngine.poseMetrics()?.builtinClip === 'walk_loop');
     const walking = window.MateEngine.poseMetrics();
     window.MateEngine.setLocomotion('dance');
-    await wait(900);
+    await until(() => window.MateEngine.poseMetrics()?.builtinClip === 'dance_loop');
     const dancing = window.MateEngine.poseMetrics();
     window.MateEngine.setLocomotion('idle');
-    await wait(900);
+    await until(() => window.MateEngine.poseMetrics()?.builtinClip === 'idle_loop');
+    await wait(600);
     const idleAgain = window.MateEngine.poseMetrics();
     const timeline = window.MateEngine.clipTimeline();
 
     // 3) setelah animasi dihentikan, tangan harus kembali ke bawah
     window.MateEngine.playBuiltin('dance');
-    await wait(900);
+    await until(() => window.MateEngine.poseMetrics()?.builtinClip === 'dance_loop');
+    await wait(600);
     window.MateEngine.stopAnimation();
     await wait(900);
     const afterStop = window.MateEngine.poseMetrics();
@@ -245,6 +261,7 @@ try {
 
     return {
       list,
+      autoIdleSettled,
       autoIdle,
       talking,
       walking,
@@ -302,9 +319,11 @@ try {
   );
 
   // Pagar lengan: selama klip bawaan berjalan di mode diam, lengan tidak boleh terangkat jauh.
+  assert(builtin.autoIdleSettled, 'klip idle tidak pernah aktif setelah animasi dihentikan');
   assert(
     builtin.autoIdle.leftArmDeg < 60 && builtin.autoIdle.rightArmDeg < 60,
-    `lengan terangkat saat diam (${builtin.autoIdle.leftArmDeg}° / ${builtin.autoIdle.rightArmDeg}°)`,
+    `lengan terangkat saat diam (${builtin.autoIdle.leftArmDeg}° / ${builtin.autoIdle.rightArmDeg}°); ` +
+      `klip=${builtin.autoIdle.builtinClip}, jejak=${builtin.timeline.map((e) => e.clip).join('>')}`,
   );
   console.log(
     `✓ lengan di bawah saat diam: ${builtin.autoIdle.leftArmDeg}° / ${builtin.autoIdle.rightArmDeg}°`,
