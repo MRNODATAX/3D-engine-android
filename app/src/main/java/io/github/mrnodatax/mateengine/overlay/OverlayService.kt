@@ -453,36 +453,30 @@ class OverlayService : Service() {
 
     // ---------------------------------------------------------------- reaksi sentuhan
 
+    private var lastHapticBucket = -1
+
     /** Getar halus tiap kelipatan 5% saat cubit, seperti kontrol sistem. */
-    private val feedback = object {
-        private var lastBucket = -1
-        private val vibrator by lazy {
-            if (Build.VERSION.SDK_INT >= 31) {
-                this@OverlayService.getSystemService(android.os.VibratorManager::class.java)?.defaultVibrator
+    private fun hapticTick(percent: Int) {
+        val bucket = percent / 5
+        if (bucket == lastHapticBucket) return
+        lastHapticBucket = bucket
+        val vibrator = if (Build.VERSION.SDK_INT >= 31) {
+            (getSystemService(VIBRATOR_MANAGER_SERVICE) as? android.os.VibratorManager)?.defaultVibrator
+        } else {
+            @Suppress("DEPRECATION")
+            getSystemService(VIBRATOR_SERVICE) as? android.os.Vibrator
+        } ?: return
+        if (!vibrator.hasVibrator()) return
+        runCatching {
+            if (Build.VERSION.SDK_INT >= 26) {
+                vibrator.vibrate(android.os.VibrationEffect.createOneShot(8, 60))
             } else {
                 @Suppress("DEPRECATION")
-                this@OverlayService.getSystemService(android.os.Vibrator)
-            }
-        }
-
-        fun pinchTick(percent: Int) {
-            val bucket = percent / 5
-            if (bucket == lastBucket) return
-            lastBucket = bucket
-            val v = vibrator ?: return
-            if (!v.hasVibrator()) return
-            runCatching {
-                if (Build.VERSION.SDK_INT >= 26) {
-                    v.vibrate(android.os.VibrationEffect.createOneShot(8, 60))
-                } else {
-                    @Suppress("DEPRECATION")
-                    v.vibrate(8)
-                }
+                vibrator.vibrate(8)
             }
         }
     }
 
-    /** Ketukan pada avatar memicu reaksi kecil: ekspresi + klip bubble. */
     private fun reactToTouch(zone: String) {
         val script = "window.MateEngine.react(${JSONObject.quote(zone)})"
         evaluate(script)
@@ -676,7 +670,7 @@ class OverlayService : Service() {
                         if (percent != repository.state.value.overlay.scalePercent && now - lastScaleSentAt >= 60) {
                             lastScaleSentAt = now
                             onScaleChanged?.invoke(percent)
-                            feedback.pinchTick(percent)
+                            hapticTick(percent)
                         }
                         return true
                     }

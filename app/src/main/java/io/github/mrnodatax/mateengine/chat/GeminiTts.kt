@@ -118,7 +118,7 @@ class GeminiTts(
             Result.Success(
                 SpeechClip(
                     file = file,
-                    envelope = buildEnvelope(pcm.first, pcm.second.samples),
+                    envelope = buildEnvelope(pcm = pcm),
                     durationMs = pcm.second.durationMs,
                     sampleRate = pcm.second.sampleRate,
                     engine = "gemini-tts",
