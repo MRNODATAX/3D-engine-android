@@ -161,8 +161,10 @@ function frameModel(vrm) {
   box.getCenter(center);
 
   const height = Math.max(size.y, 0.1);
-  // Kamera diarahkan ke pusat tubuh agar avatar 0.x dan 1.0 sama-sama masuk frame.
-  state.camera.position.set(center.x, center.y + height * 0.02, center.z + height * 1.35);
+  // Bingkai memakai tinggi total kotak model (termasuk rambut) dan jarak yang memberi margin
+  // atas-bawah, supaya kepala tidak terpotong saat jendela overlay tinggi (skala 100%).
+  state.frameHeight = height;
+  state.camera.position.set(center.x, center.y, center.z + height * 1.6);
   state.camera.lookAt(center.x, center.y, center.z);
   state.camera.updateProjectionMatrix();
   // Skala model TIDAK lagi diterapkan di sini: ukuran avatar ditentukan oleh ukuran window

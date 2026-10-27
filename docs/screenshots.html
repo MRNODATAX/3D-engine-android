@@ -132,7 +132,7 @@
   </p>
   <div class="facts">
     <span class="fact"><span class="dot"></span>APK debug 0.1.0 (1)</span>
-    <span class="fact"><span class="dot"></span><a href="https://github.com/MRNODATAX/3D-engine-android/releases/tag/v0.1.3-test">Unduh APK uji v0.1.3-test</a></span>
+    <span class="fact"><span class="dot"></span><a href="https://github.com/MRNODATAX/3D-engine-android/releases/tag/v0.1.4-test">Unduh APK uji v0.1.4-test</a></span>
     <span class="fact"><span class="dot"></span>Android 14 · API 34 · x86_64</span>
     <span class="fact"><span class="dot"></span>1080 × 2400 · 420 dpi</span>
     <span class="fact warn"><span class="dot"></span>Perangkat fisik belum diuji</span>
@@ -230,6 +230,33 @@
         <p>Pada lebar ≥ 600dp, konten dipecah dua kolom dan navigasi pindah ke rail kiri.</p>
       </figcaption>
     </figure>
+    <figure class="shot" data-kind="overlay" data-orientation="portrait">
+      <div class="frame"><img src="screenshots/13-overlay-skala-100.png" alt="Avatar dengan tinggi 100% layar: memenuhi layar di atas aplikasi."></div>
+      <figcaption>
+        <span class="tag">Skala · 100%</span>
+        <h2>Tinggi 100% layar</h2>
+        <p>Slider kini berarti tinggi avatar di layar. Pada 100% window overlay selebar layar dan avatar benar-benar besar — bukan lagi dua sistem skala yang saling meniadakan.</p>
+      </figcaption>
+    </figure>
+
+    <figure class="shot" data-kind="overlay" data-orientation="portrait">
+      <div class="frame"><img src="screenshots/14-overlay-skala-40.png" alt="Avatar dengan tinggi 40% layar, jauh lebih kecil, di sudut kanan bawah."></div>
+      <figcaption>
+        <span class="tag">Skala · 40%</span>
+        <h2>Tinggi 40% layar</h2>
+        <p>Perbandingan langsung dengan gambar sebelumnya: ukuran berubah nyata, tersimpan, dan bisa diubah dengan cubit dua jari di overlay.</p>
+      </figcaption>
+    </figure>
+
+    <figure class="shot" data-kind="overlay" data-orientation="portrait">
+      <div class="frame"><img src="screenshots/12-gerak-b.png" alt="Avatar di overlay; dua tangkapan berurutan berbeda karena avatar bergerak."></div>
+      <figcaption>
+        <span class="tag">Gerak otomatis</span>
+        <h2>Bergerak tanpa berkas animasi</h2>
+        <p>Skrip menangkap dua kali dengan jeda 1,8 detik; bila gambarnya identik, CI gagal. Amplop gerak juga tercatat: <code>motion {"time":1.18,"bones":15,...}</code>.</p>
+      </figcaption>
+    </figure>
+
     <figure class="shot" data-kind="app" data-orientation="portrait">
       <div class="frame"><img src="screenshots/11-chat.png" alt="Halaman Chat: status kunci API, tombol isi kunci, edit persona, dan kolom pesan."></div>
       <figcaption>

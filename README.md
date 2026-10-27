@@ -23,6 +23,12 @@ Sudah berjalan di kode dan diuji otomatis:
   (navigation bar di ponsel, navigation rail di jendela lebar);
 - **chat waifu** memakai Gemini API key milikmu sendiri (kunci dienkripsi di Android Keystore),
   persona siap pakai yang bisa diedit, riwayat lokal, reaksi mulut avatar, TTS opsional;
+- **gerak otomatis** tanpa berkas animasi: napas, goyangan badan, pandangan mata, tidur setelah
+  2 menit, jalan di tempat, 3 gaya tari, dan reaksi saat avatar disentuh — parameternya
+  dikalibrasi dari pengukuran `.anim` Mate Engine (`docs/gerak-kalibrasi.md`);
+- **ukuran avatar** 25–100% tinggi layar, bisa dicubit dua jari langsung di overlay;
+- **suara waifu** lewat Gemini TTS (suara natural, mulut bergerak mengikuti amplitudo audio asli),
+  dengan cadangan TTS perangkat;
 - **optimasi performa**: batas FPS, resolusi render adaptif, downscale tekstur, statistik nyata
   (triangles/draw call/tulang), dan pemangkasan memori berkala.
 
@@ -44,8 +50,8 @@ emulator Android 14 (diambil otomatis lewat `adb screencap` di CI, bukan mockup)
 
 ## Unduh dan pasang (build uji)
 
-Build uji terbaru: [Release `v0.1.3-test`](https://github.com/MRNODATAX/3D-engine-android/releases/tag/v0.1.3-test)
-(`MateEngine-v0.1.3-test-debug.apk`, ditandatangani kunci debug). Rilis ini memuat tab Chat dan
+Build uji terbaru: [Release `v0.1.4-test`](https://github.com/MRNODATAX/3D-engine-android/releases/tag/v0.1.4-test)
+(`MateEngine-v0.1.4-test-debug.apk`, ditandatangani kunci debug). Rilis ini memuat tab Chat dan
 optimasi performa.
 
 1. Unduh APK di perangkat, lalu izinkan pemasangan dari sumber tidak dikenal untuk aplikasi
