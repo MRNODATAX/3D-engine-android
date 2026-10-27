@@ -4,14 +4,20 @@
  * CC0) menjadi berkas `.vrma` (VRM Animation) yang bisa diputar avatar VRM mana pun.
  *
  * Kunci format (lihat @pixiv/three-vrm-animation, `VRMAnimationLoaderPlugin`):
- *   - berkas `.vrma` **wajib membawa hierarki tulang beserta transformasi istirahatnya**;
- *   - track rotasi berisi rotasi **lokal mentah** rig sumber (bukan delta yang sudah dinormalkan),
- *     karena loader sendiri yang mengubahnya ke ruang humanoid ternormalisasi VRM:
- *         rotasi_normal = W_rest(parent) × L(t) × W_rest(bone)⁻¹
- *   - track translasi hanya boleh untuk `hips`, dan nilainya posisi lokal `hips`.
- *   - loader menskalakan hips dengan `tinggiHipsVRM / tinggiHipsAnimasi`, jadi posisi istirahat
- *     hips **tidak boleh nol** (kalau nol, hasilnya NaN dan avatar lenyap — ini pernah terjadi
- *     pada versi pertama skrip dan tertangkap uji render di CI).
+ *   - berkas `.vrma` membawa hierarki tulang + posisi istirahat, tetapi **rotasi istirahatnya
+ *     sengaja dibuat identitas** (kerangka "ternormalisasi"). Dengan begitu loader menghitung
+ *         rotasi_normal = W_rest(parent) × track × W_rest(bone)⁻¹ = track
+ *     sehingga track harus berisi rotasi **delta di kerangka orang tua yang sedang bergerak**:
+ *         delta_world(bone)   = W_anim(bone) × W_rest(bone)⁻¹
+ *         track(bone)         = delta_world(parent)⁻¹ × delta_world(bone)
+ *   - kalau rotasi istirahat rig sumber ikut ditulis apa adanya, hasilnya bergantung pada roll
+ *     tulang rig tersebut. Itu membuat lengan kanan terangkat sementara lengan kiri benar
+ *     (terbukti di uji render CI), karena roll bahu kanan rig Blender berbeda dari model VRM.
+ *   - track translasi hanya untuk `hips`, nilainya **posisi dunia** hips (meter). Loader
+ *     mengalikannya dengan `tinggiHipsVRM / tinggiHipsAnimasi`.
+ *   - tinggi istirahat hips **tidak boleh nol**: loader memakainya sebagai pembagi skala. Versi
+ *     pertama skrip ini menulis node tanpa translasi → skala `Infinity` → avatar lenyap
+ *     (`silhouette NaN`).
  *
  * Pemakaian:
  *   node scripts/glb-ke-vrma.mjs --input ual.gltf --bin ual.bin \
@@ -29,6 +35,8 @@ function qNorm(q) {
   const length = Math.hypot(q[0], q[1], q[2], q[3]) || 1;
   return [q[0] / length, q[1] / length, q[2] / length, q[3] / length];
 }
+
+const qConj = (q) => [-q[0], -q[1], -q[2], q[3]];
 
 function qMul(a, b) {
   const [ax, ay, az, aw] = a;
@@ -164,23 +172,30 @@ function sampleTrack(times, values, t, isQuaternion) {
   return values[lo].map((value, i) => value + (values[hi][i] - value) * alpha);
 }
 
-/** Posisi dunia `hips` dari transformasi istirahat (dipakai loader untuk skala). */
-function restHipsWorldY(info, hipsIndex) {
-  const chain = [];
-  let cursor = hipsIndex;
-  while (cursor >= 0) {
-    chain.unshift(cursor);
-    cursor = info[cursor].parent;
-  }
-  let position = [0, 0, 0];
-  let rotation = qIdentity();
-  chain.forEach((index) => {
+/**
+ * Posisi dunia tiap node dari translasi + rotasi lokal yang diberikan (default: istirahat).
+ * Rotasi orang tua tetap diperhitungkan — rotasi istirahat kerangka keluaran dibuat identitas,
+ * jadi posisinya harus sudah berupa posisi dunia yang benar.
+ */
+function worldPositions(info, localTranslations, localRotations) {
+  const cache = new Array(info.length).fill(null);
+  const resolve = (index) => {
+    if (cache[index]) return cache[index];
     const node = info[index];
-    const rotated = qRotate(rotation, node.restTranslation);
-    position = [position[0] + rotated[0], position[1] + rotated[1], position[2] + rotated[2]];
-    rotation = qMul(rotation, node.restRotation);
-  });
-  return position[1];
+    const parent = node.parent >= 0 ? resolve(node.parent) : { position: [0, 0, 0], rotation: qIdentity() };
+    const rotated = qRotate(parent.rotation, localTranslations[index]);
+    cache[index] = {
+      position: [
+        parent.position[0] + rotated[0],
+        parent.position[1] + rotated[1],
+        parent.position[2] + rotated[2],
+      ],
+      rotation: qMul(parent.rotation, localRotations[index]),
+    };
+    return cache[index];
+  };
+  info.forEach((_, index) => resolve(index));
+  return cache;
 }
 
 // ---------------------------------------------------------------------------- glTF output
@@ -258,7 +273,10 @@ function convert({ gltf, bin, clipName, outputName, fps = 24 }) {
   const hipsIndex = humanBones.hips;
 
   // Pose istirahat hips tidak boleh nol: loader memakai tingginya sebagai pembagi skala.
-  const hipsY = restHipsWorldY(info, hipsIndex);
+  const restRotations = info.map((node) => node.restRotation);
+  const restTranslations = info.map((node) => node.restTranslation);
+  const restWorld = worldPositions(info, restTranslations, restRotations);
+  const hipsY = restWorld[hipsIndex].position[1];
   if (!(hipsY > 0.2)) {
     throw new Error(`tinggi istirahat hips ${hipsY.toFixed(3)} m terlalu rendah (akan menghasilkan NaN)`);
   }
@@ -279,36 +297,85 @@ function convert({ gltf, bin, clipName, outputName, fps = 24 }) {
   const steps = Math.max(2, Math.round(endTime * fps));
   const times = Array.from({ length: steps + 1 }, (_, index) => (index / steps) * endTime);
 
-  // Rotasi lokal mentah hasil sampling, per tulang yang dipetakan.
+  // Rotasi istirahat dunia rig sumber (untuk menghitung delta).
+  const resolveRestWorld = (() => {
+    const cache = new Array(info.length).fill(null);
+    const resolve = (index) => {
+      if (cache[index]) return cache[index];
+      const node = info[index];
+      const parent = node.parent >= 0 ? resolve(node.parent) : qIdentity();
+      cache[index] = qMul(parent, node.restRotation);
+      return cache[index];
+    };
+    info.forEach((_, index) => resolve(index));
+    return cache;
+  })();
+
+  // Tulang humanoid + leluhur terdekat yang juga tulang humanoid (untuk delta orang tua).
+  const boneToNode = humanBones;
+  const nearestMappedAncestor = new Map();
+  Object.values(boneToNode).forEach((nodeIndex) => {
+    let cursor = info[nodeIndex].parent;
+    while (cursor >= 0 && !Object.values(boneToNode).includes(cursor)) cursor = info[cursor].parent;
+    nearestMappedAncestor.set(nodeIndex, cursor);
+  });
+
   const sampledRotations = new Map();
   Object.values(humanBones).forEach((nodeIndex) => sampledRotations.set(nodeIndex, []));
   const hipsPositions = [];
 
   times.forEach((t) => {
-    Object.entries(humanBones).forEach(([, nodeIndex]) => {
-      const node = info[nodeIndex];
-      const track = rotationTracks.get(nodeIndex);
-      const value = track
-        ? sampleTrack(track.times, track.values, t, true)
-        : node.restRotation;
-      sampledRotations.get(nodeIndex).push(qNorm(value));
+    // Rotasi lokal tiap node pada waktu t (track atau istirahat).
+    const locals = info.map((node) => {
+      const track = rotationTracks.get(node.index);
+      return track ? sampleTrack(track.times, track.values, t, true) : node.restRotation;
     });
 
-    const hipsTrack = translationTracks.get(hipsIndex);
-    hipsPositions.push(
-      hipsTrack ? sampleTrack(hipsTrack.times, hipsTrack.values, t, false) : info[hipsIndex].restTranslation,
-    );
+    // Rotasi dunia animasi per node.
+    const animWorld = (() => {
+      const cache = new Array(info.length).fill(null);
+      const resolve = (index) => {
+        if (cache[index]) return cache[index];
+        const parent = info[index].parent >= 0 ? resolve(info[index].parent) : qIdentity();
+        cache[index] = qMul(parent, locals[index]);
+        return cache[index];
+      };
+      info.forEach((_, index) => resolve(index));
+      return cache;
+    })();
+
+    // delta_world(bone) = W_anim × W_rest⁻¹
+    const deltas = info.map((node, index) => qMul(animWorld[index], qConj(resolveRestWorld[index])));
+
+    Object.values(humanBones).forEach((nodeIndex) => {
+      const parentMapped = nearestMappedAncestor.get(nodeIndex);
+      const parentDelta = parentMapped >= 0 ? deltas[parentMapped] : qIdentity();
+      sampledRotations.get(nodeIndex).push(qNorm(qMul(qConj(parentDelta), deltas[nodeIndex])));
+    });
+
+    // Posisi dunia hips dari translasi lokal animasi (rotasi orang tua ikut dihitung).
+    const animTranslations = info.map((node) => {
+      const track = translationTracks.get(node.index);
+      return track ? sampleTrack(track.times, track.values, t, false) : node.restTranslation;
+    });
+    hipsPositions.push(worldPositions(info, animTranslations, locals)[hipsIndex].position);
   });
+
+
 
   const builder = new Builder();
   const timeAccessor = builder.addTimeAccessor(times);
 
-  // Hierarki tulang + transformasi istirahat, apa adanya dari rig sumber.
+  // Hierarki tulang dengan rotasi istirahat identitas; posisi tetap agar geometri kerangka benar.
   const nodes = info.map((node) => {
     const output = { name: node.name };
-    if (node.restTranslation.some((value) => value !== 0)) output.translation = node.restTranslation;
-    if (node.restRotation.some((value, index) => value !== qIdentity()[index])) output.rotation = node.restRotation;
-    if (node.restScale.some((value) => value !== 1)) output.scale = node.restScale;
+    const parentPosition = node.parent >= 0 ? restWorld[node.parent].position : [0, 0, 0];
+    const translation = [
+      restWorld[node.index].position[0] - parentPosition[0],
+      restWorld[node.index].position[1] - parentPosition[1],
+      restWorld[node.index].position[2] - parentPosition[2],
+    ];
+    if (translation.some((value) => Math.abs(value) > 1e-6)) output.translation = translation;
     if (node.children.length) output.children = node.children;
     return output;
   });
