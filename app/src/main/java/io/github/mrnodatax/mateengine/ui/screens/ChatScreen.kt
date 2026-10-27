@@ -51,6 +51,7 @@ import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import io.github.mrnodatax.mateengine.chat.ChatMessage
 import io.github.mrnodatax.mateengine.chat.ChatUiState
+import io.github.mrnodatax.mateengine.chat.GeminiTts
 import io.github.mrnodatax.mateengine.chat.ChatSettings
 import io.github.mrnodatax.mateengine.chat.Persona
 import io.github.mrnodatax.mateengine.ui.ChipTone
@@ -108,10 +109,24 @@ fun ChatScreen(
                                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                                     )
                                 }
-                                StatusChip(
-                                    text = if (ui.hasApiKey) "Kunci tersimpan" else "Kunci belum ada",
-                                    tone = if (ui.hasApiKey) ChipTone.Success else ChipTone.Warning,
-                                )
+                                Column(horizontalAlignment = Alignment.End) {
+                                    StatusChip(
+                                        text = if (ui.hasApiKey) "Kunci tersimpan" else "Kunci belum ada",
+                                        tone = if (ui.hasApiKey) ChipTone.Success else ChipTone.Warning,
+                                    )
+                                    val speech = when {
+                                        ui.isSpeaking -> "Menyiapkan suara…"
+                                        ui.lastSpeech != null -> ui.lastSpeech
+                                        else -> null
+                                    }
+                                    if (speech != null) {
+                                        Text(
+                                            speech,
+                                            style = MaterialTheme.typography.labelSmall,
+                                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                        )
+                                    }
+                                }
                             }
                             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                                 OutlinedButton(onClick = { editingKey = true }) {
@@ -400,6 +415,51 @@ private fun ChatOptions(
             checked = ui.settings.ttsEnabled,
             onCheckedChange = { onSettingsChange(ui.settings.copy(ttsEnabled = it)) },
         )
+        RowDivider()
+        if (ui.settings.ttsEnabled) {
+            Text(
+                "Mesin suara",
+                style = MaterialTheme.typography.bodyMedium,
+                fontWeight = FontWeight.Medium,
+            )
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                listOf("gemini" to "Gemini TTS", "device" to "TTS perangkat").forEach { (value, label) ->
+                    FilterChip(
+                        selected = ui.settings.ttsEngine == value,
+                        onClick = { onSettingsChange(ui.settings.copy(ttsEngine = value)) },
+                        label = { Text(label) },
+                        colors = FilterChipDefaults.filterChipColors(
+                            selectedContainerColor = MaterialTheme.colorScheme.primaryContainer,
+                            selectedLabelColor = MaterialTheme.colorScheme.onPrimaryContainer,
+                        ),
+                    )
+                }
+            }
+            if (ui.settings.ttsEngine == "gemini") {
+                Text(
+                    "Suara",
+                    style = MaterialTheme.typography.bodyMedium,
+                    fontWeight = FontWeight.Medium,
+                )
+                Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                    GeminiTts.VOICES.take(4).forEach { voice ->
+                        FilterChip(
+                            selected = ui.settings.ttsVoice == voice,
+                            onClick = { onSettingsChange(ui.settings.copy(ttsVoice = voice)) },
+                            label = { Text(voice) },
+                            colors = FilterChipDefaults.filterChipColors(
+                                selectedContainerColor = MaterialTheme.colorScheme.primaryContainer,
+                                selectedLabelColor = MaterialTheme.colorScheme.onPrimaryContainer,
+                            ),
+                        )
+                    }
+                }
+                InfoNote(
+                    "Gemini TTS memakai kunci yang sama dan dihitung sebagai pemakaian API. Bila gagal, " +
+                        "suara jatuh ke TTS perangkat dan pesan galatnya ditampilkan.",
+                )
+            }
+        }
         RowDivider()
         ToggleRow(
             title = "VoicePack event",

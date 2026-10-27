@@ -29,6 +29,9 @@ jobs:
       - name: Uji logika performa
         working-directory: web
         run: npm run test:perf
+      - name: Uji mesin gerak
+        working-directory: web
+        run: npm run test:motion
       - name: Build bundle renderer
         working-directory: web
         run: npm run build

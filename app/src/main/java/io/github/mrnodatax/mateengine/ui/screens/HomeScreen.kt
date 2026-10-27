@@ -94,11 +94,16 @@ fun HomeScreen(
                     SectionLabel(T.quickControls)
                     SectionCard {
                         SliderField(
-                            label = T.labelSize,
+                            label = "Tinggi avatar di layar",
                             valueLabel = "${state.overlay.scalePercent}%",
                             value = state.overlay.scalePercent.toFloat(),
                             range = 25f..100f,
                             onValueChange = { onScaleChange(it.toInt()) },
+                        )
+                        Text(
+                            "Cubit dua jari pada avatar di overlay juga mengubah ukuran ini.",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
                         SliderField(
                             label = T.labelOpacity,

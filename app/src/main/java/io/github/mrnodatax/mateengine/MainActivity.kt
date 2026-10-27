@@ -373,6 +373,11 @@ private fun MateEngineApp() {
                                         repository.setAnimationOptions(state.loopAnimation, state.shuffleAnimation, speed)
                                         if (runtime.running) OverlayService.applySettings(context)
                                     },
+                                    onLocomotionChange = { mode ->
+                                        repository.updateOverlay { it.copy(motion = mode) }
+                                        if (runtime.running) OverlayService.setLocomotion(context, mode)
+                                    },
+                                    onNextDance = { if (runtime.running) OverlayService.setLocomotion(context, "dance-next") },
                                 )
                                 Screen.Diagnostics -> DiagnosticsScreen(
                                     snapshot = diagnostics,

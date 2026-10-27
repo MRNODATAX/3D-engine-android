@@ -14,6 +14,7 @@ import { VRMLoaderPlugin, VRMUtils } from '@pixiv/three-vrm';
 import { VRMAnimationLoaderPlugin, createVRMAnimationClip } from '@pixiv/three-vrm-animation';
 import { applyRelaxedPose, captureRestPose } from './pose.js';
 import { collectStats, createGovernor, downscaleTextures } from './perf.js';
+import { createMotion } from './motion.js';
 
 const CONFIG = {
   maxPixelRatio: 2,
@@ -54,6 +55,9 @@ const state = {
   textureInfo: null,
   talking: 0,
   talkSeed: 0,
+  motion: createMotion(),
+  interacted: false,
+  speech: null,
   animationName: null,
   loop: true,
   speed: 1,
@@ -161,14 +165,9 @@ function frameModel(vrm) {
   state.camera.position.set(center.x, center.y + height * 0.02, center.z + height * 1.35);
   state.camera.lookAt(center.x, center.y, center.z);
   state.camera.updateProjectionMatrix();
-  applyScale();
-}
-
-function applyScale() {
-  if (!state.vrm) return;
-  // Skala diterapkan ke scene VRM (bukan kamera) agar overlay tetap 1:1 dengan piksel.
-  const factor = Math.max(0.25, Math.min(1.5, state.scale / 100));
-  state.vrm.scene.scale.setScalar(factor);
+  // Skala model TIDAK lagi diterapkan di sini: ukuran avatar ditentukan oleh ukuran window
+  // overlay di sisi Android, dan kamera selalu membingkai model agar mengisi window itu.
+  state.vrm.scene.scale.setScalar(1);
 }
 
 function describeVrm(vrm) {
@@ -250,6 +249,7 @@ async function loadAvatar(url) {
 }
 
 async function loadAnimation(url, name, options = {}) {
+  state.interacted = true;
   if (!state.vrm || !state.mixer) {
     fail('no-avatar', 'Pilih avatar sebelum memutar animasi.', false);
     return;
@@ -318,6 +318,26 @@ function updateBlink(delta) {
 function updateTalking(delta) {
   const expression = state.vrm?.expressionManager;
   if (!expression) return;
+
+  // Lip-sync dari amplop audio asli bila tersedia (Gemini TTS), bukan pola sinus.
+  if (state.speech) {
+    const elapsed = performance.now() - state.speech.startedAt;
+    if (elapsed >= state.speech.durationMs || state.speech.levels.length === 0) {
+      state.speech = null;
+      state.talking = 0;
+      expression.setValue('aa', 0);
+      post('talking-stopped', {});
+      return;
+    }
+    const ratio = elapsed / state.speech.durationMs;
+    const index = Math.min(
+      state.speech.levels.length - 1,
+      Math.max(0, Math.floor(ratio * state.speech.levels.length)),
+    );
+    expression.setValue('aa', state.speech.levels[index] ?? 0);
+    return;
+  }
+
   if (state.talking > 0) {
     state.talking -= delta * 1000;
     state.talkSeed += delta * 12;
@@ -339,14 +359,9 @@ function updateIdle(delta) {
   // sehingga transisi berbasis frame bisa berhenti di tengah pose.
   applyRelaxedPose(state.vrm, 1, state.restPose);
 
-  // Napas prosedural hanya saat tidak ada animasi yang diputar.
-  if (state.animationName) return;
+  // Gerak tubuh (napas, goyangan, pandangan, lokomosi) ditangani motion.js,
+  // bukan lagi dua sinus kecil di sini.
   state.idleTime += delta;
-  const chest = state.vrm.humanoid?.getNormalizedBoneNode('chest');
-  const spine = state.vrm.humanoid?.getNormalizedBoneNode('spine');
-  const sway = Math.sin(state.idleTime * 1.15 * state.speed) * 0.012;
-  if (chest) chest.rotation.x = sway * 0.6;
-  if (spine) spine.rotation.z = Math.sin(state.idleTime * 0.6) * 0.008;
 }
 
 function animate(now) {
@@ -362,8 +377,16 @@ function animate(now) {
   updateBlink(delta);
   updateIdle(delta);
   updateTalking(delta);
+
+  // Urutan penting: buang offset prosedural frame lalu, jalankan klip animasi,
+  // baru tambahkan gerak prosedural di atasnya, lalu perbarui spring bone.
+  state.motion.resetToBase();
   if (state.mixer) state.mixer.update(delta);
-  if (state.vrm) state.vrm.update(delta);
+  if (state.vrm) {
+    state.motion.update(state.vrm, delta, { talking: state.talking > 0, interacted: state.interacted });
+    state.interacted = false;
+    state.vrm.update(delta);
+  }
 
   state.renderer.render(state.scene, state.camera);
   const workMs = performance.now() - workStart;
@@ -434,10 +457,6 @@ window.MateEngine = {
   play: () => { state.paused = false; },
   pause: () => { state.paused = true; },
   setPaused: (value) => { state.paused = !!value; },
-  setScale: (percent) => {
-    state.scale = Number(percent) || 100;
-    applyScale();
-  },
   setTargetFps: (fps) => {
     state.targetFps = Math.max(5, Math.min(60, Number(fps) || 30));
     state.governor.setTargetFps(state.targetFps);
@@ -458,6 +477,64 @@ window.MateEngine = {
       blend: state.poseBlend,
       animation: state.animationName,
     };
+  },
+  setLocomotion: (mode) => {
+    const applied = state.motion.setLocomotion(mode);
+    post('locomotion', { mode: applied });
+    return applied;
+  },
+  nextDance: () => {
+    const variant = state.motion.nextDance();
+    post('locomotion', { mode: 'dance', variant });
+    return variant;
+  },
+  setReducedMotion: (value) => {
+    state.motion.setReducedMotion(value);
+  },
+  react: (type) => {
+    state.interacted = true;
+    state.motion.react(type);
+    const expression = state.vrm?.expressionManager;
+    if (expression) {
+      // Ekspresi dipilih dari yang benar-benar ada di model ini.
+      const pick = (names) => names.find((name) => expression.expressionMap?.[name]);
+      if (type === 'head') {
+        const happy = pick(['happy', 'joy', 'fun']);
+        const surprised = pick(['surprised', 'surprise']);
+        if (surprised) {
+          expression.setValue(surprised, 0.8);
+          setTimeout(() => expression.setValue(surprised, 0), 900);
+        } else if (happy) {
+          expression.setValue(happy, 0.7);
+          setTimeout(() => expression.setValue(happy, 0), 900);
+        }
+      } else {
+        const happy = pick(['happy', 'joy', 'fun']);
+        if (happy) {
+          expression.setValue(happy, 0.55);
+          setTimeout(() => expression.setValue(happy, 0), 1200);
+        }
+      }
+    }
+    post('reaction', { type });
+  },
+  motionDebug: () => state.motion.debug(),
+  /**
+   * levels: array amplitudo 0..1 (satu nilai per ~50 ms), durationMs: durasi audio.
+   * Dipakai OverlayService setelah Gemini TTS menghasilkan WAV.
+   */
+  setSpeechEnvelope: (levels, durationMs) => {
+    const clean = Array.isArray(levels)
+      ? levels.map((v) => Math.max(0, Math.min(1, Number(v) || 0)))
+      : [];
+    state.speech = {
+      levels: clean,
+      durationMs: Math.max(200, Number(durationMs) || 2000),
+      startedAt: performance.now(),
+    };
+    state.talking = state.speech.durationMs;
+    post('talking', { duration: state.speech.durationMs, source: 'envelope', samples: clean.length });
+    return clean.length;
   },
   startTalking: (durationMs) => {
     state.talking = Math.max(400, Math.min(20000, Number(durationMs) || 2500));

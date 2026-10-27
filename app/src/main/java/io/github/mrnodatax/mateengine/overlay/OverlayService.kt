@@ -116,6 +116,12 @@ class OverlayService : Service() {
             ACTION_SPEAK -> speak(intent?.getStringExtra(EXTRA_SPEECH_TEXT), intent?.getIntExtra(EXTRA_SPEECH_MS, 2600) ?: 2600)
             ACTION_STOP_SPEAKING -> evaluate("window.MateEngine.stopTalking()")
             ACTION_TRIM_MEMORY -> trimMemory(forced = true)
+            ACTION_LOCOMOTION -> applyLocomotion(intent?.getStringExtra(EXTRA_LOCOMOTION))
+            ACTION_SPEECH_ENVELOPE -> {
+                val levels = intent?.getFloatArrayExtra(EXTRA_ENVELOPE) ?: FloatArray(0)
+                val duration = intent?.getIntExtra(EXTRA_SPEECH_MS, 2000) ?: 2000
+                applySpeechEnvelope(levels, duration)
+            }
             else -> Unit
         }
         return START_NOT_STICKY
@@ -184,6 +190,11 @@ class OverlayService : Service() {
         container.onDragFinished = { x, y ->
             repository.updateOverlay { it.copy(offsetX = x, offsetY = y) }
         }
+        container.onScaleChanged = { percent ->
+            repository.updateOverlay { it.copy(scalePercent = percent) }
+            applyLayout(recenter = false)
+        }
+        container.onTap = { zone -> reactToTouch(zone) }
         container.isDragEnabled = !prefs.locked
 
         runCatching {
@@ -288,10 +299,10 @@ class OverlayService : Service() {
                 runCatching { windowManager.updateViewLayout(view, layoutParams) }
             }
         }
-        evaluate("window.MateEngine.setScale(${prefs.scalePercent})")
         evaluate("window.MateEngine.setTargetFps(${prefs.targetFps})")
         evaluate("window.MateEngine.setQuality(${JSONObject.quote(prefs.quality)})")
         evaluate("window.MateEngine.setAnimationSpeed(${repository.state.value.animationSpeedPercent / 100f})")
+        evaluate("window.MateEngine.setLocomotion(${JSONObject.quote(prefs.motion)})")
         memorySaver = prefs.memorySaver
         voicePack.setEnabled(ChatRepository.get(this).state.value.settings.voicePackEnabled)
         notifyState(notificationText())
@@ -405,6 +416,20 @@ class OverlayService : Service() {
         evaluate("window.MateEngine.loadAvatar(${JSONObject.quote(avatarUrl(asset))})")
     }
 
+    private fun applyLocomotion(mode: String?) {
+        val value = when (mode) {
+            "walk", "dance" -> mode
+            "dance-next" -> {
+                evaluate("window.MateEngine.nextDance()")
+                "dance"
+            }
+            else -> "idle"
+        }
+        repository.updateOverlay { it.copy(motion = value) }
+        if (value != "dance-next") evaluate("window.MateEngine.setLocomotion(${JSONObject.quote(value)})")
+        Log.i(TAG, "gerak prosedural: $value")
+    }
+
     private fun reloadAvatar() {
         loadedAvatarFileName = null
         rendererReady = webView != null
@@ -426,6 +451,47 @@ class OverlayService : Service() {
         evaluate(script)
     }
 
+    // ---------------------------------------------------------------- reaksi sentuhan
+
+    /** Getar halus tiap kelipatan 5% saat cubit, seperti kontrol sistem. */
+    private val feedback = object {
+        private var lastBucket = -1
+        private val vibrator by lazy {
+            if (Build.VERSION.SDK_INT >= 31) {
+                this@OverlayService.getSystemService(android.os.VibratorManager::class.java)?.defaultVibrator
+            } else {
+                @Suppress("DEPRECATION")
+                this@OverlayService.getSystemService(android.os.Vibrator)
+            }
+        }
+
+        fun pinchTick(percent: Int) {
+            val bucket = percent / 5
+            if (bucket == lastBucket) return
+            lastBucket = bucket
+            val v = vibrator ?: return
+            if (!v.hasVibrator()) return
+            runCatching {
+                if (Build.VERSION.SDK_INT >= 26) {
+                    v.vibrate(android.os.VibrationEffect.createOneShot(8, 60))
+                } else {
+                    @Suppress("DEPRECATION")
+                    v.vibrate(8)
+                }
+            }
+        }
+    }
+
+    /** Ketukan pada avatar memicu reaksi kecil: ekspresi + klip bubble. */
+    private fun reactToTouch(zone: String) {
+        val script = "window.MateEngine.react(${JSONObject.quote(zone)})"
+        evaluate(script)
+        if (ChatRepository.get(this).state.value.settings.voicePackEnabled) {
+            voicePack.play(if (zone == "head") VoicePack.Event.BUBBLE_ON else VoicePack.Event.BUBBLE_OFF)
+        }
+        Log.i(TAG, "sentuhan pada avatar: zona $zone")
+    }
+
     // ---------------------------------------------------------------- suara & memori
 
     /**
@@ -438,6 +504,23 @@ class OverlayService : Service() {
         evaluate("window.MateEngine.startTalking(${durationMs.coerceIn(400, 20000)})")
         OverlayRuntime.update { it.copy(talking = true) }
         if (!text.isNullOrBlank()) Log.i(TAG, "ucapan diputar untuk ${text.length} karakter")
+    }
+
+    /**
+     * Lip-sync memakai amplop amplitudo audio asli (RMS per 50 ms dari WAV Gemini TTS),
+     * bukan pola sinus seperti sebelumnya.
+     */
+    private fun applySpeechEnvelope(levels: FloatArray, durationMs: Int) {
+        if (levels.isEmpty()) {
+            evaluate("window.MateEngine.startTalking(${durationMs.coerceIn(400, 60000)})")
+            return
+        }
+        val json = levels.joinToString(prefix = "[", postfix = "]") { value ->
+            String.format(java.util.Locale.US, "%.2f", value)
+        }
+        evaluate("window.MateEngine.setSpeechEnvelope($json, ${durationMs.coerceIn(200, 120000)})")
+        OverlayRuntime.update { it.copy(talking = true) }
+        Log.i(TAG, "lip-sync: ${levels.size} sampel amplop, ${durationMs}ms")
     }
 
     private fun trimMemory(forced: Boolean) {
@@ -537,14 +620,30 @@ class OverlayService : Service() {
     private inner class OverlayRoot(context: Context) : FrameLayout(context) {
         var isDragEnabled: Boolean = true
         var onDragFinished: ((Int, Int) -> Unit)? = null
+        var onScaleChanged: ((Int) -> Unit)? = null
+        var onTap: ((String) -> Unit)? = null
 
         private var downRawX = 0f
         private var downRawY = 0f
         private var startX = 0
         private var startY = 0
         private var dragging = false
+        private var downTime = 0L
+
+        // Cubit dua jari: satu jari = geser, dua jari = ubah ukuran.
+        private var pinching = false
+        private var pinchStartDistance = 0f
+        private var pinchStartPercent = 100
+        private var lastScaleSentAt = 0L
 
         override fun onInterceptTouchEvent(event: MotionEvent): Boolean = isDragEnabled
+
+        private fun distance(event: MotionEvent): Float {
+            if (event.pointerCount < 2) return 0f
+            val dx = event.getX(0) - event.getX(1)
+            val dy = event.getY(0) - event.getY(1)
+            return kotlin.math.hypot(dx, dy)
+        }
 
         override fun onTouchEvent(event: MotionEvent): Boolean {
             val layoutParams = params ?: return false
@@ -552,15 +651,41 @@ class OverlayService : Service() {
                 MotionEvent.ACTION_DOWN -> {
                     downRawX = event.rawX
                     downRawY = event.rawY
+                    downTime = System.currentTimeMillis()
                     startX = layoutParams.x
                     startY = layoutParams.y
                     dragging = false
+                    pinching = false
+                    return true
+                }
+                MotionEvent.ACTION_POINTER_DOWN -> {
+                    if (event.pointerCount >= 2) {
+                        pinching = true
+                        dragging = false
+                        pinchStartDistance = distance(event).coerceAtLeast(1f)
+                        pinchStartPercent = repository.state.value.overlay.scalePercent
+                    }
                     return true
                 }
                 MotionEvent.ACTION_MOVE -> {
+                    if (pinching && event.pointerCount >= 2) {
+                        val factor = distance(event) / pinchStartDistance
+                        val percent = OverlayGeometry.scaleFromPinch(pinchStartPercent, factor)
+                        val now = System.currentTimeMillis()
+                        // Dibatasi ~16 pembaruan per detik supaya window tidak di-recycle terus-menerus.
+                        if (percent != repository.state.value.overlay.scalePercent && now - lastScaleSentAt >= 60) {
+                            lastScaleSentAt = now
+                            onScaleChanged?.invoke(percent)
+                            feedback.pinchTick(percent)
+                        }
+                        return true
+                    }
                     val dx = (event.rawX - downRawX).toInt()
                     val dy = (event.rawY - downRawY).toInt()
-                    if (!dragging && (kotlin.math.abs(dx) > 8 || kotlin.math.abs(dy) > 8)) dragging = true
+                    if (!dragging && (kotlin.math.abs(dx) > 8 || kotlin.math.abs(dy) > 8)) {
+                        dragging = true
+                        voicePack.play(VoicePack.Event.DRAG_START, 0.5f)
+                    }
                     if (!dragging) return true
                     val metrics = resources.displayMetrics
                     val placement = OverlayGeometry.clamp(
@@ -576,11 +701,30 @@ class OverlayService : Service() {
                     runCatching { windowManager.updateViewLayout(this, layoutParams) }
                     return true
                 }
+                MotionEvent.ACTION_POINTER_UP -> {
+                    if (pinching) {
+                        pinching = false
+                        onDragFinished?.invoke(layoutParams.x, layoutParams.y)
+                        Log.i(TAG, "pinch selesai pada ${repository.state.value.overlay.scalePercent}%")
+                    }
+                    return true
+                }
                 MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> {
                     if (dragging) {
                         onDragFinished?.invoke(layoutParams.x, layoutParams.y)
+                        voicePack.play(VoicePack.Event.DRAG_STOP, 0.5f)
+                    } else if (!pinching && System.currentTimeMillis() - downTime < 300) {
+                        // Ketuk singkat (bukan geser) = sentuhan pada avatar.
+                        val ratio = (event.y / layoutParams.height.toFloat()).coerceIn(0f, 1f)
+                        val zone = when {
+                            ratio < 0.22f -> "head"
+                            ratio < 0.45f -> "shoulder"
+                            else -> "body"
+                        }
+                        onTap?.invoke(zone)
                     }
                     dragging = false
+                    pinching = false
                     return true
                 }
             }
@@ -598,9 +742,13 @@ class OverlayService : Service() {
         const val ACTION_SPEAK = "io.github.mrnodatax.mateengine.action.SPEAK_REPLY"
         const val ACTION_STOP_SPEAKING = "io.github.mrnodatax.mateengine.action.STOP_SPEAKING"
         const val ACTION_TRIM_MEMORY = "io.github.mrnodatax.mateengine.action.TRIM_MEMORY"
+        const val ACTION_LOCOMOTION = "io.github.mrnodatax.mateengine.action.SET_LOCOMOTION"
+        const val EXTRA_LOCOMOTION = "locomotion"
         const val EXTRA_ANIMATION_ID = "animation_id"
         const val EXTRA_SPEECH_TEXT = "speech_text"
         const val EXTRA_SPEECH_MS = "speech_ms"
+        const val ACTION_SPEECH_ENVELOPE = "io.github.mrnodatax.mateengine.action.SPEECH_ENVELOPE"
+        const val EXTRA_ENVELOPE = "speech_envelope"
         private const val TRIM_INITIAL_DELAY_MS = 10_000L
         private const val TRIM_INTERVAL_MS = 600_000L
         private const val TAG = "MateEngineRender"
@@ -649,9 +797,28 @@ class OverlayService : Service() {
             )
         }
 
+        fun playEnvelope(context: Context, levels: FloatArray, durationMs: Int) {
+            if (!OverlayRuntime.state.value.running) return
+            context.startService(
+                Intent(context, OverlayService::class.java)
+                    .setAction(ACTION_SPEECH_ENVELOPE)
+                    .putExtra(EXTRA_ENVELOPE, levels)
+                    .putExtra(EXTRA_SPEECH_MS, durationMs),
+            )
+        }
+
         fun stopSpeaking(context: Context) {
             if (!OverlayRuntime.state.value.running) return
             context.startService(Intent(context, OverlayService::class.java).setAction(ACTION_STOP_SPEAKING))
+        }
+
+        fun setLocomotion(context: Context, mode: String) {
+            if (!OverlayRuntime.state.value.running) return
+            context.startService(
+                Intent(context, OverlayService::class.java)
+                    .setAction(ACTION_LOCOMOTION)
+                    .putExtra(EXTRA_LOCOMOTION, mode),
+            )
         }
 
         fun trimMemory(context: Context) {

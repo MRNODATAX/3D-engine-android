@@ -5,7 +5,10 @@ import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.lightColorScheme
+import androidx.compose.material3.Shapes
 import androidx.compose.material3.Typography
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.ui.unit.dp
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.SideEffect
 import androidx.compose.ui.graphics.Color
@@ -14,27 +17,30 @@ import androidx.compose.ui.platform.LocalView
 import androidx.core.view.WindowCompat
 
 /**
- * Warna netral dengan satu aksen cyan. Sengaja tidak memakai dynamic color agar identitas
- * produk tidak berubah mengikuti wallpaper; tema terang/gelap tetap mengikuti sistem.
+ * Arah desain "Expressive Cyan" (opsi 1 yang di-ACC): biji warna cyan tua #006A66 dengan
+ * permukaan pucat #F4FBFA, bentuk besar, dan sudut 20–28dp. Tetap tanpa dynamic color agar
+ * identitas produk tidak berubah mengikuti wallpaper; tema terang/gelap mengikuti sistem.
  */
-private val Cyan = Color(0xFF0E7490)
-private val CyanLight = Color(0xFF4DD6F0)
+private val Cyan = Color(0xFF006A66)
+private val CyanLight = Color(0xFF6FE0D8)
 
 private val LightColors = lightColorScheme(
     primary = Cyan,
-    onPrimary = Color.White,
-    primaryContainer = Color(0xFFE3F4F8),
-    onPrimaryContainer = Color(0xFF04333C),
-    secondary = Color(0xFF4C6169),
+    onPrimary = Color(0xFFEAFFFD),
+    primaryContainer = Color(0xFF9FF2EA),
+    onPrimaryContainer = Color(0xFF00423F),
+    secondary = Color(0xFF4A635F),
     onSecondary = Color.White,
-    background = Color(0xFFFAFAFA),
-    onBackground = Color(0xFF14181B),
+    secondaryContainer = Color(0xFFDFF3F0),
+    onSecondaryContainer = Color(0xFF0B1B1A),
+    background = Color(0xFFF4FBFA),
+    onBackground = Color(0xFF0B1B1A),
     surface = Color(0xFFFFFFFF),
-    onSurface = Color(0xFF14181B),
-    surfaceVariant = Color(0xFFF2F4F5),
-    onSurfaceVariant = Color(0xFF5B666D),
-    outline = Color(0xFFDDE1E3),
-    outlineVariant = Color(0xFFE9EDEE),
+    onSurface = Color(0xFF0B1B1A),
+    surfaceVariant = Color(0xFFE7F2F0),
+    onSurfaceVariant = Color(0xFF4F615E),
+    outline = Color(0xFF9FB4B1),
+    outlineVariant = Color(0xFFDCE9E7),
     error = Color(0xFFA5352B),
     onError = Color.White,
     errorContainer = Color(0xFFFBEAE8),
@@ -43,9 +49,9 @@ private val LightColors = lightColorScheme(
 
 private val DarkColors = darkColorScheme(
     primary = CyanLight,
-    onPrimary = Color(0xFF04191D),
-    primaryContainer = Color(0xFF10333A),
-    onPrimaryContainer = Color(0xFFBEF0F9),
+    onPrimary = Color(0xFF00312E),
+    primaryContainer = Color(0xFF114A46),
+    onPrimaryContainer = Color(0xFFC9FBF5),
     secondary = Color(0xFFA6BAC1),
     onSecondary = Color(0xFF0B1418),
     background = Color(0xFF0E1113),
@@ -86,8 +92,18 @@ fun MateEngineTheme(content: @Composable () -> Unit) {
     MaterialTheme(
         colorScheme = colors,
         typography = MateTypography,
+        shapes = MateShapes,
         content = content,
     )
 }
 
 private val MateTypography = Typography()
+
+/** Skala bentuk Expressive: kontrol kecil 12dp, kartu 20dp, panel 28dp. */
+private val MateShapes = Shapes(
+    extraSmall = RoundedCornerShape(8.dp),
+    small = RoundedCornerShape(12.dp),
+    medium = RoundedCornerShape(20.dp),
+    large = RoundedCornerShape(24.dp),
+    extraLarge = RoundedCornerShape(28.dp),
+)

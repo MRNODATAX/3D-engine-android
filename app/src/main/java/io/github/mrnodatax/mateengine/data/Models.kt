@@ -37,6 +37,8 @@ data class OverlayPrefs(
     val offsetX: Int = -1,
     val offsetY: Int = -1,
     val memorySaver: Boolean = true,
+    /** Gerak prosedural: "idle", "walk", atau "dance". */
+    val motion: String = "idle",
 )
 
 data class AppState(

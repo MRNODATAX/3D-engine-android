@@ -273,6 +273,7 @@ class AppRepository private constructor(context: Context) {
                 put("offsetX", state.overlay.offsetX)
                 put("offsetY", state.overlay.offsetY)
                 put("memorySaver", state.overlay.memorySaver)
+                put("motion", state.overlay.motion)
             })
             put("loopAnimation", state.loopAnimation)
             put("shuffleAnimation", state.shuffleAnimation)
@@ -353,6 +354,7 @@ class AppRepository private constructor(context: Context) {
                     offsetX = overlayJson?.optInt("offsetX", -1) ?: -1,
                     offsetY = overlayJson?.optInt("offsetY", -1) ?: -1,
                     memorySaver = overlayJson?.optBoolean("memorySaver", true) ?: true,
+                    motion = overlayJson?.optString("motion", "idle")?.takeIf { it.isNotBlank() } ?: "idle",
                 ),
                 loopAnimation = json.optBoolean("loopAnimation", true),
                 shuffleAnimation = json.optBoolean("shuffleAnimation", false),

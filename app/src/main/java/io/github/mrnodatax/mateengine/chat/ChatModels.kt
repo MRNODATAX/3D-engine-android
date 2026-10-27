@@ -23,6 +23,9 @@ data class ChatSettings(
     val model: String = DEFAULT_MODEL,
     val ttsEnabled: Boolean = false,
     val voicePackEnabled: Boolean = true,
+    /** "gemini" (suara natural, butuh kunci) atau "device" (TTS bawaan HP). */
+    val ttsEngine: String = "gemini",
+    val ttsVoice: String = "Kore",
 ) {
     companion object {
         /**

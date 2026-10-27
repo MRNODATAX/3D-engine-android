@@ -2,6 +2,7 @@ package io.github.mrnodatax.mateengine.chat
 
 import android.content.Context
 import io.github.mrnodatax.mateengine.overlay.OverlayRuntime
+import android.util.Log
 import io.github.mrnodatax.mateengine.overlay.OverlayService
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -19,6 +20,8 @@ data class ChatUiState(
     val sending: Boolean = false,
     val error: String? = null,
     val errorHint: String? = null,
+    val isSpeaking: Boolean = false,
+    val lastSpeech: String? = null,
 )
 
 /**
@@ -29,9 +32,12 @@ data class ChatUiState(
  */
 class ChatController(context: Context) {
 
+    private val TAG = "MateEngineChat"
+
     private val appContext = context.applicationContext
     val repository = ChatRepository.get(appContext)
     private val client = GeminiClient()
+    private val tts = GeminiTts()
     private val speech = SpeechController(appContext)
 
     private val _ui = MutableStateFlow(fromRepository())
@@ -111,7 +117,7 @@ class ChatController(context: Context) {
                         error = null,
                         errorHint = null,
                     )
-                    reactToReply(result.text)
+                    reactToReply(result.text, key)
                 }
                 is GeminiClient.Result.Failure -> {
                     repository.addMessage(
@@ -130,16 +136,49 @@ class ChatController(context: Context) {
         }
     }
 
-    /** Reaksi avatar: mulut bergerak selama perkiraan durasi bicara, plus TTS bila aktif. */
-    private fun reactToReply(text: String) {
-        val durationMs = (text.length * 55).coerceIn(1200, 12_000)
-        if (OverlayRuntime.state.value.running) {
-            OverlayService.speak(appContext, text, durationMs)
+    /**
+     * Reaksi avatar terhadap balasan.
+     *
+     * Urutan upaya: Gemini TTS (suara natural + lip-sync dari amplitudo audio) → TTS perangkat →
+     * animasi mulut saja tanpa suara. Tidak ada audio yang dibundel di APK.
+     */
+    private suspend fun reactToReply(text: String, apiKey: String) {
+        val settings = repository.state.value.settings
+        val running = OverlayRuntime.state.value.running
+
+        if (settings.ttsEnabled && settings.ttsEngine == "gemini") {
+            _ui.value = _ui.value.copy(isSpeaking = true)
+            val result = tts.synthesize(
+                apiKey = apiKey,
+                text = text,
+                voiceName = settings.ttsVoice,
+                cacheDir = java.io.File(appContext.cacheDir, "speech"),
+            )
+            _ui.value = _ui.value.copy(isSpeaking = false)
+            when (result) {
+                is GeminiTts.Result.Success -> {
+                    val clip = result.clip
+                    speech.playClip(clip)
+                    if (running) OverlayService.playEnvelope(appContext, clip.envelope.toFloatArray(), clip.durationMs)
+                    _ui.value = _ui.value.copy(lastSpeech = "Gemini TTS · ${clip.durationMs / 1000.0}s")
+                    return
+                }
+                is GeminiTts.Result.Failure -> {
+                    // Ditampilkan apa adanya; jangan diam-diam pura-pura bersuara.
+                    _ui.value = _ui.value.copy(error = result.message, errorHint = "Beralih ke TTS perangkat.")
+                    Log.w(TAG, "Gemini TTS gagal: ${result.message}")
+                }
+            }
         }
-        if (repository.state.value.settings.ttsEnabled) {
+
+        if (settings.ttsEnabled) {
             speech.initialize()
             speech.speak(text)
+            _ui.value = _ui.value.copy(lastSpeech = "TTS perangkat")
         }
+
+        // Tanpa audio: tetap gerakkan mulut selama perkiraan durasi bicara.
+        if (running) OverlayService.speak(appContext, text, (text.length * 55).coerceIn(1200, 12_000))
     }
 
     fun stopSpeech() {

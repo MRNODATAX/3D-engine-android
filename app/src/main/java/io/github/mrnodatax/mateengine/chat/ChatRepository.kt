@@ -54,6 +54,8 @@ class ChatRepository private constructor(context: Context) {
             .putString("model", settings.model)
             .putBoolean("tts", settings.ttsEnabled)
             .putBoolean("voicePack", settings.voicePackEnabled)
+            .putString("ttsEngine", settings.ttsEngine)
+            .putString("ttsVoice", settings.ttsVoice)
             .apply()
         _state.value = _state.value.copy(settings = settings)
     }
@@ -109,6 +111,8 @@ class ChatRepository private constructor(context: Context) {
             model = prefs.getString("model", ChatSettings.DEFAULT_MODEL) ?: ChatSettings.DEFAULT_MODEL,
             ttsEnabled = prefs.getBoolean("tts", false),
             voicePackEnabled = prefs.getBoolean("voicePack", true),
+            ttsEngine = prefs.getString("ttsEngine", "gemini") ?: "gemini",
+            ttsVoice = prefs.getString("ttsVoice", "Kore") ?: "Kore",
         )
 
         val messages = prefs.getString("messages", null)?.let { raw ->

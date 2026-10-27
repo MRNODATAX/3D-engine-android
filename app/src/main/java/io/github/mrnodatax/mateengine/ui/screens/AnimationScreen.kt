@@ -14,6 +14,8 @@ import androidx.compose.material.icons.filled.Clear
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material3.Button
+import androidx.compose.material3.FilterChip
+import androidx.compose.material3.FilterChipDefaults
 import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -51,6 +53,8 @@ fun AnimationScreen(
     onLoopChange: (Boolean) -> Unit,
     onShuffleChange: (Boolean) -> Unit,
     onSpeedChange: (Int) -> Unit,
+    onLocomotionChange: (String) -> Unit,
+    onNextDance: () -> Unit,
 ) {
     BoxWithConstraints(Modifier.fillMaxWidth()) {
         val wide = maxWidth >= 600.dp
@@ -94,6 +98,38 @@ fun AnimationScreen(
                                 Text(if (importing) "Mengimpor…" else T.importVrma, modifier = Modifier.padding(start = 8.dp))
                             }
                         }
+                    }
+
+                    SectionCard {
+                        Text(
+                            "Gerak otomatis",
+                            style = MaterialTheme.typography.titleSmall,
+                            fontWeight = FontWeight.SemiBold,
+                        )
+                        Text(
+                            "Napas, goyangan badan, pandangan mata, dan kedip berjalan sendiri tanpa berkas animasi. " +
+                                "Pilih suasana di bawah, atau tambahkan .vrma milikmu.",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                            listOf("idle" to "Diam", "walk" to "Jalan", "dance" to "Menari").forEach { (value, label) ->
+                                FilterChip(
+                                    selected = state.overlay.motion == value,
+                                    onClick = { onLocomotionChange(value) },
+                                    label = { Text(label) },
+                                    colors = FilterChipDefaults.filterChipColors(
+                                        selectedContainerColor = MaterialTheme.colorScheme.primaryContainer,
+                                        selectedLabelColor = MaterialTheme.colorScheme.onPrimaryContainer,
+                                    ),
+                                )
+                            }
+                            OutlinedButton(
+                                onClick = onNextDance,
+                                enabled = state.overlay.motion == "dance",
+                            ) { Text("Gaya lain") }
+                        }
+                        InfoNote("Setelah 2 menit tanpa sentuhan, avatar mengantuk lalu tertidur. Ketuk avatar untuk membangunkan.")
                     }
 
                     SectionCard {

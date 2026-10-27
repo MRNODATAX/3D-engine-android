@@ -1,6 +1,7 @@
 package io.github.mrnodatax.mateengine.chat
 
 import android.content.Context
+import android.media.MediaPlayer
 import android.speech.tts.TextToSpeech
 import android.speech.tts.UtteranceProgressListener
 import android.util.Log
@@ -20,6 +21,7 @@ class SpeechController(context: Context) {
     private var available = false
     private var languageSupported: Boolean? = null
     private var pendingText: String? = null
+    private var player: MediaPlayer? = null
     var onDone: (() -> Unit)? = null
     var onError: ((String) -> Unit)? = null
 
@@ -78,11 +80,36 @@ class SpeechController(context: Context) {
         tts.speak(clean, TextToSpeech.QUEUE_FLUSH, null, UTTERANCE_ID)
     }
 
+    /** Memutar WAV hasil Gemini TTS. Envelope mulut dikirim terpisah ke renderer. */
+    fun playClip(clip: SpeechClip) {
+        stop()
+        runCatching {
+            player = MediaPlayer().apply {
+                setDataSource(clip.file.absolutePath)
+                setOnCompletionListener { onDone?.invoke() }
+                setOnErrorListener { _, what, extra ->
+                    onError?.invoke("Pemutaran audio gagal ($what/$extra)")
+                    true
+                }
+                prepare()
+                start()
+            }
+        }.onFailure { error ->
+            onError?.invoke("Audio tidak bisa diputar: ${error.message}")
+        }
+    }
+
     fun stop() {
         engine?.stop()
+        runCatching {
+            player?.let { if (it.isPlaying) it.stop() }
+            player?.release()
+        }
+        player = null
     }
 
     fun shutdown() {
+        stop()
         engine?.stop()
         engine?.shutdown()
         engine = null
