@@ -168,11 +168,11 @@ function frameModel(vrm) {
   const distanceForHeight = (targetHeight) => targetHeight / (2 * Math.tan(fovRad / 2));
   const distanceForWidth = (targetWidth) =>
     targetWidth / (2 * Math.tan(fovRad / 2) * Math.max(0.1, state.camera.aspect));
-  // Margin 12% dan jaminan muat secara lebar maupun tinggi.
-  const distance = Math.max(
-    distanceForHeight(height * 1.12),
-    distanceForWidth(Math.max(size.x, 0.1) * 1.25),
-  );
+  // Tinggi selalu menang: batas lebar hanya boleh memperkecil sampai 1,25x, sehingga pada
+  // skala 100% avatar benar-benar mengisi tinggi layar (lengan boleh mendekati tepi).
+  const distanceHeight = distanceForHeight(height * 1.06);
+  const distanceWidth = distanceForWidth(Math.max(size.x, 0.1) * 1.06);
+  const distance = Math.max(distanceHeight, Math.min(distanceWidth, distanceHeight * 1.25));
   state.camera.position.set(center.x, center.y, center.z + distance);
   state.camera.lookAt(center.x, center.y, center.z);
   state.camera.updateProjectionMatrix();
