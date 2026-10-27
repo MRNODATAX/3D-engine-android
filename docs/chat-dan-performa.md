@@ -91,6 +91,9 @@ Governor diuji tanpa GPU di `web/test/perf.test.mjs` (dijalankan pada CI Build â
 | Build APK | lihat run CI terakhir | tab Actions |
 | Chat dengan kunci asli | **belum diverifikasi** | perlu kunci Gemini milik pengguna; tidak ada kunci di CI |
 | TTS perangkat | **belum diverifikasi di perangkat** | emulator CI tidak dijamin punya mesin TTS bahasa Indonesia |
+| Gemini TTS + lip-sync | **kode + uji unit lulus, belum diuji dengan kunci asli** | `GeminiTtsTest` menguji parsing WAV 24 kHz dan amplop RMS; panggilan jaringan butuh kunci |
+| Mesin gerak | **lulus uji headless + bukti emulator** | `motion.test.mjs` (6 skenario) dan `12-gerak-a/b.png` berbeda |
+| Skala 25â€“100% | **terbukti di emulator** | `13-overlay-skala-100.png` vs `14-overlay-skala-40.png` |
 
 Bagian yang belum diverifikasi **tidak** diklaim berfungsi. Untuk mengujinya: pasang APK debug,
 buka tab Chat, isi kunci, kirim satu pesan.
