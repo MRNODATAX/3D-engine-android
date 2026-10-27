@@ -530,8 +530,16 @@ function animate(now) {
   if (now - (state.motionLogAt || 0) >= 5000) {
     state.motionLogAt = now;
     const debug = state.motion.debug();
-    console.info('motion ' + JSON.stringify(debug));
-    post('motion-state', debug);
+    // Sertakan sudut lengan terukur supaya bukti "tangan tidak stuck di atas" terbaca di logcat.
+    const pose = window.MateEngine?.poseMetrics?.();
+    const trace = {
+      ...debug,
+      clip: state.builtinClip,
+      armLeftDeg: pose?.leftArmDeg ?? null,
+      armRightDeg: pose?.rightArmDeg ?? null,
+    };
+    console.info('motion ' + JSON.stringify(trace));
+    post('motion-state', trace);
   }
 
   if (now - state.statsReportAt >= 2000) {

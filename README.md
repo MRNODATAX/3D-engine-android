@@ -50,14 +50,17 @@ emulator Android 14 (diambil otomatis lewat `adb screencap` di CI, bukan mockup)
 
 ## Unduh dan pasang (build uji)
 
-Build uji terbaru: [Release `v0.1.4-test`](https://github.com/MRNODATAX/3D-engine-android/releases/tag/v0.1.4-test)
-(`MateEngine-v0.1.4-test-debug.apk`, ditandatangani kunci debug). Rilis ini memuat tab Chat dan
-optimasi performa.
+Build uji terbaru: [Release `v0.1.5-test`](https://github.com/MRNODATAX/3D-engine-android/releases/tag/v0.1.5-test)
+(`MateEngine-v0.1.5-test-debug.apk`, ditandatangani kunci debug). Rilis ini membawa animasi asli:
+empat klip CC0 yang dikonversi ke `.vrma`, mesin keadaan klip (bicara / jalan / tari / diam), dan
+perbaikan "tangan terangkat" setelah animasi berhenti.
 
 1. Unduh APK di perangkat, lalu izinkan pemasangan dari sumber tidak dikenal untuk aplikasi
    pengelola berkas/browser yang dipakai.
 2. Buka **Mate Engine**, buka **Diagnosa**, periksa izin overlay, notifikasi, dan versi WebView.
-3. **Avatar → Impor .vrm**, pilih model VRM milikmu.
+3. **Avatar → Impor .vrm**, pilih model VRM milikmu (VRM 1.0 maupun 0.x).
+4. Klip bawaan langsung jalan: avatar diam bergerak, klip bicara saat balasan chat, dan tombol
+   **Perbaiki pose** di layar Animasi bila tangan terlihat terangkat.
 4. **Beranda → Jalankan avatar**, izinkan "tampil di atas aplikasi lain", lalu tekan Home.
 5. Bila avatar tidak muncul, salin **ringkasan diagnosa** dan lampirkan saat melapor.
 

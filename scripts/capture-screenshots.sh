@@ -157,6 +157,35 @@ else
   echo "== bukti gerak: dua tangkapan berbeda (avatar bergerak)"
 fi
 
+# ---- bukti tangan tidak terangkat: sudut lengan dari jejak renderer harus < 45 derajat ----
+arm_report="$(adb logcat -d | grep -o 'motion {.*}' | tail -6 || true)"
+echo "--- jejak sudut lengan ---" >> "$DIAG"
+echo "$arm_report" >> "$DIAG" 2>&1 || true
+worst="$(printf '%s\n' "$arm_report" | python3 -c '
+import json, sys, re
+values = []
+for line in sys.stdin:
+    match = re.search(r"motion (\{.*\})", line)
+    if not match:
+        continue
+    try:
+        data = json.loads(match.group(1))
+    except json.JSONDecodeError:
+        continue
+    for key in ("armLeftDeg", "armRightDeg"):
+        if isinstance(data.get(key), (int, float)):
+            values.append(float(data[key]))
+if values:
+    print(max(values))
+' 2>/dev/null || true)"
+if [ -z "$worst" ]; then
+  echo "::warning::Tidak ada jejak sudut lengan di logcat; bukti pose tidak terbaca"
+elif python3 -c "import sys; sys.exit(0 if float('$worst') < 45 else 1)"; then
+  echo "== bukti pose: sudut lengan terjauh ${worst} derajat (< 45 derajat, tangan di bawah)"
+else
+  echo "::error::Sudut lengan ${worst} derajat: tangan terangkat saat diam"
+fi
+
 # ---- bukti skala: 100% vs 40% tinggi layar ----
 shoot_scale() {
   local percent="$1" name="$2"
