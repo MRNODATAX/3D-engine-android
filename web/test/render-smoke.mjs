@@ -207,26 +207,82 @@ try {
     console.log('… fixture .vrma tidak tersedia, uji animasi dilewati');
   }
 
-  // ------------------------------------------------------------------ klip bawaan + pagar lengan
+  // ------------------------------------------------------- mesin keadaan klip + pagar lengan
   const builtin = await page.evaluate(async () => {
     const list = window.MateEngine.builtinClips();
-    const played = await window.MateEngine.playBuiltin('dance');
-    await new Promise((resolve) => setTimeout(resolve, 1200));
-    const during = window.MateEngine.poseMetrics();
+    const wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+
+    // 1) idle otomatis tanpa perintah apa pun
+    await wait(1200);
+    const autoIdle = window.MateEngine.poseMetrics();
+
+    // 2) bicara -> klip talk, lalu jalan -> klip walk, lalu tari -> klip dance
+    window.MateEngine.startTalking(1500);
+    await wait(900);
+    const talking = window.MateEngine.poseMetrics();
+    window.MateEngine.stopTalking();
+    await wait(600);
+
+    window.MateEngine.setLocomotion('walk');
+    await wait(900);
+    const walking = window.MateEngine.poseMetrics();
+    window.MateEngine.setLocomotion('dance');
+    await wait(900);
+    const dancing = window.MateEngine.poseMetrics();
+    window.MateEngine.setLocomotion('idle');
+    await wait(900);
+    const idleAgain = window.MateEngine.poseMetrics();
+    const timeline = window.MateEngine.clipTimeline();
+
+    // 3) setelah animasi dihentikan, tangan harus kembali ke bawah
+    window.MateEngine.playBuiltin('dance');
+    await wait(900);
     window.MateEngine.stopAnimation();
-    await new Promise((resolve) => setTimeout(resolve, 900));
+    await wait(900);
     const afterStop = window.MateEngine.poseMetrics();
     window.MateEngine.resetPose();
     const afterReset = window.MateEngine.poseMetrics();
-    return { list, played, during, afterStop, afterReset };
+
+    return {
+      list,
+      autoIdle,
+      talking,
+      walking,
+      dancing,
+      idleAgain,
+      afterStop,
+      afterReset,
+      timeline,
+      poses: [0, 1, 2, 3, 4, 5].map(() => window.MateEngine.debugPose().leftUpperArmZ),
+    };
   });
+
   assert(builtin.list.length >= 4, `klip bawaan kurang: ${builtin.list.length}`);
-  assert(builtin.played === true, 'klip bawaan gagal diputar');
   console.log(`  klip bawaan: ${builtin.list.map((item) => item.file).join(', ')}`);
+
+  const seen = builtin.timeline.map((entry) => entry.clip);
+  for (const expected of ['idle_loop', 'idle_talk', 'walk_loop', 'dance_loop']) {
+    assert(seen.includes(expected), `klip ${expected} tidak pernah diputar (jejak: ${seen.join(' -> ')})`);
+  }
+  console.log(`  jejak klip: ${seen.join(' -> ')}`);
+
+  assert(builtin.autoIdle?.hasAction === true, 'tidak ada klip yang berjalan otomatis saat diam');
+  assert(builtin.talking?.builtinClip === 'idle_talk', `klip bicara salah: ${builtin.talking?.builtinClip}`);
+  assert(builtin.walking?.builtinClip === 'walk_loop', `klip jalan salah: ${builtin.walking?.builtinClip}`);
+  assert(builtin.dancing?.builtinClip === 'dance_loop', `klip tari salah: ${builtin.dancing?.builtinClip}`);
+  assert(builtin.idleAgain?.builtinClip === 'idle_loop', `klip diam salah: ${builtin.idleAgain?.builtinClip}`);
+
+  // Crossfade: dua perpindahan berurutan tidak boleh lebih rapat dari 250 ms.
+  const gaps = builtin.timeline
+    .slice(1)
+    .map((entry, index) => entry.at - builtin.timeline[index].at)
+    .filter((gap) => gap > 0);
   assert(
-    builtin.during?.hasAction === true,
-    `tidak ada action aktif setelah memutar klip bawaan: ${JSON.stringify(builtin.during)}`,
+    gaps.every((gap) => gap >= 240),
+    `ada perpindahan klip lebih cepat dari crossfade 250 ms (jeda: ${gaps.join(', ')} ms)`,
   );
+  console.log(`✓ mesin keadaan klip: ${seen.length} perpindahan, jeda minimum ${Math.min(...gaps)} ms`);
+
   // Perbaikan H1: setelah animasi dihentikan, tangan harus kembali ke bawah (< 45° dari vertikal).
   for (const key of ['leftArmDeg', 'rightArmDeg']) {
     const value = builtin.afterStop?.[key];
@@ -234,27 +290,25 @@ try {
       typeof value === 'number' && value < 45,
       `tangan tidak kembali setelah animasi berhenti (${key} = ${value}°, ${JSON.stringify(builtin.afterStop)})`,
     );
+    const resetValue = builtin.afterReset?.[key];
+    assert(
+      typeof resetValue === 'number' && resetValue < 45,
+      `perbaikan pose gagal (${key} = ${resetValue}°)`,
+    );
   }
   console.log(
-    `✓ pose kembali normal setelah animasi berhenti: kiri ${builtin.afterStop.leftArmDeg}°, kanan ${builtin.afterStop.rightArmDeg}°`,
+    `✓ tangan kembali ke bawah setelah animasi: ${builtin.afterStop.leftArmDeg}° / ${builtin.afterStop.rightArmDeg}° ` +
+      `(setelah perbaiki pose: ${builtin.afterReset.leftArmDeg}° / ${builtin.afterReset.rightArmDeg}°)`,
   );
 
-  // Idle bawaan harus membuat sendi bergerak: bandingkan metrik dua waktu berbeda.
-  const idleMotion = await page.evaluate(async () => {
-    window.MateEngine.playBuiltin('idle');
-    const samples = [];
-    for (let i = 0; i < 6; i += 1) {
-      await new Promise((resolve) => setTimeout(resolve, 350));
-      samples.push(window.MateEngine.debugPose());
-    }
-    return samples;
-  });
-  const deltas = idleMotion
-    .slice(1)
-    .map((sample, index) => Math.abs((sample.leftUpperArmZ ?? 0) - (idleMotion[index].leftUpperArmZ ?? 0)));
-  const moved = Math.max(...deltas);
-  assert(moved > 0.001, `klip idle tidak mengubah pose lengan (delta ${moved})`);
-  console.log(`✓ klip idle menggerakkan lengan (delta maksimum ${moved.toFixed(4)} rad)`);
+  // Pagar lengan: selama klip bawaan berjalan di mode diam, lengan tidak boleh terangkat jauh.
+  assert(
+    builtin.autoIdle.leftArmDeg < 60 && builtin.autoIdle.rightArmDeg < 60,
+    `lengan terangkat saat diam (${builtin.autoIdle.leftArmDeg}° / ${builtin.autoIdle.rightArmDeg}°)`,
+  );
+  console.log(
+    `✓ lengan di bawah saat diam: ${builtin.autoIdle.leftArmDeg}° / ${builtin.autoIdle.rightArmDeg}°`,
+  );
 
   assert(consoleErrors.length === 0, `error konsol: ${consoleErrors.slice(0, 3).join(' | ')}`);
   console.log('✓ tanpa error konsol');

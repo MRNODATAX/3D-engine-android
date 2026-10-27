@@ -58,6 +58,11 @@ const state = {
   motion: createMotion(),
   interacted: false,
   builtinClip: null,
+  clipName: null,
+  clipOverride: null,
+  clipAppliedAt: 0,
+  clipLog: [],
+  clipCache: new Map(),
   speech: null,
   animationName: null,
   loop: true,
@@ -216,7 +221,7 @@ async function loadAvatar(url) {
   }
 
   try {
-    const gltf = await loader().loadAsync(url);
+    const gltf = await (state.clipCache.has(url) ? state.clipCache.get(url) : loadVrmAnimation(url));
     const vrm = gltf.userData.vrm;
     if (!vrm) {
       fail('not-vrm', 'Berkas terbaca, tetapi tidak berisi data VRM.', true);
@@ -256,8 +261,9 @@ async function loadAvatar(url) {
     state.poseBlend = 1;
     applyRelaxedPose(vrm, 1, state.restPose);
     post('avatar-ready', { info: state.avatarInfo });
-    // Idle bawaan (CC0) supaya avatar tidak diam seperti patung saat pertama muncul.
-    playBuiltin('idle').catch(() => {});
+    // Mesin keadaan akan memutar klip idle sendiri pada frame berikutnya.
+    state.clipName = null;
+    state.clipOverride = null;
   } catch (error) {
     fail('load-failed', `Gagal memuat avatar: ${error?.message || error}`, true);
   }
@@ -270,7 +276,7 @@ async function loadAnimation(url, name, options = {}) {
     return;
   }
   try {
-    const gltf = await loader().loadAsync(url);
+    const gltf = await (state.clipCache.has(url) ? state.clipCache.get(url) : loadVrmAnimation(url));
     const vrmAnimation = gltf.userData.vrmAnimations?.[0];
     if (!vrmAnimation) {
       fail('not-vrma', 'Berkas bukan animasi VRM (.vrma).', false);
@@ -305,6 +311,8 @@ async function loadAnimation(url, name, options = {}) {
  * Klip bawaan dari paket CC0 Quaternius (lihat docs/aset-gerak.md), dikonversi ke .vrma oleh
  * scripts/glb-ke-vrma.mjs dan dibundel di assets/animations.
  */
+const CROSSFADE_MS = 250;
+
 const BUILTIN_CLIPS = {
   idle: 'idle_loop',
   talk: 'idle_talk',
@@ -317,18 +325,64 @@ function builtinUrl(name) {
   return new URL(`../animations/${name}.vrma`, window.location.href).href;
 }
 
+/** Cache berkas .vrma yang sudah diparse supaya berpindah klip tidak memicu unduhan ulang. */
+function loadVrmAnimation(url) {
+  if (!state.clipCache.has(url)) {
+    const promise = loader()
+      .loadAsync(url)
+      .catch((error) => {
+        state.clipCache.delete(url);
+        throw error;
+      });
+    state.clipCache.set(url, promise);
+  }
+  return state.clipCache.get(url);
+}
+
+/**
+ * Mesin keadaan klip bawaan.
+ * Prioritas: bicara > pilihan manual pengguna > lokomosi (jalan/tari/diam).
+ */
+function desiredClip() {
+  if (state.talking > 0 || state.speech) return 'talk';
+  if (state.clipOverride) return state.clipOverride;
+  const locomotion = state.motion?.state?.locomotion;
+  if (locomotion === 'walk') return 'walk';
+  if (locomotion === 'dance') return 'dance';
+  return 'idle';
+}
+
+function recordClip(name, reason) {
+  state.clipName = name;
+  state.clipAppliedAt = performance.now();
+  state.clipLog.push({ clip: name, reason, at: Math.round(performance.now()) });
+  if (state.clipLog.length > 40) state.clipLog.shift();
+}
+
 async function playBuiltin(name, options = {}) {
   if (!state.vrm || !state.mixer) {
     fail('no-avatar', 'Pilih avatar sebelum memutar animasi.', false);
     return false;
   }
   const file = BUILTIN_CLIPS[name] || (name in BUILTIN_CLIPS ? BUILTIN_CLIPS[name] : null);
-  const clipName = typeof name === 'string' && !(name in BUILTIN_CLIPS) ? name : file;
-  if (!clipName) return false;
-  if (state.builtinClip === clipName && state.currentAction) return true;
-  state.builtinClip = clipName;
-  await loadAnimation(builtinUrl(clipName), clipName, { loop: options.loop !== false });
+  const clipName = typeof name === 'string' && !(name in BUILTIN_CLIPS) ? file : null;
+  const resolved = clipName || file;
+  if (!resolved) return false;
+  if (state.builtinClip === resolved && state.currentAction) return true;
+  state.builtinClip = resolved;
+  recordClip(resolved, options.reason || 'manual');
+  if (options.manual !== false) state.clipOverride = resolved;
+  await loadAnimation(builtinUrl(resolved), resolved, { loop: options.loop !== false });
   return true;
+}
+
+/** Dipanggil tiap frame; hanya berpindah klip bila keadaan berubah dan crossfade sudah lewat. */
+function syncClipState() {
+  if (!state.ready || !state.vrm || !state.mixer) return;
+  const desired = desiredClip();
+  if (desired === state.clipName) return;
+  if (performance.now() - state.clipAppliedAt < CROSSFADE_MS) return;
+  playBuiltin(desired, { manual: false, reason: 'state' }).catch(() => {});
 }
 
 function stopAnimation() {
@@ -339,6 +393,8 @@ function stopAnimation() {
   if (state.mixer) state.mixer.stopAllAction();
   state.animationName = null;
   state.builtinClip = null;
+  state.clipName = null;
+  state.clipOverride = null;
   state.motion.clearBase();
   if (state.vrm) {
     applyRelaxedPose(state.vrm, 1, state.restPose);
@@ -438,6 +494,7 @@ function animate(now) {
 
   // Urutan penting: buang offset prosedural frame lalu, jalankan klip animasi,
   // baru tambahkan gerak prosedural di atasnya, lalu perbarui spring bone.
+  syncClipState();
   state.motion.resetToBase();
   if (state.mixer) state.mixer.update(delta);
   if (state.vrm) {
@@ -546,18 +603,18 @@ window.MateEngine = {
   },
   setLocomotion: (mode) => {
     const applied = state.motion.setLocomotion(mode);
+    // Pilihan manual pengguna dilepas agar mesin keadaan kembali mengikuti lokomosi.
+    state.clipOverride = null;
     post('locomotion', { mode: applied });
-    // Klip CC0 dimainkan bila tersedia; gerak prosedural tetap jadi lapisan tambahan.
-    const clip = applied === 'walk' ? 'walk' : applied === 'dance' ? 'dance' : 'idle';
-    playBuiltin(clip).catch(() => {});
     return applied;
   },
   nextDance: () => {
     const variant = state.motion.nextDance();
+    state.clipOverride = null;
     post('locomotion', { mode: 'dance', variant });
-    playBuiltin('dance').catch(() => {});
     return variant;
   },
+  clipTimeline: () => state.clipLog.slice(),
   setReducedMotion: (value) => {
     state.motion.setReducedMotion(value);
   },
