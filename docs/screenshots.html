@@ -132,7 +132,7 @@
   </p>
   <div class="facts">
     <span class="fact"><span class="dot"></span>APK debug 0.1.0 (1)</span>
-    <span class="fact"><span class="dot"></span><a href="https://github.com/MRNODATAX/3D-engine-android/releases/tag/v0.1.4-test">Unduh APK uji v0.1.4-test</a></span>
+    <span class="fact"><span class="dot"></span><a href="https://github.com/MRNODATAX/3D-engine-android/releases/tag/v0.1.5-test">Unduh APK uji v0.1.5-test</a></span>
     <span class="fact"><span class="dot"></span>Android 14 · API 34 · x86_64</span>
     <span class="fact"><span class="dot"></span>1080 × 2400 · 420 dpi</span>
     <span class="fact warn"><span class="dot"></span>Perangkat fisik belum diuji</span>
@@ -249,11 +249,22 @@
     </figure>
 
     <figure class="shot" data-kind="overlay" data-orientation="portrait">
-      <div class="frame"><img src="screenshots/12-gerak-b.png" alt="Avatar di overlay; dua tangkapan berurutan berbeda karena avatar bergerak."></div>
+      <div class="frame"><img src="screenshots/12-gerak-a.png" alt="Avatar di overlay dengan kedua tangan tergantung di samping badan, memakai klip idle CC0."></div>
+      <figcaption>
+        <span class="tag">Klip idle · tangan di bawah</span>
+        <h2>Tangan tidak lagi terangkat</h2>
+        <p>Klip <code>idle_loop</code> hasil konversi memutar kedua lengan ke bawah. Jejak renderer mencatat sudut lengan terukur:
+        <code>armLeftDeg 18,6</code> dan <code>armRightDeg 21</code> — jauh di bawah ambang 45°.</p>
+      </figcaption>
+    </figure>
+
+    <figure class="shot" data-kind="overlay" data-orientation="portrait">
+      <div class="frame"><img src="screenshots/12-gerak-b.png" alt="Avatar di overlay 1,8 detik kemudian; pose berubah karena animasi berjalan."></div>
       <figcaption>
         <span class="tag">Gerak otomatis</span>
-        <h2>Bergerak tanpa berkas animasi</h2>
-        <p>Skrip menangkap dua kali dengan jeda 1,8 detik; bila gambarnya identik, CI gagal. Amplop gerak juga tercatat: <code>motion {"time":1.18,"bones":15,...}</code>.</p>
+        <h2>Dua tangkapan, dua pose</h2>
+        <p>Skrip menangkap dua kali dengan jeda 1,8 detik; bila gambarnya identik, CI gagal. Sejak 0.1.5 pemeriksaan
+        juga menolak build bila sudut lengan ≥ 45° saat diam.</p>
       </figcaption>
     </figure>
 

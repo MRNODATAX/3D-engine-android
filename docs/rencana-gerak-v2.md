@@ -1,7 +1,8 @@
 # Rencana: memperbaiki tangan & memberi gerakan waifu yang "hidup"
 
-Status: **rencana, belum dikerjakan.** Semua klaim di bawah punya rujukan berkas/baris atau URL yang
-sudah saya buka.
+Status: **dikerjakan — Fase A, B, C, dan sebagian D selesai; E (bukti emulator) selesai di
+`v0.1.5-test`.** Bagian rencana di bawah saya biarkan apa adanya sebagai catatan keputusan; status
+per fase ada di §10. Semua klaim punya rujukan berkas/baris atau URL yang sudah saya buka.
 
 ---
 
@@ -204,3 +205,29 @@ tanpa lompatan pose.
 2. **Mode saat kejadian**: diam, jalan, atau menari?
 3. Apakah kamu oke dengan **klip CC0 Quaternius** sebagai gerakan bawaan (rekomendasi saya), atau
    lebih suka aplikasi hanya menyediakan impor dan kamu isi sendiri dari file Mate Engine-mu?
+
+---
+
+## 10. Status pelaksanaan (diperbarui setelah `v0.1.5-test`)
+
+| Fase | Isi | Status | Bukti |
+| --- | --- | --- | --- |
+| A | Buang pose terakhir animasi, ukur sudut lengan | **selesai** | `stopAnimation()` memanggil `state.motion.clearBase()` + `applyRelaxedPose`; `window.MateEngine.poseMetrics()` mengukur `armLeftDeg`/`armRightDeg` dari geometri tulang |
+| A | Pagar lengan prosedural | **selesai** | `web/src/motion.js`: offset lengan dijepit ±0,35 rad di luar mode tari, apa pun keadaan sebelumnya |
+| B | Konversi klip CC0 ke `.vrma` | **selesai** | `scripts/glb-ke-vrma.mjs` + `scripts/siapkan-klip-cc0.sh`; 4 klip total 138,8 KB (lihat `docs/aset-gerak.md`) |
+| B | Uji berkas klip tanpa browser | **selesai** | `web/test/vrma.test.mjs` (`npm run test:vrma`), jalan di CI |
+| C | Mesin keadaan klip + crossfade 250 ms | **selesai** | `desiredClip()`: bicara > pilihan manual > lokomosi; uji render memastikan jeda perpindahan ≥ 240 ms |
+| D | Ketuk kepala, geser, 3 tari | **sudah ada sejak 0.1.2**, klip tari CC0 ditambahkan | `nextDance()` memutar `dance_loop`; variasi prosedural tetap 3 |
+| E | Bukti emulator + rilis | **selesai** | `docs/screenshots/12-gerak-a.png` (tangan di bawah), jejak `motion {... "clip":"idle_loop","armLeftDeg":18.6,"armRightDeg":21}` di `docs/screenshots/diagnostik-emulator.txt`; rilis `v0.1.5-test` |
+
+### Dua kegagalan nyata yang ditemukan justru lewat CI (dan sudah diperbaiki)
+
+1. **Avatar lenyap, `silhouette (NaN)`.** Berkas `.vrma` generasi pertama menulis node tanpa
+   translasi, sehingga tinggi istirahat `hips` = 0. Loader memakai tinggi itu sebagai pembagi skala
+   → `Infinity` → semua matriks NaN. Sekarang skrip menolak keluaran bila tinggi hips < 0,2 m.
+2. **Lengan kanan terangkat 85,8° sementara kiri benar.** Penyebabnya rotasi istirahat rig Blender
+   ikut ditulis; hasil retarget jadi bergantung pada *roll* tulang tiap sisi. Sekarang kerangka
+   keluaran memakai rotasi istirahat identitas, dan track berisi
+   `delta_world(parent)⁻¹ × delta_world(bone)`, yaitu bentuk yang dikembalikan loader apa adanya.
+
+Keduanya tertangkap sebelum rilis dan diverifikasi ulang di dua jenis run CI (push dan pull_request).
