@@ -149,10 +149,12 @@ jobs:
           Tanda tangan: ${SIGNATURE}
 
           Status fitur (lihat docs/android-parity.md di repositori):
-          - Sudah ada: impor VRM, overlay transparan + drag/skala/opasitas/FPS, kunci posisi,
-            render VRM 1.0/0.x, pemutar .vrma (loop, kecepatan), diagnosa perangkat.
-          - Belum ada: duduk di jendela/taskbar, screenshot transparan, timer, AI chat,
-            Workshop, food system, touch region/headpat, head tracking.
+          - Sudah ada: impor VRM, overlay transparan + drag/skala 25-100%/cubit dua jari,
+            opasitas, batas FPS, kunci posisi, render VRM 1.0/0.x, pemutar .vrma,
+            diagnosa perangkat, chat Gemini dengan persona, Gemini TTS + lip-sync,
+            gerak prosedural (napas, goyangan, pandangan, tidur, jalan, tari, reaksi sentuh).
+          - Belum ada: duduk di jendela/taskbar, screenshot transparan, timer, Workshop,
+            food system, head tracking kamera.
 
           Batasan: overlay Android berbentuk persegi (tidak ada click-through per piksel);
           service dapat dihentikan sistem bila optimasi baterai tidak dikecualikan.
