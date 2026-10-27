@@ -25,7 +25,8 @@ object OverlayGeometry {
      * slider ke 50% menghasilkan avatar ~25% dan terasa "tidak berubah".
      */
     fun windowSize(screenWidth: Int, screenHeight: Int, scalePercent: Int, density: Float): Pair<Int, Int> {
-        val minWidth = (140 * density).toInt()
+        // 96dp: masih nyaman disentuh, tetapi tidak lagi memaksa avatar besar saat slider di 25%.
+        val minWidth = (96 * density).toInt()
         val percent = scalePercent.coerceIn(MIN_SCALE, MAX_SCALE) / 100f
         val targetHeight = (screenHeight * percent).toInt()
         var width = (targetHeight / ASPECT).toInt()

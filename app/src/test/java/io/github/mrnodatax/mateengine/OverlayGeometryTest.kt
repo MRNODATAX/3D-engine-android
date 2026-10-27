@@ -32,14 +32,14 @@ class OverlayGeometryTest {
     fun `ukuran window mengikuti persentase dan batas minimum`() {
         val (width, height) = OverlayGeometry.windowSize(1080, 2400, 62, 2.75f)
         assertTrue("lebar harus masuk layar", width <= 1080)
-        assertTrue("lebar minimal 140dp", width >= (140 * 2.75f).toInt() - 1)
+        assertTrue("lebar minimal 96dp", width >= (96 * 2.75f).toInt() - 1)
         assertEquals((width * 1.9f).toInt(), height)
     }
 
     @Test
     fun `persentase kecil tetap menghormati batas minimum`() {
-        val (width, _) = OverlayGeometry.windowSize(1080, 2400, 25, 3f)
-        assertEquals((140 * 3f).toInt(), width)
+        val (width, _) = OverlayGeometry.windowSize(400, 800, 25, 3f)
+        assertEquals((96 * 3f).toInt(), width)
     }
 
     @Test
