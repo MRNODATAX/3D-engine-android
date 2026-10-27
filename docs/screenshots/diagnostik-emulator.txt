@@ -1,14 +1,14 @@
 --- services ---
 ACTIVITY MANAGER SERVICES (dumpsys activity services)
   User 0 active services:
-  * ServiceRecord{4395465 u0 io.github.mrnodatax.mateengine.debug/org.chromium.content.app.SandboxedProcessService0:0}
+  * ServiceRecord{516978b u0 io.github.mrnodatax.mateengine.debug/org.chromium.content.app.SandboxedProcessService0:0}
     intent={cmp=io.github.mrnodatax.mateengine.debug/org.chromium.content.app.SandboxedProcessService0:0}
     packageName=io.github.mrnodatax.mateengine.debug
     processName=com.google.android.webview:sandboxed_process0:org.chromium.content.app.SandboxedProcessService0:0
-    baseDir=/data/app/~~bRENSo5R1df730x_bU0cSA==/com.google.android.webview-cp5ge2kbTF1C3-66m2Jxfg==/WebViewGoogle.apk
+    baseDir=/data/app/~~iiyh-xeM4sa4eTeguzISQA==/com.google.android.webview-G7oQqSxSrtKNAJ6F3RBS6g==/WebViewGoogle.apk
     dataDir=/data/user/0/com.google.android.webview
-    app=ProcessRecord{e7e4793 6422:com.google.android.webview:sandboxed_process0:org.chromium.content.app.SandboxedProcessService0:0/u0a192i0}
-    isolationHostProc=ProcessRecord{e7e4793 6422:com.google.android.webview:sandboxed_process0:org.chromium.content.app.SandboxedProcessService0:0/u0a192i0}
+    app=ProcessRecord{24915f9 6378:com.google.android.webview:sandboxed_process0:org.chromium.content.app.SandboxedProcessService0:0/u0a192i0}
+    isolationHostProc=ProcessRecord{24915f9 6378:com.google.android.webview:sandboxed_process0:org.chromium.content.app.SandboxedProcessService0:0/u0a192i0}
     mAllowWhileInUsePermissionInFgsReason=PROC_STATE_TOP
     allowUiJobScheduling=false
     recentCallingPackage=io.github.mrnodatax.mateengine.debug
@@ -16,31 +16,31 @@ ACTIVITY MANAGER SERVICES (dumpsys activity services)
     allowStartForeground=PROC_STATE_TOP
     startForegroundCount=0
     infoAllowStartForeground=[callingPackage: io.github.mrnodatax.mateengine.debug; callingUid: 10192; uidState: TOP ; uidBFSL: [BFSL]; intent: Intent { cmp=io.github.mrnodatax.mateengine.debug/org.chromium.content.app.SandboxedProcessService0:0 (has extras) }; code:PROC_STATE_TOP; tempAllowListReason:<null>; targetSdkVersion:34; callerTargetSdkVersion:34; startForegroundCount:0; bindFromPackage:null: isBindService:true]
-    createTime=-8s227ms startingBgTimeout=--
-    lastActivity=-8s0ms restartTime=-8s158ms createdFromFg=true
+    createTime=-8s142ms startingBgTimeout=--
+    lastActivity=-7s862ms restartTime=-8s48ms createdFromFg=true
     Bindings:
-    * IntentBindRecord{b1977d8 CREATE}:
+    * IntentBindRecord{90bb7bf CREATE}:
       intent={cmp=io.github.mrnodatax.mateengine.debug/org.chromium.content.app.SandboxedProcessService0:0}
-      binder=android.os.BinderProxy@56c0731
+      binder=android.os.BinderProxy@8b39e8c
       requested=true received=true hasBound=true doRebind=false
-      * Client AppBindRecord{a162e16 ProcessRecord{6ad0398 6321:io.github.mrnodatax.mateengine.debug/u0a192}}
+      * Client AppBindRecord{b1159d5 ProcessRecord{5def07f 6273:io.github.mrnodatax.mateengine.debug/u0a192}}
         Per-process Connections:
-          ConnectionRecord{a55fcfc u0 CR WPRI io.github.mrnodatax.mateengine.debug/org.chromium.content.app.SandboxedProcessService0:0:@9bbc9ef flags=0x80000021}
-          ConnectionRecord{e9f0171 u0 CR IMP io.github.mrnodatax.mateengine.debug/org.chromium.content.app.SandboxedProcessService0:0:@2ef318 flags=0x80000041}
+          ConnectionRecord{49fe39f u0 CR WPRI io.github.mrnodatax.mateengine.debug/org.chromium.content.app.SandboxedProcessService0:0:@566693e flags=0x80000021}
+          ConnectionRecord{dadb140 u0 CR IMP io.github.mrnodatax.mateengine.debug/org.chromium.content.app.SandboxedProcessService0:0:@af454c3 flags=0x80000041}
     All Connections:
-      ConnectionRecord{e9f0171 u0 CR IMP io.github.mrnodatax.mateengine.debug/org.chromium.content.app.SandboxedProcessService0:0:@2ef318 flags=0x80000041}
-      ConnectionRecord{a55fcfc u0 CR WPRI io.github.mrnodatax.mateengine.debug/org.chromium.content.app.SandboxedProcessService0:0:@9bbc9ef flags=0x80000021}
+      ConnectionRecord{49fe39f u0 CR WPRI io.github.mrnodatax.mateengine.debug/org.chromium.content.app.SandboxedProcessService0:0:@566693e flags=0x80000021}
+      ConnectionRecord{dadb140 u0 CR IMP io.github.mrnodatax.mateengine.debug/org.chromium.content.app.SandboxedProcessService0:0:@af454c3 flags=0x80000041}
 
-  * ServiceRecord{2a11fa2 u0 io.github.mrnodatax.mateengine.debug/io.github.mrnodatax.mateengine.overlay.OverlayService}
+  * ServiceRecord{dab126a u0 io.github.mrnodatax.mateengine.debug/io.github.mrnodatax.mateengine.overlay.OverlayService}
     intent={act=io.github.mrnodatax.mateengine.action.START_OVERLAY cmp=io.github.mrnodatax.mateengine.debug/io.github.mrnodatax.mateengine.overlay.OverlayService}
     packageName=io.github.mrnodatax.mateengine.debug
     processName=io.github.mrnodatax.mateengine.debug
-    baseDir=/data/app/~~x2ybncypgy9O-MQ6XtvK-w==/io.github.mrnodatax.mateengine.debug-k1kKyl9nE3J8lEBb3bVIWw==/base.apk
+    baseDir=/data/app/~~ISgxfxxkoAPbw1sg23wzmw==/io.github.mrnodatax.mateengine.debug-xhnKdUiZ9ZZ6K-4N368lUg==/base.apk
     dataDir=/data/user/0/io.github.mrnodatax.mateengine.debug
-    app=ProcessRecord{6ad0398 6321:io.github.mrnodatax.mateengine.debug/u0a192}
+    app=ProcessRecord{5def07f 6273:io.github.mrnodatax.mateengine.debug/u0a192}
     mAllowWhileInUsePermissionInFgsReason=PROC_STATE_TOP
 --- appops ---
-SYSTEM_ALERT_WINDOW: allow; time=+8s213ms ago (running)
+SYSTEM_ALERT_WINDOW: allow; time=+8s3ms ago (running)
 --- package perms ---
       android.permission.SYSTEM_ALERT_WINDOW
       android.permission.FOREGROUND_SERVICE
@@ -50,5 +50,6 @@ SYSTEM_ALERT_WINDOW: allow; time=+8s213ms ago (running)
       android.permission.FOREGROUND_SERVICE_SPECIAL_USE: granted=true
 --- crash log ---
 --- jejak gerak renderer (5 detik terakhir) ---
-motion {"time":2.12,"locomotion":"idle","sleepiness":0,"lookYaw":0,"bones":15,"react":null}
-motion {"time":3.77,"locomotion":"idle","sleepiness":0,"lookYaw":0.071,"bones":15,"react":null}
+motion {"time":1.63,"locomotion":"idle","sleepiness":0,"lookYaw":0,"bones":15,"react":null}
+motion {"time":3.3,"locomotion":"idle","sleepiness":0,"lookYaw":0.063,"bones":15,"react":null}
+motion {"time":4.95,"locomotion":"idle","sleepiness":0,"lookYaw":0.074,"bones":15,"react":null}
