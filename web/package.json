@@ -8,8 +8,9 @@
     "build": "node build.mjs",
     "test:render": "node test/render-smoke.mjs",
     "test:perf": "node test/perf.test.mjs",
-    "test": "node test/perf.test.mjs && node test/motion.test.mjs",
-    "test:motion": "node test/motion.test.mjs"
+    "test": "node test/perf.test.mjs && node test/motion.test.mjs && node test/vrma.test.mjs",
+    "test:motion": "node test/motion.test.mjs",
+    "test:vrma": "node test/vrma.test.mjs"
   },
   "dependencies": {
     "@pixiv/three-vrm": "3.5.5",

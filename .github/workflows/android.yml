@@ -32,6 +32,9 @@ jobs:
       - name: Uji mesin gerak
         working-directory: web
         run: npm run test:motion
+      - name: Uji berkas klip .vrma
+        working-directory: web
+        run: npm run test:vrma
       - name: Build bundle renderer
         working-directory: web
         run: npm run build

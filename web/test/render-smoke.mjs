@@ -142,9 +142,12 @@ try {
   const silhouetteWidth = pixels.maxX - pixels.minX;
   const silhouetteHeight = pixels.maxY - pixels.minY;
   const widthRatio = silhouetteWidth / silhouetteHeight;
+  // Diag: sertakan error konsol supaya penyebab kanvas kosong terbaca langsung dari anotasi CI.
+  const diag = `opaque ${pixels.opaque}/${pixels.total}, konsol: ${consoleErrors.slice(0, 3).join(' | ') || '-'}`;
+  assert(Number.isFinite(widthRatio), `kanvas kosong (${diag})`);
   assert(
     widthRatio < 0.62,
-    `silhouette terlalu lebar (${widthRatio.toFixed(2)}), kemungkinan avatar masih T-pose`,
+    `silhouette terlalu lebar (${widthRatio.toFixed(2)}), kemungkinan avatar masih T-pose; ${diag}`,
   );
   console.log(`✓ pose rileks: rasio lebar/tinggi silhouette ${widthRatio.toFixed(2)}`);
   assert(pixels.opaque > 5000, `piksel avatar terlalu sedikit (${pixels.opaque})`);

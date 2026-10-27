@@ -6,12 +6,12 @@ Aplikasi membundel **4 klip animasi** yang bukan buatan saya dan bukan milik Mat
 
 | Berkas | Klip asal | Durasi | Ukuran | SHA-256 |
 | --- | --- | --- | --- | --- |
-| `idle_loop.vrma` | `Idle_Loop` | 2,50 s | 36.455 B | `8691c79c0f0250b182360fb207bab95ccbd7728f43e573132cb1f0cb49b2e456` |
-| `idle_talk.vrma` | `Idle_Talking_Loop` | 2,92 s | 41.401 B | `e04712ead5fda928bddf17a884332bcb14cb65fc6501a5d01ebd6bbabeded87a` |
-| `walk_loop.vrma` | `Walk_Loop` | 1,33 s | 22.720 B | `af910e451df2d14be0da3b17ee6f52dce33b9268aa76de0c179bc913b71da0a0` |
-| `dance_loop.vrma` | `Dance_Loop` | 1,00 s | 18.774 B | `71c579941616a463ee7da4972729d649379114a3f786f216782405ad4f0fa1f0` |
+| `idle_loop.vrma` | `Idle_Loop` | 2,50 s | 48.841 B | `c97b6925865f1190fa1df44fea762c4e991839eb1e6f7872b2ca8d0ffd715629` |
+| `idle_talk.vrma` | `Idle_Talking_Loop` | 2,92 s | 53.787 B | `653fdaac802344687afda2c23814ccf8825ca19b8101116b7623041d76342951` |
+| `walk_loop.vrma` | `Walk_Loop` | 1,33 s | 35.106 B | `7676ca13b3a37d17a79ec36cb04f2c319861970525ba83eab0b27d535c60f0aa` |
+| `dance_loop.vrma` | `Dance_Loop` | 1,00 s | 31.160 B | `06ecaf3951acfa84e18e636154e86304235c39f1027f67487eb95204a2597159` |
 
-Total ± 119 KB. Karena kecil, klip ikut di APK sehingga avatar langsung bergerak tanpa impor manual.
+Total ± 165 KB (24 fps). Karena kecil, klip ikut di APK sehingga avatar langsung bergerak tanpa impor manual.
 
 ## Sumber & lisensi
 
@@ -48,18 +48,26 @@ bash scripts/siapkan-klip-cc0.sh          # unduh + konversi ke app/src/main/ass
 Skrip memakai `api.github.com` (Contents API + Blobs API) karena `raw.githubusercontent.com` tidak
 selalu tersedia di lingkungan build. Konversi dilakukan oleh `scripts/glb-ke-vrma.mjs`.
 
-### Kenapa perlu retarget, bukan salin rotasi
+### Format `.vrma` yang benar (pelajaran dari kegagalan CI pertama)
 
-Tulang rig sumber punya orientasi istirahat sendiri. Yang bisa dipindahkan ke VRM adalah
-**perubahan orientasi terhadap pose istirahat** di ruang sejajar dunia:
+Loader `VRMAnimationLoaderPlugin` (three-vrm) **tidak** menerima delta rotasi yang sudah dinormalkan.
+Yang ia harapkan:
 
-```
-delta_world(bone)   = W_anim × W_rest⁻¹
-rotasi_normal(bone) = delta_world(parent)⁻¹ × delta_world(bone)
-```
+1. **hierarki tulang rig sumber beserta transformasi istirahatnya** ikut ditulis di berkas;
+2. track rotasi berisi **rotasi lokal mentah** rig sumber — loader sendiri yang mengubahnya:
 
-`rotasi_normal` adalah bentuk yang dipakai sendi humanoid ternormalisasi VRM, jadi hasilnya bisa
-dipakai model VRM 0.x maupun 1.0.
+   ```
+   rotasi_normal(bone) = W_rest(parent) × L(t) × W_rest(bone)⁻¹
+   ```
+
+3. track translasi **hanya** untuk `hips`, nilainya posisi lokal `hips` (bukan offset);
+4. posisi istirahat `hips` **tidak boleh nol**: loader memakainya sebagai pembagi skala
+   (`tinggiHipsVRM / tinggiHipsAnimasi`). Berkas versi pertama saya menulis node tanpa translasi,
+   sehingga tinggi hips = 0 → skala `Infinity` → avatar lenyap dan uji render gagal dengan
+   `silhouette (NaN)`.
+
+Skrip sekarang menolak (exit non-zero) bila tinggi istirahat hips < 0,2 m, jadi kegagalan yang sama
+tidak bisa lolos lagi.
 
 ## Verifikasi
 
@@ -71,3 +79,8 @@ dipakai model VRM 0.x maupun 1.0.
 3. memutar `idle` dan memastikan rotasi lengan berubah antar-cuplikan (klip benar-benar bergerak).
 
 Bila salah satu gagal, CI merah — bukan sekadar catatan di dokumen.
+
+`web/test/vrma.test.mjs` (`npm run test:vrma`) menguji berkasnya tanpa browser: meniru matematika
+loader, memastikan hierarki + tinggi hips wajar, tidak ada NaN, kuaternion bernorma 1, ayunan hips
+masuk akal, lengan `idle_loop` berada di bawah (50–100° dari T-pose) dan `dance_loop` ≥ 2× lebih
+banyak bergerak daripada idle. Total keempat klip dijaga < 1 MB.
