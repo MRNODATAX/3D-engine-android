@@ -383,6 +383,8 @@ private fun MateEngineApp() {
                                         if (runtime.running) OverlayService.setLocomotion(context, mode)
                                     },
                                     onNextDance = { if (runtime.running) OverlayService.setLocomotion(context, "dance-next") },
+                                    onPlayBuiltin = { name -> if (runtime.running) OverlayService.playBuiltin(context, name) },
+                                    onResetPose = { if (runtime.running) OverlayService.resetPose(context) },
                                 )
                                 Screen.Diagnostics -> DiagnosticsScreen(
                                     snapshot = diagnostics,

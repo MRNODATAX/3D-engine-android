@@ -79,6 +79,11 @@ export function createMotion(options = {}) {
    * Tanpa langkah ini, offset prosedural akan menumpuk setiap frame pada sendi yang tidak
    * dianimasikan klip, dan avatar perlahan melengkung sampai rusak.
    */
+  /** Membuang acuan lama; wajib dipanggil saat animasi berhenti atau avatar diganti. */
+  function clearBase() {
+    base.clear();
+  }
+
   function resetToBase() {
     for (const [key, node] of bones) {
       const q = base.get(key);
@@ -255,6 +260,17 @@ export function createMotion(options = {}) {
       }
     }
 
+    // ---- pagar lengan: di luar mode tari, offset lengan tidak boleh mengangkat tangan.
+    // Batas 0,35 rad (~20°) membuat "tangan stuck di atas" tidak mungkin terjadi karena
+    // lapisan prosedural, apa pun kombinasi keadaan sebelumnya.
+    if (state.locomotion !== 'dance') {
+      for (const key of ['leftUpperArm', 'rightUpperArm', 'leftLowerArm', 'rightLowerArm']) {
+        layers[key].x = clamp(layers[key].x, -0.35, 0.35);
+        layers[key].y = clamp(layers[key].y, -0.35, 0.35);
+        layers[key].z = clamp(layers[key].z, -0.35, 0.35);
+      }
+    }
+
     // ---- terapkan: acuan disimpan dulu, lalu offset kecil ditumpuk
     for (const [key, node] of bones) {
       if (!base.has(key)) base.set(key, node.quaternion.clone());
@@ -272,6 +288,7 @@ export function createMotion(options = {}) {
   return {
     state,
     resetToBase,
+    clearBase,
     update,
     setLocomotion(mode) {
       state.locomotion = LOCOMOTIONS.includes(mode) ? mode : 'idle';

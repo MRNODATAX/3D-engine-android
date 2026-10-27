@@ -36,6 +36,9 @@ const server = http.createServer(async (req, res) => {
     if (url.pathname === '/' || url.pathname === '/index.html') file = path.join(assetsDir, 'index.html');
     else if (url.pathname === '/renderer.js') file = path.join(assetsDir, 'renderer.js');
     else if (url.pathname.startsWith('/fixtures/')) file = path.join(fixtureDir, path.basename(url.pathname));
+    else if (url.pathname.startsWith('/animations/')) {
+      file = path.join(repoRoot, 'app/src/main/assets/animations', path.basename(url.pathname));
+    }
     if (!file) { res.writeHead(404).end('not found'); return; }
     const body = await readFile(file);
     res.writeHead(200, { 'content-type': MIME[path.extname(file)] || 'application/octet-stream', 'content-length': body.length });
@@ -200,6 +203,55 @@ try {
   } else {
     console.log('… fixture .vrma tidak tersedia, uji animasi dilewati');
   }
+
+  // ------------------------------------------------------------------ klip bawaan + pagar lengan
+  const builtin = await page.evaluate(async () => {
+    const list = window.MateEngine.builtinClips();
+    const played = await window.MateEngine.playBuiltin('dance');
+    await new Promise((resolve) => setTimeout(resolve, 1200));
+    const during = window.MateEngine.poseMetrics();
+    window.MateEngine.stopAnimation();
+    await new Promise((resolve) => setTimeout(resolve, 900));
+    const afterStop = window.MateEngine.poseMetrics();
+    window.MateEngine.resetPose();
+    const afterReset = window.MateEngine.poseMetrics();
+    return { list, played, during, afterStop, afterReset };
+  });
+  assert(builtin.list.length >= 4, `klip bawaan kurang: ${builtin.list.length}`);
+  assert(builtin.played === true, 'klip bawaan gagal diputar');
+  console.log(`  klip bawaan: ${builtin.list.map((item) => item.file).join(', ')}`);
+  assert(
+    builtin.during?.hasAction === true,
+    `tidak ada action aktif setelah memutar klip bawaan: ${JSON.stringify(builtin.during)}`,
+  );
+  // Perbaikan H1: setelah animasi dihentikan, tangan harus kembali ke bawah (< 45° dari vertikal).
+  for (const key of ['leftArmDeg', 'rightArmDeg']) {
+    const value = builtin.afterStop?.[key];
+    assert(
+      typeof value === 'number' && value < 45,
+      `tangan tidak kembali setelah animasi berhenti (${key} = ${value}°, ${JSON.stringify(builtin.afterStop)})`,
+    );
+  }
+  console.log(
+    `✓ pose kembali normal setelah animasi berhenti: kiri ${builtin.afterStop.leftArmDeg}°, kanan ${builtin.afterStop.rightArmDeg}°`,
+  );
+
+  // Idle bawaan harus membuat sendi bergerak: bandingkan metrik dua waktu berbeda.
+  const idleMotion = await page.evaluate(async () => {
+    window.MateEngine.playBuiltin('idle');
+    const samples = [];
+    for (let i = 0; i < 6; i += 1) {
+      await new Promise((resolve) => setTimeout(resolve, 350));
+      samples.push(window.MateEngine.debugPose());
+    }
+    return samples;
+  });
+  const deltas = idleMotion
+    .slice(1)
+    .map((sample, index) => Math.abs((sample.leftUpperArmZ ?? 0) - (idleMotion[index].leftUpperArmZ ?? 0)));
+  const moved = Math.max(...deltas);
+  assert(moved > 0.001, `klip idle tidak mengubah pose lengan (delta ${moved})`);
+  console.log(`✓ klip idle menggerakkan lengan (delta maksimum ${moved.toFixed(4)} rad)`);
 
   assert(consoleErrors.length === 0, `error konsol: ${consoleErrors.slice(0, 3).join(' | ')}`);
   console.log('✓ tanpa error konsol');

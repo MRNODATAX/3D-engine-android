@@ -55,6 +55,8 @@ fun AnimationScreen(
     onSpeedChange: (Int) -> Unit,
     onLocomotionChange: (String) -> Unit,
     onNextDance: () -> Unit,
+    onPlayBuiltin: (String) -> Unit,
+    onResetPose: () -> Unit,
 ) {
     BoxWithConstraints(Modifier.fillMaxWidth()) {
         val wide = maxWidth >= 600.dp
@@ -98,6 +100,45 @@ fun AnimationScreen(
                                 Text(if (importing) "Mengimpor…" else T.importVrma, modifier = Modifier.padding(start = 8.dp))
                             }
                         }
+                    }
+
+                    SectionCard {
+                        Text(
+                            "Gerak bawaan (CC0)",
+                            style = MaterialTheme.typography.titleSmall,
+                            fontWeight = FontWeight.SemiBold,
+                        )
+                        Text(
+                            "Empat klip animasi asli dari Universal Animation Library (lisensi CC0), " +
+                                "dikonversi ke .vrma oleh skrip di repo. Tidak perlu impor.",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                            listOf(
+                                "idle" to "Diam",
+                                "talk" to "Bicara",
+                                "walk" to "Jalan",
+                                "dance" to "Menari",
+                            ).forEach { (value, label) ->
+                                OutlinedButton(
+                                    onClick = { onPlayBuiltin(value) },
+                                    enabled = runtime.running,
+                                ) { Text(label) }
+                            }
+                        }
+                        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                            OutlinedButton(onClick = onResetPose, enabled = runtime.running) {
+                                Text("Perbaiki pose")
+                            }
+                            OutlinedButton(onClick = onStop, enabled = runtime.running) {
+                                Text("Berhenti bergerak")
+                            }
+                        }
+                        InfoNote(
+                            "Bila tangan sempat terangkat setelah animasi berhenti, tombol " +
+                                "\"Perbaiki pose\" mengembalikannya ke posisi rileks.",
+                        )
                     }
 
                     SectionCard {

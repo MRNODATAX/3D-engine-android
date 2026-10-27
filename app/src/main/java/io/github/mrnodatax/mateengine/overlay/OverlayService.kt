@@ -117,6 +117,11 @@ class OverlayService : Service() {
             ACTION_STOP_SPEAKING -> evaluate("window.MateEngine.stopTalking()")
             ACTION_TRIM_MEMORY -> trimMemory(forced = true)
             ACTION_LOCOMOTION -> applyLocomotion(intent?.getStringExtra(EXTRA_LOCOMOTION))
+            ACTION_PLAY_BUILTIN -> evaluate("window.MateEngine.playBuiltin(${JSONObject.quote(intent?.getStringExtra(EXTRA_BUILTIN) ?: "idle")})")
+            ACTION_RESET_POSE -> {
+                evaluate("window.MateEngine.resetPose()")
+                Log.i(TAG, "pose avatar direset ke pose rileks")
+            }
             ACTION_SPEECH_ENVELOPE -> {
                 val levels = intent?.getFloatArrayExtra(EXTRA_ENVELOPE) ?: FloatArray(0)
                 val duration = intent?.getIntExtra(EXTRA_SPEECH_MS, 2000) ?: 2000
@@ -737,6 +742,9 @@ class OverlayService : Service() {
         const val ACTION_STOP_SPEAKING = "io.github.mrnodatax.mateengine.action.STOP_SPEAKING"
         const val ACTION_TRIM_MEMORY = "io.github.mrnodatax.mateengine.action.TRIM_MEMORY"
         const val ACTION_LOCOMOTION = "io.github.mrnodatax.mateengine.action.SET_LOCOMOTION"
+        const val ACTION_PLAY_BUILTIN = "io.github.mrnodatax.mateengine.action.PLAY_BUILTIN"
+        const val EXTRA_BUILTIN = "builtin_clip"
+        const val ACTION_RESET_POSE = "io.github.mrnodatax.mateengine.action.RESET_POSE"
         const val EXTRA_LOCOMOTION = "locomotion"
         const val EXTRA_ANIMATION_ID = "animation_id"
         const val EXTRA_SPEECH_TEXT = "speech_text"
@@ -804,6 +812,20 @@ class OverlayService : Service() {
         fun stopSpeaking(context: Context) {
             if (!OverlayRuntime.state.value.running) return
             context.startService(Intent(context, OverlayService::class.java).setAction(ACTION_STOP_SPEAKING))
+        }
+
+        fun playBuiltin(context: Context, name: String) {
+            if (!OverlayRuntime.state.value.running) return
+            context.startService(
+                Intent(context, OverlayService::class.java)
+                    .setAction(ACTION_PLAY_BUILTIN)
+                    .putExtra(EXTRA_BUILTIN, name),
+            )
+        }
+
+        fun resetPose(context: Context) {
+            if (!OverlayRuntime.state.value.running) return
+            context.startService(Intent(context, OverlayService::class.java).setAction(ACTION_RESET_POSE))
         }
 
         fun setLocomotion(context: Context, mode: String) {

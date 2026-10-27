@@ -57,6 +57,7 @@ const state = {
   talkSeed: 0,
   motion: createMotion(),
   interacted: false,
+  builtinClip: null,
   speech: null,
   animationName: null,
   loop: true,
@@ -251,9 +252,12 @@ async function loadAvatar(url) {
     state.ready = true;
     state.idleTime = 0;
     state.restPose = captureRestPose(vrm);
+    state.motion.clearBase();
     state.poseBlend = 1;
     applyRelaxedPose(vrm, 1, state.restPose);
     post('avatar-ready', { info: state.avatarInfo });
+    // Idle bawaan (CC0) supaya avatar tidak diam seperti patung saat pertama muncul.
+    playBuiltin('idle').catch(() => {});
   } catch (error) {
     fail('load-failed', `Gagal memuat avatar: ${error?.message || error}`, true);
   }
@@ -283,11 +287,48 @@ async function loadAnimation(url, name, options = {}) {
     }
     action.reset().fadeIn(0.25).play();
     state.currentAction = action;
+    state.motion.clearBase();
     state.animationName = name || null;
     post('animation-playing', { name: name || null, duration: clip.duration });
   } catch (error) {
     fail('animation-failed', `Gagal memuat animasi: ${error?.message || error}`, false);
   }
+}
+
+/**
+ * Menghentikan animasi dan **membuang pose terakhirnya**.
+ *
+ * Tanpa ini, quaternion frame terakhir klip tersimpan sebagai acuan gerak prosedural dan avatar
+ * berhenti dengan tangan terangkat (mis. setelah klip melambai). Lihat docs/rencana-gerak-v2.md §2.
+ */
+/**
+ * Klip bawaan dari paket CC0 Quaternius (lihat docs/aset-gerak.md), dikonversi ke .vrma oleh
+ * scripts/glb-ke-vrma.mjs dan dibundel di assets/animations.
+ */
+const BUILTIN_CLIPS = {
+  idle: 'idle_loop',
+  talk: 'idle_talk',
+  walk: 'walk_loop',
+  dance: 'dance_loop',
+};
+
+function builtinUrl(name) {
+  // index.html berada di /assets/renderer/, animasi di /assets/animations/.
+  return new URL(`../animations/${name}.vrma`, window.location.href).href;
+}
+
+async function playBuiltin(name, options = {}) {
+  if (!state.vrm || !state.mixer) {
+    fail('no-avatar', 'Pilih avatar sebelum memutar animasi.', false);
+    return false;
+  }
+  const file = BUILTIN_CLIPS[name] || (name in BUILTIN_CLIPS ? BUILTIN_CLIPS[name] : null);
+  const clipName = typeof name === 'string' && !(name in BUILTIN_CLIPS) ? name : file;
+  if (!clipName) return false;
+  if (state.builtinClip === clipName && state.currentAction) return true;
+  state.builtinClip = clipName;
+  await loadAnimation(builtinUrl(clipName), clipName, { loop: options.loop !== false });
+  return true;
 }
 
 function stopAnimation() {
@@ -297,6 +338,12 @@ function stopAnimation() {
   }
   if (state.mixer) state.mixer.stopAllAction();
   state.animationName = null;
+  state.builtinClip = null;
+  state.motion.clearBase();
+  if (state.vrm) {
+    applyRelaxedPose(state.vrm, 1, state.restPose);
+    state.vrm.update(0);
+  }
   post('animation-stopped');
 }
 
@@ -500,11 +547,15 @@ window.MateEngine = {
   setLocomotion: (mode) => {
     const applied = state.motion.setLocomotion(mode);
     post('locomotion', { mode: applied });
+    // Klip CC0 dimainkan bila tersedia; gerak prosedural tetap jadi lapisan tambahan.
+    const clip = applied === 'walk' ? 'walk' : applied === 'dance' ? 'dance' : 'idle';
+    playBuiltin(clip).catch(() => {});
     return applied;
   },
   nextDance: () => {
     const variant = state.motion.nextDance();
     post('locomotion', { mode: 'dance', variant });
+    playBuiltin('dance').catch(() => {});
     return variant;
   },
   setReducedMotion: (value) => {
@@ -538,6 +589,56 @@ window.MateEngine = {
     post('reaction', { type });
   },
   motionDebug: () => state.motion.debug(),
+  /**
+   * Sudut lengan terukur dari geometri, bukan dari tanda rotasi: dipakai uji regresi untuk
+   * memastikan tangan tidak "stuck di atas".
+   */
+  poseMetrics: () => {
+    const humanoid = state.vrm?.humanoid;
+    if (!humanoid) return null;
+    const hips = humanoid.getNormalizedBoneNode('hips');
+    const measure = (upperArm, lowerArm) => {
+      const upper = humanoid.getNormalizedBoneNode(upperArm);
+      const lower = humanoid.getNormalizedBoneNode(lowerArm);
+      if (!upper || !lower) return null;
+      const from = new THREE.Vector3();
+      const to = new THREE.Vector3();
+      upper.getWorldPosition(from);
+      lower.getWorldPosition(to);
+      const direction = to.sub(from).normalize();
+      // Sudut terhadap "bawah" (0° = lengan menggantung, 180° = lengan lurus ke atas).
+      const down = new THREE.Vector3(0, -1, 0);
+      if (hips) {
+        const hipsWorld = new THREE.Quaternion();
+        hips.getWorldQuaternion(hipsWorld);
+        down.applyQuaternion(hipsWorld).normalize();
+      }
+      const dot = Math.max(-1, Math.min(1, direction.dot(down)));
+      return Number(((Math.acos(dot) * 180) / Math.PI).toFixed(1));
+    };
+    return {
+      leftArmDeg: measure('leftUpperArm', 'leftLowerArm'),
+      rightArmDeg: measure('rightUpperArm', 'rightLowerArm'),
+      locomotion: state.motion?.state?.locomotion ?? null,
+      animationName: state.animationName,
+      builtinClip: state.builtinClip,
+      hasAction: Boolean(state.currentAction),
+      baseBones: state.motion?.debug?.().bones ?? 0,
+    };
+  },
+  resetPose: () => {
+    stopAnimation();
+    state.motion.clearBase();
+    if (state.vrm) {
+      applyRelaxedPose(state.vrm, 1, state.restPose);
+      state.vrm.update(0);
+    }
+    const metrics = window.MateEngine.poseMetrics?.();
+    post('pose-reset', metrics || {});
+    return metrics;
+  },
+  playBuiltin: (name) => playBuiltin(name),
+  builtinClips: () => Object.entries(BUILTIN_CLIPS).map(([key, file]) => ({ key, file })),
   /**
    * levels: array amplitudo 0..1 (satu nilai per ~50 ms), durationMs: durasi audio.
    * Dipakai OverlayService setelah Gemini TTS menghasilkan WAV.
