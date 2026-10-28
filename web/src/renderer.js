@@ -477,7 +477,10 @@ async function loadAvatar(url) {
     vrm.scene.traverse((object) => {
       object.frustumCulled = false;
       if (object.isMesh && object.material) {
-        object.material.side = THREE.FrontSide;
+        // Jangan paksa `side`: mesh outline VRM justru wajib BackSide (kulit terbalik). Dulu
+        // semua mesh dipaksa FrontSide dan bagian tubuh yang memakai outline menghilang —
+        // di emulator hanya sepatu dan kaki yang tersisa.
+        if (object.material.side === undefined) object.material.side = THREE.FrontSide;
         // Hitung mesh yang benar-benar masuk pipeline gambar. `visible` bisa saja true
         // sementara shader gagal atau mesh terpotong; angka ini memisahkan keduanya.
         object.onBeforeRender = () => {
