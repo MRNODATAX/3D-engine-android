@@ -34,6 +34,17 @@ object MateTokens {
     const val OutlineDark = 0xFF5A6C72
     const val OutlineVariantDark = 0xFF3A464C
 
+    // --- dipakai menu cepat overlay (View biasa, di luar MaterialTheme) ---
+    const val PrimaryContainer = 0xFF9FF2EA
+    const val OnPrimaryContainer = 0xFF00423F
+    const val PrimaryContainerDark = 0xFF114A46
+    const val OnPrimaryContainerDark = 0xFFC9FBF5
+    const val AccentInk = 0xFFEAFFFD
+    const val AccentInkDark = 0xFF00312E
+    const val Bubble = 0xFFE7F2F0
+    const val BubbleDark = 0xFF1F262A
+    const val ErrorDark = 0xFFF09086
+
     const val Success = 0xFF1F7A4D
     const val SuccessContainer = 0xFFE6F4EC
     const val Warning = 0xFF8A5A00

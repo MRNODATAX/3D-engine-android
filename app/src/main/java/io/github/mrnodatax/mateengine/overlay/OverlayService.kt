@@ -23,7 +23,6 @@ import android.view.View
 import android.view.WindowManager
 import android.webkit.WebResourceRequest
 import io.github.mrnodatax.mateengine.chat.ChatController
-import io.github.mrnodatax.mateengine.ui.theme.MateEngineTheme
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -77,7 +76,7 @@ class OverlayService : Service() {
     private val voicePack by lazy { VoicePack(this) }
 
     // ---- menu cepat (avatar diketuk 3×) ----
-    private var menuView: QuickMenuHost? = null
+    private var menuView: QuickMenuView? = null
     private var menuParams: WindowManager.LayoutParams? = null
     private var menuController: QuickMenuController? = null
     private var menuChatJob: Job? = null
@@ -554,7 +553,10 @@ class OverlayService : Service() {
         controller.hasApiKey = chatController.ui.value.hasApiKey
         controller.screen = screen
 
-        if (menuView == null) buildMenuWindow(controller) else updateMenuPosition()
+        if (menuView == null) buildMenuWindow(controller) else {
+            menuView?.render()
+            updateMenuPosition()
+        }
         setMenuFocusable(screen == QuickMenuScreen.CHAT)
         if (screen == QuickMenuScreen.CHAT) observeChat(controller)
         Log.i(TAG, "menu cepat dibuka: ${screen.name.lowercase()}")
@@ -576,12 +578,8 @@ class OverlayService : Service() {
             },
         )
 
-        val host = QuickMenuHost(this) { hideQuickMenu() }
-        host.setContent {
-            MateEngineTheme {
-                QuickMenuPanel(controller, callbacks)
-            }
-        }
+        val host = QuickMenuView(this, controller, callbacks)
+        host.render()
 
         val layoutParams = WindowManager.LayoutParams(
             WindowManager.LayoutParams.WRAP_CONTENT,
@@ -663,7 +661,6 @@ class OverlayService : Service() {
         menuView = null
         menuParams = null
         runCatching { windowManager.removeView(host) }
-        host.destroy()
     }
 
     private fun performMenuAction(controller: QuickMenuController, action: QuickMenuAction) {
@@ -672,12 +669,14 @@ class OverlayService : Service() {
                 controller.activeClip = OverlayRuntime.state.value.clipName
                 controller.screen = QuickMenuScreen.CLIPS
                 setMenuFocusable(false)
+                menuView?.render()
                 menuView?.post { updateMenuPosition() }
             }
             QuickMenuAction.CHAT -> {
                 controller.screen = QuickMenuScreen.CHAT
                 setMenuFocusable(true)
                 observeChat(controller)
+                menuView?.render()
                 menuView?.post { updateMenuPosition() }
                 chatController.refresh()
             }
@@ -686,6 +685,7 @@ class OverlayService : Service() {
                 evaluate("window.MateEngine.setSeated($seated)")
                 controller.seated = seated
                 OverlayRuntime.update { it.copy(seated = seated) }
+                menuView?.render()
                 Log.i(TAG, "menu cepat: duduk=$seated")
             }
             QuickMenuAction.SETTINGS -> {
@@ -703,6 +703,8 @@ class OverlayService : Service() {
             return
         }
         controller.error = null
+        controller.sending = true
+        menuView?.setBusy(true)
         chatController.send(text, serviceScope)
         Log.i(TAG, "menu cepat: pesan chat dikirim (${text.length} karakter)")
     }
@@ -716,6 +718,8 @@ class OverlayService : Service() {
                 controller.sending = ui.sending
                 controller.error = ui.error
                 controller.showMessages(ui.messages)
+                menuView?.render()
+                menuView?.post { updateMenuPosition() }
             }
         }
     }

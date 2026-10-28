@@ -97,9 +97,6 @@ dependencies {
     implementation("androidx.compose.material3:material3")
     implementation("androidx.compose.material:material-icons-core")
     implementation("androidx.webkit:webkit:1.11.0")
-    // Compose di dalam Service (menu 3× ketuk) butuh owner ini dipasang manual.
-    implementation("androidx.savedstate:savedstate-ktx:1.2.1")
-    implementation("androidx.lifecycle:lifecycle-viewmodel-savedstate:2.8.2")
 
     debugImplementation("androidx.compose.ui:ui-tooling")
 
