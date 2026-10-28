@@ -270,6 +270,28 @@
     </figure>
 
     <figure class="shot" data-kind="overlay" data-orientation="portrait">
+      <div class="frame"><img src="screenshots/19-overlay-duduk.png" alt="Avatar duduk di overlay; seluruh tubuh termasuk sepatu terlihat, tidak terpotong tepi kanvas."></div>
+      <figcaption>
+        <span class="tag">Duduk · kaki terlihat</span>
+        <h2>Kaki tidak lagi hilang saat duduk</h2>
+        <p>Geseran kamera tetap saat duduk sudah dihapus; bingkai kini mengikuti kerangka. Renderer juga mengirim
+        angka celah tubuh ke setiap tepi kanvas, dan CI menolak build bila celah ≤ 1 px. Pada gambar ini
+        <code>bodyGap</code> = atas 109 px, bawah 111 px (bukan 0 px).</p>
+      </figcaption>
+    </figure>
+
+    <figure class="shot" data-kind="overlay" data-orientation="portrait">
+      <div class="frame"><img src="screenshots/20-overlay-geser-pojok.png" alt="Avatar yang sama setelah digeser dengan swipe ke arah kiri-atas, sekarang berada jauh dari posisi awalnya."></div>
+      <figcaption>
+        <span class="tag">Geser bebas</span>
+        <h2>Digeser ke mana saja di layar</h2>
+        <p>Swipe sungguhan dari tengah layar memindahkan avatar ke kiri-atas. Jendela overlay boleh keluar tepi layar
+        (selama 62% masih terlihat), jadi avatar skala 100% pun bisa dipindah — bukan lagi terkurung kotak 1,9:1.
+        Logcat mencatat <code>overlay digeser ke (-327, -602)</code>, posisi negatif yang dulu mustahil.</p>
+      </figcaption>
+    </figure>
+
+    <figure class="shot" data-kind="overlay" data-orientation="portrait">
       <div class="frame"><img src="screenshots/18-menu-3x-ketuk.png" alt="Panel menu cepat terbuka setelah avatar diketuk tiga kali di layar emulator."></div>
       <figcaption>
         <span class="tag">Menu · 3× ketuk</span>

@@ -197,9 +197,10 @@ jobs:
 
           Status fitur (lihat docs/android-parity.md di repositori):
           - Sudah ada: impor VRM, overlay transparan + drag/skala 25-100%/cubit dua jari,
-            opasitas, batas FPS, kunci posisi, render VRM 1.0/0.x, pemutar .vrma,
+            opasitas, batas FPS, kunci posisi (geser), render VRM 1.0/0.x, pemutar .vrma,
             diagnosa perangkat, chat Gemini dengan persona, Gemini TTS + lip-sync,
-            14 klip animasi CC0, direktur perilaku (avatar bergerak sendiri sesuai suasana),
+            29 klip animasi CC0 (gerak acak + gestur sekali-jalan), direktur perilaku
+            (avatar bergerak sendiri sesuai suasana),
             duduk di tepi layar, ayunan badan saat avatar digeser, headpat (mata menutup),
             menu cepat 3× ketuk (Gerak, balon Chat AI, Duduk/Berdiri, Setelan) — panel View biasa
             di jendela overlay sendiri, bukan Compose,
@@ -207,7 +208,8 @@ jobs:
           - Belum ada: duduk di jendela aplikasi lain/taskbar desktop, screenshot transparan,
             timer, Workshop, food system, head tracking kamera.
 
-          Batasan: overlay Android berbentuk persegi (tidak ada click-through per piksel);
+          Batasan: overlay Android berbentuk persegi — area kosong di sekitar avatar selalu
+          menahan sentuhan (tidak ada click-through per piksel, sesuai permintaan produk);
           service dapat dihentikan sistem bila optimasi baterai tidak dikecualikan.
           Model uji yang disertakan berlisensi redistribusi (pixiv Inc.), bukan avatar produk.
           NOTES

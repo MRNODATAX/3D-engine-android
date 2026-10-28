@@ -19,7 +19,7 @@ Arti label:
 | Opasitas avatar | **Diport** | Slider 30–100% (alpha window) |
 | Batas FPS | **Diport** | 15/30/45/60 |
 | FPS terukur | **Diport** | Angka berasal dari renderer, ditampilkan setelah benar-benar ada |
-| Idle animation | **Diport sebagian** | 14 klip CC0 (`.vrma`) + direktur perilaku yang memilih sendiri aksi idle; bukan salinan set animasi idle desktop |
+| Idle animation | **Diport sebagian** | 29 klip CC0 (`.vrma`) + direktur perilaku yang memilih sendiri aksi idle; bukan salinan set animasi idle desktop |
 | Dance/animation player | **Diport sebagian** | Impor `.vrma`, putar/berhenti, loop, kecepatan, rantai klip (`sitting_enter → sitting_idle`). Belum ada audio/musik |
 | Shuffle | **Diport sebagian** | Opsi tersimpan; pemilihan acak otomatis oleh renderer belum dijalankan |
 | Window/taskbar sitting | **Diport sebagian** | Duduk di **tepi layar** (`sitting_idle`/`sitting_talk`, kamera digeser 0,34 × tinggi). Duduk di jendela aplikasi lain belum ada |

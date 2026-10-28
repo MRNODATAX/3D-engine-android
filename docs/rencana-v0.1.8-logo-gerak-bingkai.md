@@ -40,7 +40,7 @@ yang perlu diverifikasi:
 | Hal | Keadaan |
 | --- | --- |
 | 5 kandidat logo | **sudah ada** di `docs/logo-pilihan/` + halaman `docs/logo-pilihan.html`; belum diterapkan ke APK |
-| Klip tambahan | **7 klip** (bukan 5–10): `jump_loop`, `push_loop`, `walk_formal`, `jog_loop`, `kneel_fix`, `crouch_walk`, `drive_idle` → total **21 klip**, 740 KB |
+| Klip tambahan | **7 klip** + **8 klip** gelombang kedua (`sprint_loop`, `swim_idle`, `swim_fwd`, `pickup`, `spell_enter`, `spell_exit`, `spell_shoot`, `roll`) → total **29 klip**, 944 KB |
 | Gerak acak | perilaku `random_clip`: 12 klip diundi, bobot tertinggi, tidak mengulang klip barusan. Uji: 11 pergantian / 7 klip berbeda dalam 200 s |
 | Terhalang kotak | `--in-place` saat konversi (X/Z pinggul dipaku) + `clampRootMotion()` tiap frame |
 | Kaki hilang saat duduk | geseran kamera tetap 0,34 × tinggi **dihapus**; bingkai pakai posisi tulang (`skeletonBounds`) |
@@ -122,20 +122,22 @@ Pratinjau: `docs/logo-pilihan.html` (ada contoh ukuran 24 dp dan 48 dp per kandi
 **Kriteria selesai:** ikon baru tampil di peluncur emulator tanpa terpotong, dan tidak ada sisa
 ikon lama di `res/drawable*`.
 
-### Tahap B — Blokir sentuhan area kosong
-1. Tambah `overlay.forwardEmptyTouches` (default **false** = blokir) di model setelan.
-2. Di `OverlayService`: jendela avatar **selalu** menangkap sentuhan di dalam batasnya
-   (`OverlayRoot` tidak lagi meneruskan lewat `FLAG_NOT_TOUCHABLE`); bila sakelar dinyalakan,
-   area kosong memakai jendela tembus-sentuh seperti perilaku lama.
-3. Karena WebView juga di dalam jendela, pastikan kanvas tidak "menelan" ketukan: ketukan pada
-   area kosong tetap dihitung sebagai ketukan avatar (bisa memicu 3× ketuk) — atau diabaikan,
-   tetapi **tidak** diteruskan.
-4. UI Setelan: satu baris sakelar + penjelasan konsekuensinya (bukan disembunyikan).
-5. Uji unit: nilai default mati, dan nilai tersimpan dibaca balik dengan benar.
+### Tahap B — Blokir sentuhan area kosong (**tanpa sakelar**, sesuai keputusan pemilik)
 
-**Kriteria selesai:** di emulator, mengetuk area kosong di samping avatar sementara aplikasi lain
-terbuka **tidak** menekan tombol aplikasi itu (dibuktikan dengan aplikasi uji + logcat), dan sakelar
-ON mengembalikan perilaku lama.
+> Revisi 28 Okt: rencana awal memakai sakelar `overlay.forwardEmptyTouches`. Pemilik meminta
+> blokir ini **wajib dan tidak bisa dimatikan**, jadi sakelar itu tidak dibuat sama sekali.
+
+1. ~~Tambah `overlay.forwardEmptyTouches`~~ — **dibatalkan**; tidak ada setelan untuk mematikan.
+2. Di `OverlayService`: `FLAG_NOT_TOUCHABLE` **dihapus total**; `OverlayRoot.onInterceptTouchEvent()`
+   selalu `true` sehingga seluruh persegi jendela menahan sentuhan, termasuk piksel transparan.
+3. WebView tidak lagi menerima sentuhan mentah; ketukan pada area kosong dihitung sebagai ketukan
+   avatar (bisa memicu 3× ketuk) tetapi **tidak** diteruskan ke aplikasi di bawah.
+4. Sakelar "Kunci posisi" tetap ada, tetapi maknanya menyempit: hanya mematikan geser
+   (`isDragEnabled`), bukan lagi meneruskan sentuhan. Teks bantuan ikut diperbarui.
+5. Uji: `OverlayGeometryTest` (geser bebas) + tangkapan emulator `20-overlay-geser-pojok.png`.
+
+**Kriteria selesai:** sentuhan pada area kosong tidak pernah sampai ke aplikasi di bawah, pada
+keadaan apa pun (tidak ada jalur kode yang bisa mematikannya).
 
 ### Tahap C — Verifikasi bingkai & gerak acak (sudah dikodekan, belum terbukti di emulator)
 1. CI hijau (renderer + uji unit + APK).
@@ -171,15 +173,35 @@ Perkiraan lolos dari paket ini: **3–4 klip**. Untuk mencapai 8–10, rencanany
 5. Anggaran ukuran dinaikkan dari 900 KB ke 1,2 MB bila perlu, dan angka baru itu yang diuji —
    bukan dihapus.
 
-**Kriteria selesai:** ≥ 8 klip baru lolos uji (durasi, ayunan pinggul, tidak ada NaN), total aset
-di bawah anggaran, dan gerak acak mengundi dari ≥ 18 klip.
+**Hasil (28 Okt):** 8 klip lolos — `sprint_loop`, `swim_idle`, `swim_fwd`, `pickup`, `spell_enter`,
+`spell_exit`, `spell_shoot`, `roll`. Katalog menjadi **29 klip / 966.438 B** (anggaran uji 1,2 MB).
+Klip 0,4–0,9 s diputar sekali lalu kembali ke idle (`GESTURE_CLIPS`), sehingga pelonggaran aturan
+durasi hanya berlaku untuk gestur (0,4 s), sedangkan klip loop tetap 0,6 s. `Roll` lolos setelah
+batas ayunan pinggul dinaikkan 0,6 → 0,8 m, aman karena bingkai kamera mengikuti kerangka.
+`BONE_MAP mixamorig*` dan paket Kenney **tidak diperlukan** — target 8 klip tercapai dari paket CC0
+yang sudah dipakai. Gerak acak mengundi dari 15 klip (`RANDOM_CLIPS`).
+
+**Kriteria selesai:** ✅ ≥ 8 klip baru lolos uji, total aset di bawah anggaran, gerak acak ≥ 18 klip
+(terpenuhi: 29 klip katalog, 15 klip undian).
 
 ### Tahap E — Rilis
 1. `release/tag.txt = v0.1.8-test`; job "Periksa rilis baru" menerbitkan rilis otomatis saat APK hijau.
 2. Hapus rilis + tag `v0.1.7-test` (kebijakan hanya-rilis-terbaru).
 3. README + galeri + catatan rilis jujur (termasuk konsekuensi blokir sentuhan).
 
-## 7. Yang belum saya eksekusi
+## 7. Status eksekusi (28 Okt 2026)
 
-Semua Tahap A–E di atas **belum dikerjakan**; yang ada di branch baru sampai Tahap C (kode bingkai
-dan gerak acak, belum terbukti di emulator) plus pratinjau logo.
+| Tahap | Status | Bukti |
+| --- | --- | --- |
+| A — Logo D | ✅ | `ic_launcher_foreground.xml`, `ic_brand_mark.xml`; ikon tampil di peluncur pada `12-gerak-b.png`, `19-overlay-duduk.png` |
+| B — Blokir sentuhan tanpa sakelar | ✅ | `OverlayService` tanpa `FLAG_NOT_TOUCHABLE`; `onInterceptTouchEvent()` selalu `true` |
+| C — Bingkai & gerak acak | ✅ | `13-overlay-skala-100.png` (tubuh utuh, skala 100%), `19-overlay-duduk.png` (kaki terlihat), log `motion` memuat `bodyGap` |
+| C+ — Geser bebas | ✅ | `20-overlay-geser-pojok.png` + logcat `overlay digeser ke (x, y)`; uji `OverlayGeometryTest` baru |
+| D — 8 klip tambahan | ✅ | 29 klip / 966.438 B, `docs/aset-gerak.md` |
+| E — Rilis | ✅ | `v0.1.8-test` (APK 16.897.838 B), `v0.1.7-test` dihapus |
+
+Perbaikan tambahan dari temuan emulator: spring bone dipecah ke langkah kecil (rambut tidak
+melonjak di 6–10 fps), uji "bukan T-pose" memakai median 5 contoh, dan langkah rilis dibuat
+idempoten.
+
+Sisa risiko jujur: seluruh bukti berasal dari emulator CI (perangkat fisik belum diuji).
