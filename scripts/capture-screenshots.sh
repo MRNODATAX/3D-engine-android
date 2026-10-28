@@ -386,8 +386,16 @@ adb exec-out screencap -p > "$OUT/07-beranda-saat-overlay.png"
 echo "== tersimpan $OUT/07-beranda-saat-overlay.png"
 
 # Katalog saat overlay berjalan: kartu klip yang sedang diputar harus bertanda "Diputar".
-adb shell am start -n "$ACTIVITY" --es screen animation >/dev/null
-sleep 4
+# Service dijalankan ulang tanpa `open_menu` supaya panel 3× ketuk dari uji sebelumnya tidak
+# menutupi layar (panel itu tetap terbuka selama service hidup).
+adb shell am force-stop "$PKG" || true
+adb shell am start -W -n "$ACTIVITY" --ez seed_sample true --ez start_overlay true \
+  --es screen animation >/dev/null
+for i in $(seq 1 12); do
+  sleep 5
+  if adb logcat -d | grep -q "MateEngineRender.*avatar-ready"; then break; fi
+done
+sleep 3
 adb shell input swipe 540 1750 540 700 300
 sleep 1
 adb shell input swipe 540 1750 540 950 300
@@ -395,14 +403,20 @@ sleep 2
 adb exec-out screencap -p > "$OUT/22-animasi-diputar.png"
 echo "== tersimpan $OUT/22-animasi-diputar.png (klip aktif ditandai)"
 
-# Ukuran teks besar (aksesibilitas): tidak boleh ada teks terpotong di header/kartu.
+# Ukuran teks besar (aksesibilitas): tata letak harus tetap utuh. Overlay dimatikan agar yang
+# dinilai benar-benar tata letak aplikasi, bukan avatar yang menutupinya.
+adb shell am force-stop "$PKG" || true
 adb shell settings put system font_scale 1.3
 sleep 2
-adb shell am start -n "$ACTIVITY" --es screen home >/dev/null
-sleep 4
+adb shell am start -W -n "$ACTIVITY" --es screen home >/dev/null
+sleep 5
 adb exec-out screencap -p > "$OUT/23-teks-besar.png"
-echo "== tersimpan $OUT/23-teks-besar.png (font_scale 1,3)"
+adb shell am start -n "$ACTIVITY" --es screen animation >/dev/null
+sleep 3
+adb exec-out screencap -p > "$OUT/24-teks-besar-animasi.png"
+echo "== tersimpan 23-teks-besar.png & 24-teks-besar-animasi.png (font_scale 1,3)"
 adb shell settings put system font_scale 1.0
+sleep 1
 
 adb shell am start -n "$ACTIVITY" --es screen diagnostics >/dev/null
 sleep 5
