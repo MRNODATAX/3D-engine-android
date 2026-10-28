@@ -218,14 +218,16 @@ private fun StatusCard(
                     .clip(RoundedCornerShape(MateRadius.EXTRA_LARGE.dp)),
                 contentAlignment = Alignment.Center,
             ) {
-                if (previewFailed) {
-                    Icon(
-                        painter = painterResource(R.drawable.ic_brand_mark),
-                        contentDescription = null,
-                        tint = MaterialTheme.colorScheme.primary,
-                        modifier = Modifier.size(72.dp),
-                    )
-                } else {
+                // Monogram selalu digambar lebih dulu sebagai lapisan dasar: kalau WebView belum
+                // siap (atau GPU menolak konteks kedua), kartu tetap berisi — tidak pernah kotak
+                // kosong. Pratinjau hidup ditumpuk di atasnya.
+                Icon(
+                    painter = painterResource(R.drawable.ic_brand_mark),
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.primary.copy(alpha = if (previewFailed) 1f else 0.18f),
+                    modifier = Modifier.size(96.dp),
+                )
+                if (!previewFailed) {
                     AvatarPreview(
                         asset = state.selectedAvatar,
                         modifier = Modifier.fillMaxSize(),

@@ -1100,7 +1100,9 @@ async function boot() {
       // tidak berebut GPU dengan overlay yang mungkin sedang berjalan.
       state.targetFps = 15;
       state.governor.setTargetFps(15);
-      state.renderScale = 0.75;
+      // Kartu pratinjau kecil: setengah resolusi sudah cukup dan jauh lebih ringan di GPU
+      // (di emulator, dua konteks WebGL membuat satu frame butuh >3 detik pada 0,75).
+      state.renderScale = 0.5;
       state.behaviorEnabled = false;
       applyPixelRatio();
       post('preview-mode', { fps: state.targetFps });
