@@ -1245,8 +1245,6 @@ class OverlayService : Service() {
         private var downTime = 0L
         private var designStartX = 0
         private var designStartY = 0
-        private var dragOffsetX = 0
-        private var dragOffsetY = 0
         /** Diisi dari JS (`touch-zone`): sentuhan mendarat di badan atau di margin kosong. */
         private var touchOnBody = false
 
@@ -1289,8 +1287,7 @@ class OverlayService : Service() {
                     val design = currentDesignPlacement()
                     designStartX = design.x
                     designStartY = design.y
-                    dragOffsetX = layoutParams.x - design.x
-                    dragOffsetY = layoutParams.y - design.y
+
                     lastMoveX = event.rawX
                     lastMoveY = event.rawY
                     lastMoveAt = downTime
@@ -1366,9 +1363,11 @@ class OverlayService : Service() {
                     )
                     designX = placement.x
                     designY = placement.y
-                    layoutParams.x = designX + dragOffsetX
-                    layoutParams.y = designY + dragOffsetY
-                    runCatching { windowManager.updateViewLayout(this, layoutParams) }
+                    // Jangan menulis layoutParams di sini: posisi jendela dan pergeseran kanvas di
+                    // dalamnya HARUS dihitung di satu tempat (`applySilhouette`). Dulu keduanya
+                    // diubah terpisah, dan setelah avatar digeser isi kanvas bisa bergeser
+                    // terhadap jendelanya (avatar tampak hanya sebatas kaki di emulator).
+                    applySilhouette(force = true)
                     return true
                 }
                 MotionEvent.ACTION_POINTER_UP -> {
