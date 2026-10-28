@@ -139,9 +139,12 @@ object QuickMenuPlacement {
     /**
      * Hitung posisi (x, y) pojok kiri-atas menu dalam koordinat layar.
      *
-     * Menu diletakkan di sisi avatar yang masih lapang: di bawah avatar bila avatar berada di
-     * separuh atas layar, di atas avatar bila avatar di separuh bawah. Hasil selalu dijepit agar
-     * menu tidak keluar layar (termasuk saat avatar menempel di tepi).
+     * Aturan penempatan:
+     * 1. Bila avatar tinggi (menempati > 60% layar, kondisi bawaan overlay), menu diletakkan di
+     *    **samping** avatar — di atas/bawah akan menutupi avatar itu sendiri.
+     * 2. Bila avatar pendek, menu di bawah avatar ketika avatar ada di separuh atas layar, dan di
+     *    atas avatar ketika avatar ada di separuh bawah.
+     * Hasil selalu dijepit agar menu tidak keluar layar (termasuk saat avatar menempel di tepi).
      */
     fun forAvatar(
         avatarX: Int,
@@ -155,9 +158,22 @@ object QuickMenuPlacement {
         marginPx: Int,
     ): Pair<Int, Int> {
         val avatarCenterY = avatarY + avatarHeight / 2
-        val below = avatarCenterY < screenHeight / 2
-        val rawX = avatarX + (avatarWidth - menuWidth) / 2
-        val rawY = if (below) avatarY + avatarHeight + marginPx else avatarY - menuHeight - marginPx
+        val tall = avatarHeight * 10 > screenHeight * 6
+        val rawX: Int
+        val rawY: Int
+        val sideRight = avatarX + avatarWidth + marginPx
+        val sideLeft = avatarX - menuWidth - marginPx
+        val fitsRight = sideRight + menuWidth + marginPx <= screenWidth
+        val fitsLeft = sideLeft >= marginPx
+        if (tall && (fitsRight || fitsLeft)) {
+            // Geser ke samping avatar; pilih sisi yang masih lapang.
+            rawX = if (fitsRight) sideRight else sideLeft
+            rawY = avatarCenterY - menuHeight / 2
+        } else {
+            val below = avatarCenterY < screenHeight / 2
+            rawX = avatarX + (avatarWidth - menuWidth) / 2
+            rawY = if (below) avatarY + avatarHeight + marginPx else avatarY - menuHeight - marginPx
+        }
         val maxX = (screenWidth - menuWidth - marginPx).coerceAtLeast(marginPx)
         val maxY = (screenHeight - menuHeight - marginPx).coerceAtLeast(marginPx)
         return rawX.coerceIn(marginPx, maxX) to rawY.coerceIn(marginPx, maxY)

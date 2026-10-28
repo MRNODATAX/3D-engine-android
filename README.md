@@ -49,18 +49,19 @@ Rincian provenance, lisensi aset, dan status verifikasi: [`docs/chat-dan-perform
 ## Tangkapan layar
 
 [`docs/screenshots.html`](docs/screenshots.html) memuat tangkapan layar asli APK yang berjalan di
-emulator Android 14 (diambil otomatis lewat `adb screencap` di CI, bukan mockup).
+emulator Android 14 (diambil otomatis lewat `adb screencap` di CI, bukan mockup), termasuk panel
+menu cepat yang dibuka dengan tiga ketukan sungguhan.
 
 ## Unduh dan pasang (build uji)
 
 Hanya build uji terbaru yang disimpan; rilis versi lama sudah dihapus agar tidak ada yang
 mengunduh APK dengan bug gerak.
 
-Build uji terbaru: [Release `v0.1.6-test`](https://github.com/MRNODATAX/3D-engine-android/releases/tag/v0.1.6-test)
-(`MateEngine-v0.1.6-test-debug.apk`, ditandatangani kunci debug). Rilis ini membawa **gerak hidup**:
+Build uji terbaru: [Release `v0.1.7-test`](https://github.com/MRNODATAX/3D-engine-android/releases/tag/v0.1.7-test)
+(`MateEngine-v0.1.7-test-debug.apk`, ditandatangani kunci debug). Rilis ini membawa **gerak hidup**:
 direktur perilaku (avatar bergerak sendiri, suasana ceria/kalem), 14 klip CC0, duduk di tepi layar,
 ayunan saat digeser, headpat, serta wajah baru — 5 tab, kontras batas kartu diperbaiki, logo dan
-splash, dan font Outfit.
+splash, font Outfit, serta **menu cepat 3× ketuk** untuk gerak, chat AI, dan duduk.
 
 1. Unduh APK di perangkat, lalu izinkan pemasangan dari sumber tidak dikenal untuk aplikasi
    pengelola berkas/browser yang dipakai.

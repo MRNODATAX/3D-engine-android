@@ -131,8 +131,8 @@
     terlihat adalah aplikasi asli yang membaca metadata VRM asli.
   </p>
   <div class="facts">
-    <span class="fact"><span class="dot"></span>APK debug 0.1.6 (6)</span>
-    <span class="fact"><span class="dot"></span><a href="https://github.com/MRNODATAX/3D-engine-android/releases/tag/v0.1.6-test">Unduh APK uji v0.1.6-test</a></span>
+    <span class="fact"><span class="dot"></span>APK debug 0.1.7 (7)</span>
+    <span class="fact"><span class="dot"></span><a href="https://github.com/MRNODATAX/3D-engine-android/releases/tag/v0.1.7-test">Unduh APK uji v0.1.7-test</a></span>
     <span class="fact"><span class="dot"></span>Android 14 · API 34 · x86_64</span>
     <span class="fact"><span class="dot"></span>1080 × 2400 · 420 dpi</span>
     <span class="fact warn"><span class="dot"></span>Perangkat fisik belum diuji</span>
@@ -266,6 +266,37 @@
         <h2>Dua tangkapan, dua pose</h2>
         <p>Skrip menangkap dua kali dengan jeda 1,8 detik; bila gambarnya identik, CI gagal. Sejak 0.1.5 pemeriksaan
         juga menolak build bila sudut lengan ≥ 45° saat diam.</p>
+      </figcaption>
+    </figure>
+
+    <figure class="shot" data-kind="overlay" data-orientation="portrait">
+      <div class="frame"><img src="screenshots/18-menu-3x-ketuk.png" alt="Panel menu cepat terbuka setelah avatar diketuk tiga kali di layar emulator."></div>
+      <figcaption>
+        <span class="tag">Menu · 3× ketuk</span>
+        <h2>Ketuk tiga kali, menu muncul</h2>
+        <p>Tiga ketukan beruntun pada avatar (jeda ≤ 700 ms, jarak ≤ 90 px) membuka panel kecil: Gerak, Chat AI,
+        Duduk/Berdiri, dan Setelan. Gambar ini diambil setelah CI mengetuk avatar lewat perintah sentuh sungguhan,
+        bukan lewat hook debug.</p>
+      </figcaption>
+    </figure>
+
+    <figure class="shot" data-kind="overlay" data-orientation="portrait">
+      <div class="frame"><img src="screenshots/16-menu-gerak.png" alt="Panel menu pada halaman Gerak: empat tombol klip bawaan CC0 dalam dua kolom."></div>
+      <figcaption>
+        <span class="tag">Menu · Gerak</span>
+        <h2>Gerakan custom langsung dari overlay</h2>
+        <p>Empat klip bawaan diputar tanpa membuka aplikasi utama. Tombol menyala mengikuti klip yang sedang
+        berjalan; animasi impor <code>.vrma</code> tetap dibuka dari tab Animasi.</p>
+      </figcaption>
+    </figure>
+
+    <figure class="shot" data-kind="overlay" data-orientation="portrait">
+      <div class="frame"><img src="screenshots/17-menu-chat.png" alt="Panel menu pada halaman Chat AI; kunci Gemini belum diisi sehingga muncul tombol Buka tab Chat."></div>
+      <figcaption>
+        <span class="tag">Menu · Chat AI</span>
+        <h2>Balon obrolan di atas aplikasi lain</h2>
+        <p>Balasan muncul sebagai balon dan tetap dibacakan sesuai pengaturan suara. Bila kunci Gemini belum ada,
+        panel mengatakannya apa adanya dan menawarkan jalan ke tab Chat — bukan jawaban palsu.</p>
       </figcaption>
     </figure>
 

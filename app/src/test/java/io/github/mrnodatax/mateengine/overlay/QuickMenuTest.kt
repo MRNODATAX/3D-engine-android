@@ -130,6 +130,44 @@ class QuickMenuTest {
     }
 
     @Test
+    fun `avatar tinggi dan sempit menaruh menu di samping`() {
+        val (x, y) = QuickMenuPlacement.forAvatar(
+            avatarX = 300,
+            avatarY = 200,
+            avatarWidth = 320,
+            avatarHeight = 1600,
+            menuWidth = 400,
+            menuHeight = 700,
+            screenWidth = 1080,
+            screenHeight = 2000,
+            marginPx = 24,
+        )
+        // 300 + 320 + 24 = 644, muat 400 + 24 → sisi kanan.
+        assertEquals(644, x)
+        assertEquals("sejajar tengah avatar", 200 + 800 - 350, y)
+    }
+
+    @Test
+    fun `avatar tinggi yang memenuhi lebar layar tetap dapat posisi tanpa keluar layar`() {
+        val (x, y) = QuickMenuPlacement.forAvatar(
+            avatarX = 200,
+            avatarY = 200,
+            avatarWidth = 660,
+            avatarHeight = 1600,
+            menuWidth = 800,
+            menuHeight = 700,
+            screenWidth = 1080,
+            screenHeight = 2000,
+            marginPx = 24,
+        )
+        // Tidak ada ruang di samping → jatuh ke aturan atas/bawah, tetap di dalam layar.
+        assertTrue(x >= 24)
+        assertTrue(x + 800 <= 1080)
+        assertTrue(y >= 24)
+        assertTrue(y + 700 <= 2000)
+    }
+
+    @Test
     fun `menu selalu dijepit agar tidak keluar layar`() {
         val (x, y) = QuickMenuPlacement.forAvatar(
             avatarX = 0,

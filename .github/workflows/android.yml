@@ -163,7 +163,8 @@ jobs:
             diagnosa perangkat, chat Gemini dengan persona, Gemini TTS + lip-sync,
             14 klip animasi CC0, direktur perilaku (avatar bergerak sendiri sesuai suasana),
             duduk di tepi layar, ayunan badan saat avatar digeser, headpat (mata menutup),
-            menu cepat 3× ketuk (Gerak, balon Chat AI, Duduk/Berdiri, Setelan),
+            menu cepat 3× ketuk (Gerak, balon Chat AI, Duduk/Berdiri, Setelan) — panel View biasa
+            di jendela overlay sendiri, bukan Compose,
             gerak prosedural (napas, goyangan, pandangan, tidur, jalan, tari, reaksi sentuh).
           - Belum ada: duduk di jendela aplikasi lain/taskbar desktop, screenshot transparan,
             timer, Workshop, food system, head tracking kamera.
