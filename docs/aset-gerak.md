@@ -2,16 +2,28 @@
 
 ## Ringkasan
 
-Aplikasi membundel **4 klip animasi** yang bukan buatan saya dan bukan milik Mate Engine:
+Aplikasi membundel **14 klip animasi** yang bukan buatan saya dan bukan milik Mate Engine:
 
 | Berkas | Klip asal | Durasi | Ukuran | SHA-256 |
 | --- | --- | --- | --- | --- |
-| `idle_loop.vrma` | `Idle_Loop` | 2,50 s | 48.841 B | `c97b6925865f1190fa1df44fea762c4e991839eb1e6f7872b2ca8d0ffd715629` |
-| `idle_talk.vrma` | `Idle_Talking_Loop` | 2,92 s | 53.787 B | `653fdaac802344687afda2c23814ccf8825ca19b8101116b7623041d76342951` |
-| `walk_loop.vrma` | `Walk_Loop` | 1,33 s | 35.106 B | `7676ca13b3a37d17a79ec36cb04f2c319861970525ba83eab0b27d535c60f0aa` |
-| `dance_loop.vrma` | `Dance_Loop` | 1,00 s | 31.160 B | `06ecaf3951acfa84e18e636154e86304235c39f1027f67487eb95204a2597159` |
+| `idle_loop.vrma` | `Idle_Loop` | 2,50 s | 42.150 B | `3dd5cd9ea339fc9dc34348df928d4f85ba4fcbc2ffe6558087363ee9909704fb` |
+| `idle_talk.vrma` | `Idle_Talking_Loop` | 2,92 s | 47.096 B | `660121d6dcd46456c66544e2192ad098ca40c285ce0d53dedcd3d091d428fd3f` |
+| `walk_loop.vrma` | `Walk_Loop` | 1,33 s | 28.415 B | `21703b838c14605f99ab002395e56052d210cdc61c96394f2b17f308f651376c` |
+| `dance_loop.vrma` | `Dance_Loop` | 1,00 s | 24.469 B | `a730f967f5e641aaad3ac400c1d2f4e87bddfc3bda0835672d6bbbc8054759be` |
+| `interact.vrma` | `Interact` | 2,00 s | 36.255 B | `16fae05b4406863f10e87437fd8b0fc01778dc833130a572643816ecb151d476` |
+| `idle_torch.vrma` | `Idle_Torch_Loop` | 1,25 s | 27.421 B | `cdb602f66d71025aad3bc5b7647e5b7b3bf22103fc5e629506985f7cfb604b1f` |
+| `spell_idle.vrma` | `Spell_Simple_Idle_Loop` | 2,08 s | 37.255 B | `361932887be4602b8e81b9916b46d39a61a7174ff206472098b8fc3265552376` |
+| `sitting_enter.vrma` | `Sitting_Enter` | 1,29 s | 27.930 B | `33318d0b628ec1367fb10c909279ba849c0215818ec1e1b55be08ba621ab55b5` |
+| `sitting_idle.vrma` | `Sitting_Idle_Loop` | 1,67 s | 32.350 B | `feb5aafe12c74b3481ee0847f55270862d92944636bf83ac686b156c0a799f57` |
+| `sitting_exit.vrma` | `Sitting_Exit` | 1,00 s | 24.471 B | `b13fdfb89530e803bbe7078c570917f1a109446efe2a8f4c5d2d3dbe1b69b6d7` |
+| `sitting_talk.vrma` | `Sitting_Talking_Loop` | 2,92 s | 47.099 B | `2a4f359685c98727dc43ca550e0bfa9c8df2031fc09307ec77e0f6ea82e43a32` |
+| `crouch_idle.vrma` | `Crouch_Idle_Loop` | 2,92 s | 47.098 B | `bfb7f8bc80ff4e2ce63d964d6a5dbfb9ef316aa0bc0980fa655c3c449f8ee80d` |
+| `jump_start.vrma` | `Jump_Start` | 1,33 s | 28.416 B | `9a0bb3bbd8d4a1b2ccd5b4a0dc319fb785471f9c87e153e2d77e70fe5fbb26b4` |
+| `jump_land.vrma` | `Jump_Land` | 1,25 s | 27.420 B | `c228386f2d2e42a42bc1a8adcfabc218831058e5942a0ccbebf7e87d8fd140e5` |
 
-Total ± 165 KB (24 fps). Karena kecil, klip ikut di APK sehingga avatar langsung bergerak tanpa impor manual.
+Total **477.845 byte (± 466,6 KB)** untuk 14 klip, di bawah anggaran 900 KB
+(`web/test/vrma.test.mjs` gagal bila melewati). Karena kecil, klip ikut di APK sehingga avatar langsung
+bergerak tanpa impor manual.
 
 ## Sumber & lisensi
 

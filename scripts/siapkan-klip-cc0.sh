@@ -36,7 +36,17 @@ node scripts/glb-ke-vrma.mjs \
   --clip Idle_Loop:idle_loop \
   --clip Idle_Talking_Loop:idle_talk \
   --clip Walk_Loop:walk_loop \
-  --clip Dance_Loop:dance_loop
+  --clip Dance_Loop:dance_loop \
+  --clip Interact:interact \
+  --clip Idle_Torch_Loop:idle_torch \
+  --clip Spell_Simple_Idle_Loop:spell_idle \
+  --clip Sitting_Enter:sitting_enter \
+  --clip Sitting_Idle_Loop:sitting_idle \
+  --clip Sitting_Exit:sitting_exit \
+  --clip Sitting_Talking_Loop:sitting_talk \
+  --clip Crouch_Idle_Loop:crouch_idle \
+  --clip Jump_Start:jump_start \
+  --clip Jump_Land:jump_land
 
 echo "== selesai. Berkas di $OUT_DIR:"
 ls -l "$OUT_DIR"

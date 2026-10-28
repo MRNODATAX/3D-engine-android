@@ -20,7 +20,25 @@ import { fileURLToPath } from 'node:url';
 const here = path.dirname(fileURLToPath(import.meta.url));
 const assetsDir = path.resolve(here, '../../app/src/main/assets/animations');
 
-const CLIPS = ['idle_loop', 'idle_talk', 'walk_loop', 'dance_loop'];
+const CLIPS = [
+  'idle_loop',
+  'idle_talk',
+  'walk_loop',
+  'dance_loop',
+  'interact',
+  'idle_torch',
+  'spell_idle',
+  'sitting_enter',
+  'sitting_idle',
+  'sitting_exit',
+  'sitting_talk',
+  'crouch_idle',
+  'jump_start',
+  'jump_land',
+];
+
+/** Anggaran ukuran seluruh klip yang dibundel (lihat docs/rencana-v3 §4). */
+const BUDGET_BYTES = 900 * 1024;
 
 function qMul(a, b) {
   const [ax, ay, az, aw] = a;
@@ -148,7 +166,7 @@ function analyze(name) {
   if (hipsTranslationRange > 0.6) {
     throw new Error(`${name}: ayunan hips ${hipsTranslationRange.toFixed(2)} m terlalu besar`);
   }
-  if (!(duration > 0.5)) throw new Error(`${name}: durasi ${duration.toFixed(2)} s terlalu pendek`);
+  if (!(duration > 0.9)) throw new Error(`${name}: durasi ${duration.toFixed(2)} s terlalu pendek`);
 
   /** Sudut rotasi ternormalisasi (delta dari T-pose) untuk satu tulang, seluruh frame. */
   const normalizedAngles = (bone) => {
@@ -224,9 +242,14 @@ try {
       );
     }
     const total = results.reduce((sum, result) => sum + result.size, 0);
-    if (total > 1024 * 1024) throw new Error(`total klip ${(total / 1024 / 1024).toFixed(2)} MB melebihi 1 MB`);
+    if (total > BUDGET_BYTES) {
+      throw new Error(`total klip ${(total / 1024).toFixed(1)} KB melebihi anggaran 900 KB`);
+    }
+    if (results.length !== CLIPS.length) {
+      throw new Error(`hanya ${results.length} dari ${CLIPS.length} klip yang diperiksa`);
+    }
     console.log(
-      `✓ total ${(total / 1024).toFixed(1)} KB (< 1 MB), lengan di bawah saat diam ` +
+      `✓ total ${results.length} klip ${(total / 1024).toFixed(1)} KB (< 900 KB), lengan di bawah saat diam ` +
         `(${idle.leftArmMax.toFixed(0)}°), tari ${(dance.totalSpread / idle.totalSpread).toFixed(1)}× lebih aktif`,
     );
   } else {

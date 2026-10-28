@@ -15,6 +15,7 @@ import { VRMAnimationLoaderPlugin, createVRMAnimationClip } from '@pixiv/three-v
 import { applyRelaxedPose, captureRestPose } from './pose.js';
 import { collectStats, createGovernor, downscaleTextures } from './perf.js';
 import { createMotion } from './motion.js';
+import { createBehaviorDirector } from './behavior.js';
 
 const CONFIG = {
   maxPixelRatio: 2,
@@ -56,7 +57,9 @@ const state = {
   talking: 0,
   talkSeed: 0,
   motion: createMotion(),
+  behavior: createBehaviorDirector(),
   interacted: false,
+  interactedEver: false,
   builtinClip: null,
   clipName: null,
   clipOverride: null,
@@ -258,6 +261,8 @@ async function loadAvatar(url) {
     state.idleTime = 0;
     state.restPose = captureRestPose(vrm);
     state.motion.clearBase();
+    state.behavior.reset(performance.now());
+    state.interactedEver = false;
     state.poseBlend = 1;
     applyRelaxedPose(vrm, 1, state.restPose);
     post('avatar-ready', { info: state.avatarInfo });
@@ -270,7 +275,7 @@ async function loadAvatar(url) {
 }
 
 async function loadAnimation(url, name, options = {}) {
-  state.interacted = true;
+  markInteraction();
   if (!state.vrm || !state.mixer) {
     fail('no-avatar', 'Pilih avatar sebelum memutar animasi.', false);
     return;
@@ -318,6 +323,17 @@ const BUILTIN_CLIPS = {
   talk: 'idle_talk',
   walk: 'walk_loop',
   dance: 'dance_loop',
+  // Klip tambahan untuk direktur perilaku (semua dari paket CC0 yang sama).
+  interact: 'interact',
+  idle_torch: 'idle_torch',
+  spell_idle: 'spell_idle',
+  sitting_enter: 'sitting_enter',
+  sitting_idle: 'sitting_idle',
+  sitting_exit: 'sitting_exit',
+  sitting_talk: 'sitting_talk',
+  crouch_idle: 'crouch_idle',
+  jump_start: 'jump_start',
+  jump_land: 'jump_land',
 };
 
 function builtinUrl(name) {
@@ -339,17 +355,31 @@ function loadVrmAnimation(url) {
   return state.clipCache.get(url);
 }
 
+/** Konteks yang dipakai direktur perilaku, diturunkan dari keadaan renderer. */
+function behaviorContext() {
+  const motion = state.motion?.state;
+  return {
+    talking: state.talking > 0 || Boolean(state.speech),
+    locomotion: motion?.locomotion ?? 'idle',
+    idleMs: Math.round((motion?.idleSeconds ?? 0) * 1000),
+    interacted: state.interacted,
+    // Duduk di tepi layar belum aktif pada versi ini (lihat docs/rencana-v3 §5.1).
+    edgeSeatAvailable: false,
+    armed: state.interactedEver,
+  };
+}
+
 /**
  * Mesin keadaan klip bawaan.
- * Prioritas: bicara > pilihan manual pengguna > lokomosi (jalan/tari/diam).
+ * Prioritas: bicara > pilihan manual pengguna > perilaku otomatis > lokomosi.
  */
 function desiredClip() {
-  if (state.talking > 0 || state.speech) return 'talk';
+  const context = behaviorContext();
+  if (context.talking) return 'talk';
   if (state.clipOverride) return state.clipOverride;
-  const locomotion = state.motion?.state?.locomotion;
-  if (locomotion === 'walk') return 'walk';
-  if (locomotion === 'dance') return 'dance';
-  return 'idle';
+  if (context.locomotion === 'walk') return 'walk';
+  if (context.locomotion === 'dance') return 'dance';
+  return state.behavior.currentClip() || 'idle';
 }
 
 function recordClip(name, reason) {
@@ -379,10 +409,18 @@ async function playBuiltin(name, options = {}) {
 /** Dipanggil tiap frame; hanya berpindah klip bila keadaan berubah dan crossfade sudah lewat. */
 function syncClipState() {
   if (!state.ready || !state.vrm || !state.mixer) return;
+  // Direktur memilih perilaku (membaca apakah bicara/berjalan untuk membatalkannya).
+  state.behavior.update(performance.now(), behaviorContext());
   const desired = desiredClip();
   if (desired === state.clipName) return;
   if (performance.now() - state.clipAppliedAt < CROSSFADE_MS) return;
   playBuiltin(desired, { manual: false, reason: 'state' }).catch(() => {});
+}
+
+/** Tandai ada interaksi pengguna (dipakai suasana perilaku & pematian rasa kantuk). */
+function markInteraction() {
+  state.interacted = true;
+  state.interactedEver = true;
 }
 
 function stopAnimation() {
@@ -396,6 +434,7 @@ function stopAnimation() {
   state.clipName = null;
   state.clipOverride = null;
   state.motion.clearBase();
+  state.behavior.reset(performance.now());
   if (state.vrm) {
     applyRelaxedPose(state.vrm, 1, state.restPose);
     state.vrm.update(0);
@@ -535,6 +574,8 @@ function animate(now) {
     const trace = {
       ...debug,
       clip: state.builtinClip,
+      behavior: state.behavior.currentId(),
+      mood: state.behavior.state.mood,
       armLeftDeg: pose?.leftArmDeg ?? null,
       armRightDeg: pose?.rightArmDeg ?? null,
     };
@@ -623,11 +664,17 @@ window.MateEngine = {
     return variant;
   },
   clipTimeline: () => state.clipLog.slice(),
+  behaviorTimeline: () => state.behavior.timeline(),
+  behaviorState: () => ({
+    id: state.behavior.currentId(),
+    mood: state.behavior.state.mood,
+    clip: state.behavior.currentClip(),
+  }),
   setReducedMotion: (value) => {
     state.motion.setReducedMotion(value);
   },
   react: (type) => {
-    state.interacted = true;
+    markInteraction();
     state.motion.react(type);
     const expression = state.vrm?.expressionManager;
     if (expression) {
