@@ -47,6 +47,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.text.font.FontWeight
@@ -141,69 +142,89 @@ fun AnimationScreen(
                         // Button group (tiruan connected button group M3 Expressive tanpa naik versi
                         // library): tiga aksi berlabel, tiap target >= 48 dp. Sebelumnya dua di
                         // antaranya hanya ikon telanjang (× dan +) sehingga fungsinya harus ditebak.
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.spacedBy(8.dp),
-                            verticalAlignment = Alignment.CenterVertically,
+                        // Pada ukuran teks besar (aksesibilitas) tombol ditumpuk agar label tidak
+                        // terpotong — terbukti pada tangkapan fontScale 1,3.
+                        val stacked = LocalDensity.current.fontScale > 1.15f
+                        val playEnabled = runtime.running && state.selectedAnimation != null
+                        @Composable
+                        fun actionButton(
+                            label: String,
+                            icon: Int,
+                            enabled: Boolean,
+                            primary: Boolean,
+                            shape: RoundedCornerShape,
+                            modifier: Modifier,
+                            onClick: () -> Unit,
                         ) {
-                            FilledTonalButton(
-                                onClick = { state.selectedAnimation?.let(onPlay) },
-                                enabled = runtime.running && state.selectedAnimation != null,
-                                shape = RoundedCornerShape(topStart = 20.dp, bottomStart = 20.dp, topEnd = 8.dp, bottomEnd = 8.dp),
-                                contentPadding = PaddingValues(horizontal = 10.dp),
-                                modifier = Modifier.weight(1.1f),
-                            ) {
+                            val content: @Composable androidx.compose.foundation.layout.RowScope.() -> Unit = {
                                 Icon(
-                                    painter = painterResource(R.drawable.ic_symbol_animation),
+                                    painter = painterResource(icon),
                                     contentDescription = null,
                                     modifier = Modifier.size(18.dp),
                                 )
                                 Text(
-                                    T.play,
+                                    label,
                                     modifier = Modifier.padding(start = 6.dp),
                                     maxLines = 1,
                                     softWrap = false,
                                 )
                             }
-                            FilledTonalButton(
-                                onClick = onStop,
-                                enabled = runtime.running,
-                                shape = RoundedCornerShape(8.dp),
-                                contentPadding = PaddingValues(horizontal = 10.dp),
-                                modifier = Modifier.weight(1f),
-                            ) {
-                                Icon(
-                                    painter = painterResource(R.drawable.ic_symbol_stop_circle),
-                                    contentDescription = null,
-                                    modifier = Modifier.size(18.dp),
+                            if (primary) {
+                                FilledTonalButton(
+                                    onClick = onClick,
+                                    enabled = enabled,
+                                    shape = shape,
+                                    contentPadding = PaddingValues(horizontal = 10.dp),
+                                    modifier = modifier,
+                                    content = content,
                                 )
-                                Text(
-                                    T.stopAnimation,
-                                    modifier = Modifier.padding(start = 6.dp),
-                                    maxLines = 1,
-                                    softWrap = false,
-                                    overflow = TextOverflow.Ellipsis,
+                            } else {
+                                FilledTonalButton(
+                                    onClick = onClick,
+                                    enabled = enabled,
+                                    shape = shape,
+                                    contentPadding = PaddingValues(horizontal = 10.dp),
+                                    modifier = modifier,
+                                    content = content,
                                 )
                             }
-                            FilledTonalButton(
-                                onClick = onImport,
-                                enabled = !importing,
-                                shape = RoundedCornerShape(topStart = 8.dp, bottomStart = 8.dp, topEnd = 20.dp, bottomEnd = 20.dp),
-                                contentPadding = PaddingValues(horizontal = 10.dp),
-                                modifier = Modifier.weight(1f),
-                            ) {
-                                Icon(
-                                    painter = painterResource(R.drawable.ic_symbol_upload),
-                                    contentDescription = null,
-                                    modifier = Modifier.size(18.dp),
+                        }
+
+                        if (stacked) {
+                            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                                actionButton(
+                                    T.play, R.drawable.ic_symbol_animation, playEnabled, true,
+                                    RoundedCornerShape(MateRadius.MEDIUM.dp), Modifier.fillMaxWidth(),
+                                ) { state.selectedAnimation?.let(onPlay) }
+                                actionButton(
+                                    T.stopAnimation, R.drawable.ic_symbol_stop_circle, runtime.running, false,
+                                    RoundedCornerShape(MateRadius.MEDIUM.dp), Modifier.fillMaxWidth(), onStop,
                                 )
-                                // Label pendek: tiga tombol berbagi satu baris, jadi "Impor .vrma"
-                                // akan terpotong. Ikon unggah sudah menjelaskan arahnya.
-                                Text(
-                                    if (importing) "Mengimpor…" else "Impor",
-                                    modifier = Modifier.padding(start = 6.dp),
-                                    maxLines = 1,
-                                    softWrap = false,
+                                actionButton(
+                                    if (importing) "Mengimpor…" else "Impor", R.drawable.ic_symbol_upload,
+                                    !importing, false,
+                                    RoundedCornerShape(MateRadius.MEDIUM.dp), Modifier.fillMaxWidth(), onImport,
+                                )
+                            }
+                        } else {
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                                verticalAlignment = Alignment.CenterVertically,
+                            ) {
+                                actionButton(
+                                    T.play, R.drawable.ic_symbol_animation, playEnabled, true,
+                                    RoundedCornerShape(topStart = 20.dp, bottomStart = 20.dp, topEnd = 8.dp, bottomEnd = 8.dp),
+                                    Modifier.weight(1.1f),
+                                ) { state.selectedAnimation?.let(onPlay) }
+                                actionButton(
+                                    T.stopAnimation, R.drawable.ic_symbol_stop_circle, runtime.running, false,
+                                    RoundedCornerShape(8.dp), Modifier.weight(1f), onStop,
+                                )
+                                actionButton(
+                                    if (importing) "Mengimpor…" else "Impor", R.drawable.ic_symbol_upload, !importing, false,
+                                    RoundedCornerShape(topStart = 8.dp, bottomStart = 8.dp, topEnd = 20.dp, bottomEnd = 20.dp),
+                                    Modifier.weight(1f), onImport,
                                 )
                             }
                         }
@@ -228,7 +249,7 @@ fun AnimationScreen(
                             value = clipQuery,
                             onValueChange = { clipQuery = it },
                             singleLine = true,
-                            placeholder = { Text("Cari klip: lari, duduk, sihir…") },
+                            placeholder = { Text("Cari klip…") },
                             leadingIcon = {
                                 Icon(
                                     painter = painterResource(R.drawable.ic_symbol_search),
