@@ -205,6 +205,8 @@ class QuickMenuView(
             row.addView(
                 View(context).apply {
                     background = androidx.core.content.ContextCompat.getDrawable(context, R.drawable.ic_brand_mark)
+                    // Tanda merek aslinya hitam; warnai dengan aksen agar terbaca di tema gelap.
+                    backgroundTintList = android.content.res.ColorStateList.valueOf(accent)
                     layoutParams = LayoutParams(dp(20), dp(20)).apply { rightMargin = dp(8) }
                 },
             )
@@ -403,10 +405,10 @@ class QuickMenuView(
     /** Outfit adalah font variabel: berat harus dipatok lewat `fontVariationSettings`. */
     private fun outfit(weight: Int): Typeface {
         val base = ResourcesCompat.getFont(context, R.font.outfit) ?: Typeface.DEFAULT
+        // `fontVariationSettings` hanya punya setter (tanpa getter), jadi sintaks properti tidak
+        // tersedia — panggil metodenya langsung. minSdk 26 = API tempat metode ini ada.
         return Typeface.create(base, Typeface.NORMAL).apply {
-            if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
-                fontVariationSettings = "'wght' $weight"
-            }
+            setFontVariationSettings("'wght' $weight")
         }
     }
 
