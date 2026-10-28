@@ -1085,6 +1085,21 @@ function animate(now) {
         : null,
       frameHeight: state.frameHeight ? Number(state.frameHeight.toFixed(2)) : null,
       pose: state.vrm ? Object.keys(state.vrm.humanoid?.humanBones || {}).length : 0,
+      camPos: state.camera
+        ? [state.camera.position.x, state.camera.position.y, state.camera.position.z].map((v) => Number(v.toFixed(2)))
+        : null,
+      lookAt: state.cameraLookAt
+        ? [state.cameraLookAt.x, state.cameraLookAt.y, state.cameraLookAt.z].map((v) => Number(v.toFixed(2)))
+        : null,
+      aspect: Number((state.camera?.aspect ?? 0).toFixed(3)),
+      worldBox: (() => {
+        const box = skeletonBounds(state.vrm);
+        if (!box) return null;
+        return {
+          min: [box.min.x, box.min.y, box.min.z].map((v) => Number(v.toFixed(2))),
+          max: [box.max.x, box.max.y, box.max.z].map((v) => Number(v.toFixed(2))),
+        };
+      })(),
       drawCalls: state.renderer.info.render.calls,
       triangles: state.renderer.info.render.triangles,
       glError: state.renderer.getContext().getError(),
