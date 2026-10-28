@@ -263,6 +263,34 @@ function skeletonBounds(vrm) {
   return box;
 }
 
+/** Proyeksikan kotak dunia ke fraksi kanvas (celah dari tiap tepi), sama seperti frameGaps. */
+function projectBox(box) {
+  if (!box || box.isEmpty() || !state.camera) return null;
+  const xs = [box.min.x, box.max.x];
+  const ys = [box.min.y, box.max.y];
+  const zs = [box.min.z, box.max.z];
+  let minX = Infinity; let maxX = -Infinity; let minY = Infinity; let maxY = -Infinity;
+  const point = new THREE.Vector3();
+  for (const x of xs) for (const y of ys) for (const z of zs) {
+    point.set(x, y, z).project(state.camera);
+    minX = Math.min(minX, point.x); maxX = Math.max(maxX, point.x);
+    minY = Math.min(minY, point.y); maxY = Math.max(maxY, point.y);
+  }
+  return {
+    left: Number(((1 + minX) / 2).toFixed(3)),
+    right: Number(((1 - maxX) / 2).toFixed(3)),
+    top: Number(((1 - maxY) / 2).toFixed(3)),
+    bottom: Number(((1 + minY) / 2).toFixed(3)),
+  };
+}
+
+/** Kotak mesh sesungguhnya (tanpa proyeksi tulang): inilah yang benar-benar dilukis GPU. */
+function meshBounds(vrm) {
+  if (!vrm?.scene) return null;
+  const box = new THREE.Box3().setFromObject(vrm.scene);
+  return box.isEmpty() ? null : box;
+}
+
 /**
  * Kotak piksel yang benar-benar terlukis (fraksi kanvas), dibaca langsung dari framebuffer.
  * Pemindaian dilakukan tiap 4 piksel supaya ringan; ini alat diagnosa, bukan jalur render.
@@ -308,8 +336,15 @@ function paintedBox() {
  */
 function frameModel(vrm, force = false) {
   const skeleton = skeletonBounds(vrm);
-  const box = skeleton || new THREE.Box3().setFromObject(vrm.scene);
-  if (!box || box.isEmpty()) return;
+  const mesh = meshBounds(vrm);
+  // Kotak **gabungan** tulang + mesh. Tulang menentukan pose, tetapi yang dilihat pengguna
+  // adalah mesh; kalau keduanya meleset (retargeting VRM 0/1, model dengan rig ganda), kamera
+  // yang hanya memakai tulang akan membingkai bagian yang tidak terlukis — di emulator ini
+  // membuat hanya sepatu yang tampak.
+  const box = new THREE.Box3();
+  if (skeleton && !skeleton.isEmpty()) box.union(skeleton);
+  if (mesh && !mesh.isEmpty()) box.union(mesh);
+  if (box.isEmpty()) return;
   const size = new THREE.Vector3();
   const center = new THREE.Vector3();
   box.getSize(size);
@@ -1026,6 +1061,8 @@ function animate(now) {
         : null,
       frameHeight: state.frameHeight ? Number(state.frameHeight.toFixed(2)) : null,
       pose: state.vrm ? Object.keys(state.vrm.humanoid?.humanBones || {}).length : 0,
+      boneBox: projectBox(skeletonBounds(state.vrm)),
+      meshBox: projectBox(meshBounds(state.vrm)),
     });
   }
 
