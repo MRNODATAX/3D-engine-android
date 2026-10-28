@@ -1,14 +1,14 @@
 --- services ---
 ACTIVITY MANAGER SERVICES (dumpsys activity services)
   User 0 active services:
-  * ServiceRecord{fd7da06 u0 io.github.mrnodatax.mateengine.debug/org.chromium.content.app.SandboxedProcessService0:0}
+  * ServiceRecord{2622474 u0 io.github.mrnodatax.mateengine.debug/org.chromium.content.app.SandboxedProcessService0:0}
     intent={cmp=io.github.mrnodatax.mateengine.debug/org.chromium.content.app.SandboxedProcessService0:0}
     packageName=io.github.mrnodatax.mateengine.debug
     processName=com.google.android.webview:sandboxed_process0:org.chromium.content.app.SandboxedProcessService0:0
-    baseDir=/data/app/~~ia024QnEh8DwmtXxBZvKcw==/com.google.android.webview-X-a9Q1RtFQqErIKgN0evgA==/WebViewGoogle.apk
+    baseDir=/data/app/~~sKj6-w0Jn2EMeKcYAvNOPg==/com.google.android.webview-vlJ1akdewpZOWn21lMD0Eg==/WebViewGoogle.apk
     dataDir=/data/user/0/com.google.android.webview
-    app=ProcessRecord{2983fdf 6098:com.google.android.webview:sandboxed_process0:org.chromium.content.app.SandboxedProcessService0:0/u0a192i1}
-    isolationHostProc=ProcessRecord{2983fdf 6098:com.google.android.webview:sandboxed_process0:org.chromium.content.app.SandboxedProcessService0:0/u0a192i1}
+    app=ProcessRecord{d6b6129 6197:com.google.android.webview:sandboxed_process0:org.chromium.content.app.SandboxedProcessService0:0/u0a192i1}
+    isolationHostProc=ProcessRecord{d6b6129 6197:com.google.android.webview:sandboxed_process0:org.chromium.content.app.SandboxedProcessService0:0/u0a192i1}
     mAllowWhileInUsePermissionInFgsReason=PROC_STATE_TOP
     allowUiJobScheduling=false
     recentCallingPackage=io.github.mrnodatax.mateengine.debug
@@ -16,31 +16,31 @@ ACTIVITY MANAGER SERVICES (dumpsys activity services)
     allowStartForeground=PROC_STATE_TOP
     startForegroundCount=0
     infoAllowStartForeground=[callingPackage: io.github.mrnodatax.mateengine.debug; callingUid: 10192; uidState: TOP ; uidBFSL: [BFSL]; intent: Intent { cmp=io.github.mrnodatax.mateengine.debug/org.chromium.content.app.SandboxedProcessService0:0 (has extras) }; code:PROC_STATE_TOP; tempAllowListReason:<null>; targetSdkVersion:34; callerTargetSdkVersion:34; startForegroundCount:0; bindFromPackage:null: isBindService:true]
-    createTime=-21s931ms startingBgTimeout=--
-    lastActivity=-20s291ms restartTime=-21s855ms createdFromFg=true
+    createTime=-23s108ms startingBgTimeout=--
+    lastActivity=-20s711ms restartTime=-23s45ms createdFromFg=true
     Bindings:
-    * IntentBindRecord{34b452e CREATE}:
+    * IntentBindRecord{39befba CREATE}:
       intent={cmp=io.github.mrnodatax.mateengine.debug/org.chromium.content.app.SandboxedProcessService0:0}
-      binder=android.os.BinderProxy@5b4a8cf
+      binder=android.os.BinderProxy@4bee6b
       requested=true received=true hasBound=true doRebind=false
-      * Client AppBindRecord{875225c ProcessRecord{bfd13db 6060:io.github.mrnodatax.mateengine.debug/u0a192}}
+      * Client AppBindRecord{4bb4dc8 ProcessRecord{273d37f 6155:io.github.mrnodatax.mateengine.debug/u0a192}}
         Per-process Connections:
-          ConnectionRecord{51aa633 u0 CR IMP io.github.mrnodatax.mateengine.debug/org.chromium.content.app.SandboxedProcessService0:0:@b6709a2 flags=0x80000041}
-          ConnectionRecord{b6afafb u0 CR WPRI io.github.mrnodatax.mateengine.debug/org.chromium.content.app.SandboxedProcessService0:0:@b74148a flags=0x80000021}
+          ConnectionRecord{4ef5dc u0 CR WPRI io.github.mrnodatax.mateengine.debug/org.chromium.content.app.SandboxedProcessService0:0:@b4b9a4f flags=0x80000021}
+          ConnectionRecord{100aae8 u0 CR IMP io.github.mrnodatax.mateengine.debug/org.chromium.content.app.SandboxedProcessService0:0:@460c0b flags=0x80000041}
     All Connections:
-      ConnectionRecord{51aa633 u0 CR IMP io.github.mrnodatax.mateengine.debug/org.chromium.content.app.SandboxedProcessService0:0:@b6709a2 flags=0x80000041}
-      ConnectionRecord{b6afafb u0 CR WPRI io.github.mrnodatax.mateengine.debug/org.chromium.content.app.SandboxedProcessService0:0:@b74148a flags=0x80000021}
+      ConnectionRecord{100aae8 u0 CR IMP io.github.mrnodatax.mateengine.debug/org.chromium.content.app.SandboxedProcessService0:0:@460c0b flags=0x80000041}
+      ConnectionRecord{4ef5dc u0 CR WPRI io.github.mrnodatax.mateengine.debug/org.chromium.content.app.SandboxedProcessService0:0:@b4b9a4f flags=0x80000021}
 
-  * ServiceRecord{d52819b u0 io.github.mrnodatax.mateengine.debug/io.github.mrnodatax.mateengine.overlay.OverlayService}
+  * ServiceRecord{aa6a113 u0 io.github.mrnodatax.mateengine.debug/io.github.mrnodatax.mateengine.overlay.OverlayService}
     intent={act=io.github.mrnodatax.mateengine.action.START_OVERLAY cmp=io.github.mrnodatax.mateengine.debug/io.github.mrnodatax.mateengine.overlay.OverlayService}
     packageName=io.github.mrnodatax.mateengine.debug
     processName=io.github.mrnodatax.mateengine.debug
-    baseDir=/data/app/~~eXvco_xNhxTCDaIIvLp--g==/io.github.mrnodatax.mateengine.debug-jU2QkLvUtFS5g2iWR459Kg==/base.apk
+    baseDir=/data/app/~~pSyplOqzidL7uMF0-8-OEw==/io.github.mrnodatax.mateengine.debug-0YGh4FrLjizRtHcI1GPFEg==/base.apk
     dataDir=/data/user/0/io.github.mrnodatax.mateengine.debug
-    app=ProcessRecord{bfd13db 6060:io.github.mrnodatax.mateengine.debug/u0a192}
+    app=ProcessRecord{273d37f 6155:io.github.mrnodatax.mateengine.debug/u0a192}
     mAllowWhileInUsePermissionInFgsReason=PROC_STATE_TOP
 --- appops ---
-SYSTEM_ALERT_WINDOW: allow; time=+8s2ms ago (running)
+SYSTEM_ALERT_WINDOW: allow; time=+6s387ms ago (running)
 --- package perms ---
       android.permission.SYSTEM_ALERT_WINDOW
       android.permission.FOREGROUND_SERVICE
@@ -50,45 +50,49 @@ SYSTEM_ALERT_WINDOW: allow; time=+8s2ms ago (running)
       android.permission.FOREGROUND_SERVICE_SPECIAL_USE: granted=true
 --- crash log ---
 --- pratinjau Beranda (MateEnginePreview) ---
-10-28 09:59:35.878  2560  3646 I MateEnginePreview: avatar siap: {"type":"avatar-ready","info":{"name":"VRM1_Constraint_Twist_Sample","version":"VRM 1.0","authors":["pixiv Inc."],"licenseUrl":"https://vrm.dev/licenses/1.0/","redistribution":true,"commercial":"corporation","expressions":["aa","angry","blink","blinkLeft","blinkRight","ee","happy","ih","lookDown","lookLeft","lookRight","lookUp","neutral","oh","ou","relaxed","sad","surprised"],"humanoidBones":54,"springJoints":57}}
-10-28 09:59:35.987  2560  3646 I MateEnginePreview: pesan {"type":"clip-changed","clip":"idle_loop","reason":"state"}
-10-28 10:00:54.589  6060  6164 I MateEnginePreview: mode pratinjau aktif: {"type":"preview-mode","fps":15}
-10-28 10:00:54.597  6060  6164 I MateEnginePreview: pesan {"type":"renderer-ready","webgl2":true}
-10-28 10:00:54.600  6060  6060 I MateEnginePreview: halaman pratinjau selesai dimuat
-10-28 10:00:54.603  6060  6164 I MateEnginePreview: pesan {"type":"avatar-loading","url":"https://appassets.androidplatform.net/avatars/sample-vrm1-twist.vrm"}
-10-28 10:00:55.427  6060  6164 I MateEnginePreview: pesan {"type":"textures","resized":3,"kept":14,"maxSize":1024}
-10-28 10:00:55.436  6060  6164 I MateEnginePreview: avatar siap: {"type":"avatar-ready","info":{"name":"VRM1_Constraint_Twist_Sample","version":"VRM 1.0","authors":["pixiv Inc."],"licenseUrl":"https://vrm.dev/licenses/1.0/","redistribution":true,"commercial":"corporation","expressions":["aa","angry","blink","blinkLeft","blinkRight","ee","happy","ih","lookDown","lookLeft","lookRight","lookUp","neutral","oh","ou","relaxed","sad","surprised"],"humanoidBones":54,"springJoints":57}}
-10-28 10:00:55.522  6060  6164 I MateEnginePreview: pesan {"type":"clip-changed","clip":"idle_loop","reason":"state"}
-10-28 10:01:02.288  6060  6164 I MateEnginePreview: pesan {"type":"fps","value":1,"workMs":6767}
-10-28 10:01:02.294  6060  6164 I MateEnginePreview: pesan {"type":"motion-state","time":0.05,"locomotion":"idle","sleepiness":0,"lookYaw":0,"bones":15,"react":null,"sway":0,"clip":"idle_loop","behavior":null,"mood":"ceria","armLeftDeg":21.3,"armRightDeg":21.4,"seated":false,"bodyGap":{"top":50,"bottom":-57,"left":121,"right":120}}
-10-28 10:01:02.295  6060  6164 I MateEnginePreview: pesan {"type":"stats","triangles":70116,"calls":20,"textures":28,"geometries":13,"bones":137,"meshes":13,"springJoints":57,"fpsTarget":15,"renderScale":1,"qualityLevel":"high","workMs":6767}
-10-28 10:01:02.299  6060  6164 I MateEnginePreview: pesan {"type":"clip-changed","clip":"idle_loop","reason":"state"}
-10-28 10:01:02.377  6060  6164 I MateEnginePreview: pesan {"type":"fps","value":1,"workMs":6098}
-10-28 10:01:02.382  6060  6164 I MateEnginePreview: pesan {"type":"motion-state","time":0.1,"locomotion":"idle","sleepiness":0,"lookYaw":0,"bones":15,"react":null,"sway":0,"clip":"idle_loop","behavior":null,"mood":"ceria","armLeftDeg":20.9,"armRightDeg":22.1,"seated":false,"bodyGap":{"top":50,"bottom":-57,"left":121,"right":120}}
-10-28 10:01:02.383  6060  6164 I MateEnginePreview: pesan {"type":"stats","triangles":70116,"calls":20,"textures":28,"geometries":13,"bones":137,"meshes":13,"springJoints":57,"fpsTarget":15,"renderScale":1,"qualityLevel":"high","workMs":6098}
-10-28 10:01:02.500  6060  6060 I MateEnginePreview: console WARNING: createVRMAnimationClip: VRMLookAtQuaternionProxy is not found. Creating a new one automatically. To suppress this warning, create a VRMLookAtQuaternionProxy manually
-10-28 10:01:02.518  6060  6164 I MateEnginePreview: pesan {"type":"animation-playing","name":"idle_loop","duration":2.5}
-10-28 10:01:02.522  6060  6164 I MateEnginePreview: pesan {"type":"animation-playing","name":"idle_loop","duration":2.5}
-10-28 10:01:03.343  6060  6164 I MateEnginePreview: pesan {"type":"fps","value":15,"workMs":1266}
-10-28 10:01:04.349  6060  6164 I MateEnginePreview: pesan {"type":"fps","value":15,"workMs":267}
-10-28 10:01:04.490  6060  6164 I MateEnginePreview: pesan {"type":"stats","triangles":70116,"calls":20,"textures":28,"geometries":13,"bones":137,"meshes":13,"springJoints":57,"fpsTarget":15,"renderScale":1,"qualityLevel":"high","workMs":267}
-10-28 10:01:05.398  6060  6164 I MateEnginePreview: pesan {"type":"fps","value":13,"workMs":72}
-10-28 10:01:06.639  6060  6164 I MateEnginePreview: pesan {"type":"fps","value":5,"workMs":53}
-10-28 10:01:06.640  6060  6164 I MateEnginePreview: pesan {"type":"stats","triangles":70116,"calls":20,"textures":28,"geometries":13,"bones":137,"meshes":13,"springJoints":57,"fpsTarget":15,"renderScale":1,"qualityLevel":"high","workMs":53}
-10-28 10:01:07.484  6060  6164 I MateEnginePreview: pesan {"type":"motion-state","time":2.95,"locomotion":"idle","sleepiness":0,"lookYaw":0.048,"bones":15,"react":null,"sway":0,"clip":"idle_loop","behavior":null,"mood":"ceria","armLeftDeg":29.1,"armRightDeg":30.5,"seated":false,"bodyGap":{"top":57,"bottom":-58,"left":134,"right":127}}
-10-28 10:01:07.682  6060  6164 I MateEnginePreview: pesan {"type":"fps","value":10,"workMs":28}
-10-28 10:01:13.703  6060  6164 I MateEnginePreview: pesan {"type":"fps","value":2,"workMs":23}
-10-28 10:01:13.761  6060  6164 I MateEnginePreview: pesan {"type":"motion-state","time":3.1,"locomotion":"idle","sleepiness":0,"lookYaw":0.056,"bones":15,"react":null,"sway":0,"clip":"idle_loop","behavior":null,"mood":"ceria","armLeftDeg":27.5,"armRightDeg":30.6,"seated":false,"bodyGap":{"top":57,"bottom":-58,"left":134,"right":127}}
-10-28 10:01:13.795  6060  6164 I MateEnginePreview: pesan {"type":"stats","triangles":70116,"calls":20,"textures":28,"geometries":13,"bones":137,"meshes":13,"springJoints":57,"fpsTarget":15,"renderScale":1,"qualityLevel":"high","workMs":23}
+--------- beginning of main
+10-28 10:11:17.925  2977  3884 I MateEnginePreview: mode pratinjau aktif: {"type":"preview-mode","fps":15}
+10-28 10:11:17.926  2977  3884 I MateEnginePreview: pesan {"type":"renderer-ready","webgl2":true}
+10-28 10:11:17.932  2977  2977 I MateEnginePreview: halaman pratinjau selesai dimuat
+10-28 10:11:17.935  2977  3884 I MateEnginePreview: pesan {"type":"avatar-loading","url":"https://appassets.androidplatform.net/avatars/sample-vrm1-twist.vrm"}
+10-28 10:11:20.798  2977  3884 I MateEnginePreview: pesan {"type":"textures","resized":3,"kept":14,"maxSize":1024}
+10-28 10:11:20.943  2977  3884 I MateEnginePreview: avatar siap: {"type":"avatar-ready","info":{"name":"VRM1_Constraint_Twist_Sample","version":"VRM 1.0","authors":["pixiv Inc."],"licenseUrl":"https://vrm.dev/licenses/1.0/","redistribution":true,"commercial":"corporation","expressions":["aa","angry","blink","blinkLeft","blinkRight","ee","happy","ih","lookDown","lookLeft","lookRight","lookUp","neutral","oh","ou","relaxed","sad","surprised"],"humanoidBones":54,"springJoints":57}}
+10-28 10:11:21.820  2977  3884 I MateEnginePreview: pesan {"type":"clip-changed","clip":"idle_loop","reason":"state"}
+10-28 10:12:35.532  6155  6264 I MateEnginePreview: mode pratinjau aktif: {"type":"preview-mode","fps":15}
+10-28 10:12:35.537  6155  6264 I MateEnginePreview: pesan {"type":"renderer-ready","webgl2":true}
+10-28 10:12:35.644  6155  6155 I MateEnginePreview: halaman pratinjau selesai dimuat
+10-28 10:12:35.662  6155  6264 I MateEnginePreview: pesan {"type":"avatar-loading","url":"https://appassets.androidplatform.net/avatars/sample-vrm1-twist.vrm"}
+10-28 10:12:37.515  6155  6264 I MateEnginePreview: pesan {"type":"textures","resized":3,"kept":14,"maxSize":1024}
+10-28 10:12:37.531  6155  6264 I MateEnginePreview: avatar siap: {"type":"avatar-ready","info":{"name":"VRM1_Constraint_Twist_Sample","version":"VRM 1.0","authors":["pixiv Inc."],"licenseUrl":"https://vrm.dev/licenses/1.0/","redistribution":true,"commercial":"corporation","expressions":["aa","angry","blink","blinkLeft","blinkRight","ee","happy","ih","lookDown","lookLeft","lookRight","lookUp","neutral","oh","ou","relaxed","sad","surprised"],"humanoidBones":54,"springJoints":57}}
+10-28 10:12:37.704  6155  6264 I MateEnginePreview: pesan {"type":"clip-changed","clip":"idle_loop","reason":"state"}
+10-28 10:12:44.993  6155  6264 I MateEnginePreview: pesan {"type":"fps","value":1,"workMs":7303}
+10-28 10:12:45.010  6155  6264 I MateEnginePreview: pesan {"type":"motion-state","time":0.05,"locomotion":"idle","sleepiness":0,"lookYaw":0,"bones":15,"react":null,"sway":0,"clip":"idle_loop","behavior":null,"mood":"ceria","armLeftDeg":21.3,"armRightDeg":21.4,"seated":false,"bodyGap":{"top":50,"bottom":-57,"left":121,"right":120}}
+10-28 10:12:45.015  6155  6264 I MateEnginePreview: pesan {"type":"stats","triangles":70116,"calls":20,"textures":28,"geometries":13,"bones":137,"meshes":13,"springJoints":57,"fpsTarget":15,"renderScale":1,"qualityLevel":"high","workMs":7303}
+10-28 10:12:45.019  6155  6264 I MateEnginePreview: pesan {"type":"clip-changed","clip":"idle_loop","reason":"state"}
+10-28 10:12:45.144  6155  6264 I MateEnginePreview: pesan {"type":"fps","value":1,"workMs":6585}
+10-28 10:12:45.153  6155  6264 I MateEnginePreview: pesan {"type":"motion-state","time":0.1,"locomotion":"idle","sleepiness":0,"lookYaw":0,"bones":15,"react":null,"sway":0,"clip":"idle_loop","behavior":null,"mood":"ceria","armLeftDeg":20.9,"armRightDeg":22.1,"seated":false,"bodyGap":{"top":50,"bottom":-57,"left":121,"right":120}}
+10-28 10:12:45.155  6155  6264 I MateEnginePreview: pesan {"type":"stats","triangles":70116,"calls":20,"textures":28,"geometries":13,"bones":137,"meshes":13,"springJoints":57,"fpsTarget":15,"renderScale":1,"qualityLevel":"high","workMs":6585}
+10-28 10:12:45.273  6155  6155 I MateEnginePreview: console WARNING: createVRMAnimationClip: VRMLookAtQuaternionProxy is not found. Creating a new one automatically. To suppress this warning, create a VRMLookAtQuaternionProxy manually
+10-28 10:12:45.275  6155  6264 I MateEnginePreview: pesan {"type":"animation-playing","name":"idle_loop","duration":2.5}
+10-28 10:12:45.281  6155  6264 I MateEnginePreview: pesan {"type":"animation-playing","name":"idle_loop","duration":2.5}
+10-28 10:12:45.972  6155  6264 I MateEnginePreview: pesan {"type":"fps","value":13,"workMs":1679}
+10-28 10:12:48.277  6155  6264 I MateEnginePreview: pesan {"type":"fps","value":8,"workMs":728}
+10-28 10:12:48.280  6155  6264 I MateEnginePreview: pesan {"type":"stats","triangles":70116,"calls":20,"textures":28,"geometries":13,"bones":137,"meshes":13,"springJoints":57,"fpsTarget":15,"renderScale":1,"qualityLevel":"high","workMs":728}
+10-28 10:12:49.443  6155  6264 I MateEnginePreview: pesan {"type":"fps","value":4,"workMs":487}
+10-28 10:12:50.042  6155  6264 I MateEnginePreview: pesan {"type":"motion-state","time":1.65,"locomotion":"idle","sleepiness":0,"lookYaw":0,"bones":15,"react":null,"sway":0,"clip":"idle_loop","behavior":null,"mood":"ceria","armLeftDeg":24.4,"armRightDeg":31.5,"seated":false,"bodyGap":{"top":57,"bottom":-57,"left":132,"right":130}}
 --- jejak gerak renderer (5 detik terakhir) ---
-motion {"type":"motion-state","time":0.65,"locomotion":"idle","sleepiness":0,"lookYaw":0,"bones":15,"react":null,"sway":0,"clip":"idle_loop","behavior":"look_around","mood":"ceria","armLeftDeg":92.8,"armRightDeg":107.1,"seated":false,"bodyGap":{"top":75,"bottom":75,"left":21,"right":21}}
-motion {"type":"motion-state","time":1.83,"locomotion":"idle","sleepiness":0,"lookYaw":0,"bones":15,"react":null,"sway":0,"clip":"idle_loop","behavior":null,"mood":"ceria","armLeftDeg":26.7,"armRightDeg":30.7,"seated":false,"bodyGap":{"top":57,"bottom":58,"left":82,"right":82}}
+motion {"type":"motion-state","time":0.05,"locomotion":"idle","sleepiness":0,"lookYaw":0,"bones":15,"react":null,"sway":0,"clip":"idle_loop","behavior":null,"mood":"ceria","armLeftDeg":21.3,"armRightDeg":21.4,"seated":false,"bodyGap":{"top":105,"bottom":-121,"left":44,"right":42}}
+motion {"type":"motion-state","time":0.1,"locomotion":"idle","sleepiness":0,"lookYaw":0,"bones":15,"react":null,"sway":0,"clip":"push_loop","behavior":"random_clip","mood":"ceria","armLeftDeg":20.9,"armRightDeg":22.1,"seated":false,"bodyGap":{"top":105,"bottom":-121,"left":43,"right":42}}
+motion {"type":"motion-state","time":0.65,"locomotion":"idle","sleepiness":0,"lookYaw":0,"bones":15,"react":null,"sway":0,"clip":"idle_loop","behavior":null,"mood":"ceria","armLeftDeg":25.7,"armRightDeg":39.3,"seated":false,"bodyGap":{"top":17,"bottom":55,"left":81,"right":60}}
+motion {"type":"motion-state","time":1.83,"locomotion":"idle","sleepiness":0,"lookYaw":0,"bones":15,"react":null,"sway":0,"clip":"idle_loop","behavior":null,"mood":"ceria","armLeftDeg":25,"armRightDeg":29.4,"seated":false,"bodyGap":{"top":39,"bottom":38,"left":78,"right":77}}
 --- jejak sudut lengan ---
-motion {"type":"motion-state","time":0.65,"locomotion":"idle","sleepiness":0,"lookYaw":0,"bones":15,"react":null,"sway":0,"clip":"idle_loop","behavior":"look_around","mood":"ceria","armLeftDeg":92.8,"armRightDeg":107.1,"seated":false,"bodyGap":{"top":75,"bottom":75,"left":21,"right":21}}
-motion {"type":"motion-state","time":1.83,"locomotion":"idle","sleepiness":0,"lookYaw":0,"bones":15,"react":null,"sway":0,"clip":"idle_loop","behavior":null,"mood":"ceria","armLeftDeg":26.7,"armRightDeg":30.7,"seated":false,"bodyGap":{"top":57,"bottom":58,"left":82,"right":82}}
+motion {"type":"motion-state","time":0.05,"locomotion":"idle","sleepiness":0,"lookYaw":0,"bones":15,"react":null,"sway":0,"clip":"idle_loop","behavior":null,"mood":"ceria","armLeftDeg":21.3,"armRightDeg":21.4,"seated":false,"bodyGap":{"top":105,"bottom":-121,"left":44,"right":42}}
+motion {"type":"motion-state","time":0.1,"locomotion":"idle","sleepiness":0,"lookYaw":0,"bones":15,"react":null,"sway":0,"clip":"push_loop","behavior":"random_clip","mood":"ceria","armLeftDeg":20.9,"armRightDeg":22.1,"seated":false,"bodyGap":{"top":105,"bottom":-121,"left":43,"right":42}}
+motion {"type":"motion-state","time":0.65,"locomotion":"idle","sleepiness":0,"lookYaw":0,"bones":15,"react":null,"sway":0,"clip":"idle_loop","behavior":null,"mood":"ceria","armLeftDeg":25.7,"armRightDeg":39.3,"seated":false,"bodyGap":{"top":17,"bottom":55,"left":81,"right":60}}
+motion {"type":"motion-state","time":1.83,"locomotion":"idle","sleepiness":0,"lookYaw":0,"bones":15,"react":null,"sway":0,"clip":"idle_loop","behavior":null,"mood":"ceria","armLeftDeg":25,"armRightDeg":29.4,"seated":false,"bodyGap":{"top":39,"bottom":38,"left":78,"right":77}}
 --- jejak direktur perilaku ---
-look_around
+random_clip
 --- celah tubuh saat duduk (piksel) ---
-{"top":51,"bottom":51,"left":78,"right":78}
+{"top":135,"bottom":-156,"left":54,"right":55}
 --- hasil geser ---
-overlay digeser ke (-204, -322)
+overlay digeser ke (96, 359)
