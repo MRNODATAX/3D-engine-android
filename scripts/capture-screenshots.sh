@@ -164,6 +164,10 @@ fi
   adb logcat -d -s AndroidRuntime:E | tail -60
   echo "--- pratinjau Beranda (MateEnginePreview) ---"
   adb logcat -d -s MateEnginePreview:I | tail -30
+  echo "--- jendela siluet & bingkai (v0.1.10) ---"
+  adb logcat -d -s MateEngineRender:I | grep -E "siluet|kotak tubuh|layar berubah|dipetakan|digeser|reaksi|sentuhan" | tail -25
+  echo "--- jendela overlay menurut WindowManager ---"
+  adb shell dumpsys window windows | grep -A 6 "MateEngine avatar" | head -20
 } > "$DIAG" 2>&1 || true
 head -40 "$DIAG"
 

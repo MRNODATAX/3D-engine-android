@@ -182,9 +182,14 @@ object OverlayGeometry {
         edgePx: Int,
         minSizePx: Int,
         frame: Frame,
+        maxCropRatio: Float = MAX_CROP_RATIO,
     ): Rect {
         val design = Rect(designX, designY, designX + designWidth, designY + designHeight)
-        if (box == null) {
+        // Pengukuran yang tidak masuk akal lebih berbahaya daripada tidak ada pengukuran:
+        // kotak setinggi < 30 % kanvas berarti renderer melaporkan satuan/kanvas yang berbeda,
+        // dan memakainya akan memotong badan (pernah terjadi: avatar hanya tampak sebatas kaki).
+        val plausible = box != null && box.height >= designHeight * 0.3f && box.width >= designWidth * 0.12f
+        if (!plausible || box == null) {
             // Tanpa pengukuran tubuh: jendela desain dipotong bingkai saja.
             return Rect(
                 design.left.coerceAtLeast(frame.left),
@@ -204,6 +209,14 @@ object OverlayGeometry {
         top = top.coerceAtLeast(design.top)
         right = right.coerceAtMost(design.right)
         bottom = bottom.coerceAtMost(design.bottom)
+        // Batas pemotongan per sisi: apa pun hasil pengukurannya, jendela tidak boleh menyisakan
+        // kurang dari ~44 % dimensi desain, supaya badan tidak pernah terpotong separuh.
+        val cropCapX = (designWidth * maxCropRatio).toInt()
+        val cropCapY = (designHeight * maxCropRatio).toInt()
+        left = left.coerceAtMost(design.left + cropCapX)
+        top = top.coerceAtMost(design.top + cropCapY)
+        right = right.coerceAtLeast(design.right - cropCapX)
+        bottom = bottom.coerceAtLeast(design.bottom - cropCapY)
         val cx = (left + right) / 2
         val cy = (top + bottom) / 2
         if (right - left < minSizePx) {
@@ -216,6 +229,12 @@ object OverlayGeometry {
         }
         return Rect(left, top, right, bottom)
     }
+
+    /**
+     * Batas maksimum pemotongan per sisi. 0,28 berarti jendela tidak pernah lebih pendek dari
+     * 44 % tinggi desain, sekalipun pengukuran tubuh kacau.
+     */
+    const val MAX_CROP_RATIO = 0.28f
 
     /** Bagian jendela desain yang menelan sentuhan, 0..1. Dipakai untuk mengukur pengurangan. */
     fun blockedFraction(designWidth: Int, designHeight: Int, visible: Rect): Float {

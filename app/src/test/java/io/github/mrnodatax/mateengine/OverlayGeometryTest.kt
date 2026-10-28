@@ -192,6 +192,28 @@ class OverlayGeometryTest {
     }
 
     @Test
+    fun `pengukuran tubuh yang tidak masuk akal ditolak`() {
+        val frame = OverlayGeometry.frame(1080, 2400, OverlayGeometry.Insets(0, 0, 0, 0), marginPx = 0)
+        // Kotak setinggi 8 % kanvas = pengukuran rusak (salah satuan); jangan dipotong.
+        val broken = OverlayGeometry.BodyBox(left = 100, top = 500, right = 400, bottom = 600)
+        val visible = OverlayGeometry.visibleRect(100, 300, 631, 1200, broken, 16, 264, frame)
+        assertEquals(1200, visible.height)
+        assertEquals(631, visible.width)
+    }
+
+    @Test
+    fun `pemotongan dibatasi 28 persen per sisi`() {
+        val frame = OverlayGeometry.frame(1080, 2400, OverlayGeometry.Insets(0, 0, 0, 0), marginPx = 0)
+        // Kotak yang hanya menutup bagian bawah kanvas: tanpa batas, kepala ikut terpotong.
+        val bottomHalf = OverlayGeometry.BodyBox(left = 100, top = 700, right = 500, bottom = 1200)
+        val visible = OverlayGeometry.visibleRect(0, 0, 631, 1200, bottomHalf, 16, 264, frame)
+        // 28 % dari 1200 = 336 → paling cepat mulai di y = 336.
+        assertEquals(336, visible.top)
+        // …dan tinggi minimal 44 % kanvas.
+        assertTrue("tinggi minimal 44 %, dapat ${visible.height}", visible.height >= (1200 * 0.44f).toInt() - 1)
+    }
+
+    @Test
     fun `tanpa pengukuran tubuh jendela tetap ukuran penuh`() {
         val frame = OverlayGeometry.frame(1080, 2400, OverlayGeometry.Insets(0, 0, 0, 0), marginPx = 0)
         val visible = OverlayGeometry.visibleRect(100, 300, 631, 1200, null, 16, 264, frame)

@@ -669,17 +669,30 @@ class OverlayService : Service() {
             "body-box" -> {
                 // Kotak tubuh (piksel kanvas) dari renderer: dasar jendela siluet. Dikirim
                 // beberapa kali per detik hanya saat berubah nyata.
-                // `bodyGap` dikirim dalam CSS px (1 CSS px = 1 dp), sedangkan jendela memakai
-                // piksel fisik — kalikan density.
-                val density = resources.displayMetrics.density
-                val left = (payload.optInt("left") * density).toInt()
-                val top = (payload.optInt("top") * density).toInt()
-                val right = (designWidth - payload.optInt("right") * density).toInt()
-                val bottom = (designHeight - payload.optInt("bottom") * density).toInt()
-                if (right > left && bottom > top) {
-                    bodyBox = OverlayGeometry.BodyBox(left, top, right, bottom)
-                    bodyBoxAt = System.currentTimeMillis()
-                    if (!silhouetteSuspended) applySilhouette()
+                // Payload berisi **fraksi** kanvas (0..1) — bebas satuan, jadi tidak perlu
+                // menebak apakah WebView melaporkan CSS px atau piksel fisik.
+                val fracLeft = payload.optDouble("left", Double.NaN)
+                val fracTop = payload.optDouble("top", Double.NaN)
+                val fracRight = payload.optDouble("right", Double.NaN)
+                val fracBottom = payload.optDouble("bottom", Double.NaN)
+                if (listOf(fracLeft, fracTop, fracRight, fracBottom).all { it.isFinite() }) {
+                    val left = (fracLeft.coerceIn(0.0, 1.0) * designWidth).toInt()
+                    val top = (fracTop.coerceIn(0.0, 1.0) * designHeight).toInt()
+                    val right = ((1.0 - fracRight.coerceIn(0.0, 1.0)) * designWidth).toInt()
+                    val bottom = ((1.0 - fracBottom.coerceIn(0.0, 1.0)) * designHeight).toInt()
+                    Log.i(
+                        TAG,
+                        "kotak tubuh: fraksi ${fracLeft}/${fracTop}/${fracRight}/${fracBottom} " +
+                            "-> px ($left, $top) - ($right, $bottom) dari desain ${designWidth}x$designHeight " +
+                            "(css ${payload.optDouble("cssWidth")}x${payload.optDouble("cssHeight")})",
+                    )
+                    if (right > left && bottom > top) {
+                        bodyBox = OverlayGeometry.BodyBox(left, top, right, bottom)
+                        bodyBoxAt = System.currentTimeMillis()
+                        if (!silhouetteSuspended) applySilhouette()
+                    } else {
+                        Log.w(TAG, "kotak tubuh tidak masuk akal (fraksi $fracLeft/$fracTop/$fracRight/$fracBottom), diabaikan")
+                    }
                 }
             }
             "touch-zone" -> rootView?.setTouchOnBody(payload.optBoolean("inside", false))
@@ -1037,14 +1050,12 @@ class OverlayService : Service() {
      * digeser [canvasOffsetX]/[canvasOffsetY].
      */
     private fun pipePointer(phase: String, x: Float, y: Float) {
-        // Kanvas WebView memakai CSS px, dan dengan viewport `width=device-width` 1 CSS px
-        // sama dengan 1 dp — bukan 1 piksel fisik. Tanpa pembagian ini, sentuhan di kepala
-        // akan dikira di kaki pada perangkat density 2,75.
-        val density = resources.displayMetrics.density
-        if (density <= 0f) return
-        val cssX = ((x + canvasOffsetX) / density).toInt()
-        val cssY = ((y + canvasOffsetY) / density).toInt()
-        evaluate("window.MateEngine.pointer('$phase', $cssX, $cssY)")
+        if (designWidth <= 0 || designHeight <= 0) return
+        // Dikirim sebagai fraksi kanvas (0..1): renderer yang mengalikan dengan ukuran
+        // kanvasnya sendiri, jadi tidak ada asumsi CSS px vs piksel fisik di sini.
+        val fx = ((x + canvasOffsetX) / designWidth).coerceIn(0f, 1f)
+        val fy = ((y + canvasOffsetY) / designHeight).coerceIn(0f, 1f)
+        evaluate("window.MateEngine.pointer('$phase', $fx, $fy)")
     }
 
     /**

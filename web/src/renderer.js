@@ -902,7 +902,18 @@ function animate(now) {
         || Math.abs(last.right - gaps.right) > 6 || Math.abs(last.bottom - gaps.bottom) > 6;
       if (changed) {
         state.bodyBoxLast = gaps;
-        post('body-box', gaps);
+        // Dikirim sebagai **fraksi** kanvas (0..1), bukan piksel: WebView bisa melaporkan
+        // CSS px atau piksel fisik tergantung perangkat, dan Kotlin tidak perlu menebak
+        // density-nya. Ini menghilangkan seluruh kelas bug skala.
+        const { width, height } = canvasSize();
+        post('body-box', {
+          left: Number((gaps.left / width).toFixed(4)),
+          top: Number((gaps.top / height).toFixed(4)),
+          right: Number((gaps.right / width).toFixed(4)),
+          bottom: Number((gaps.bottom / height).toFixed(4)),
+          cssWidth: width,
+          cssHeight: height,
+        });
       }
     }
   }
@@ -1103,8 +1114,11 @@ function pipeTouch(phase, x, y) {
   if (!state.vrm || state.paused) return null;
   const now = performance.now();
   state.touch.tick(now);
-  const px = Number(x) || 0;
-  const py = Number(y) || 0;
+  // Masukan Android berupa fraksi kanvas (0..1) — bebas dari perbedaan CSS px vs piksel fisik.
+  // Nilai di luar 0..1 (sentuhan di margin jendela yang dipotong) dijepit.
+  const { width, height } = canvasSize();
+  const px = Math.min(1, Math.max(0, Number(x) || 0)) * width;
+  const py = Math.min(1, Math.max(0, Number(y) || 0)) * height;
   if (phase === 'down') {
     wakeFromSleep();
     const zone = zoneAt(px, py);
