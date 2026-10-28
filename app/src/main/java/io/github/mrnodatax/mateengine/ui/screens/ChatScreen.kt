@@ -25,6 +25,7 @@ import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Send
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.AssistChip
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.FilterChip
@@ -48,7 +49,9 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
+import io.github.mrnodatax.mateengine.R
 import io.github.mrnodatax.mateengine.chat.ChatMessage
 import io.github.mrnodatax.mateengine.chat.ChatUiState
 import io.github.mrnodatax.mateengine.chat.GeminiTts
@@ -78,6 +81,7 @@ fun ChatScreen(
     var editingPersona by remember { mutableStateOf(false) }
     // Di layar sempit tidak ada kolom kedua, jadi opsi suara/model dibuka lewat dialog.
     var showOptions by remember { mutableStateOf(false) }
+    var confirmClear by remember { mutableStateOf(false) }
     val listState = rememberLazyListState()
 
     LaunchedEffect(ui.messages.size) {
@@ -90,7 +94,8 @@ fun ChatScreen(
             TwoPane(
                 wide = wide,
                 primary = {
-                    Column(Modifier.fillMaxSize()) {
+                    // Gutter 20 dp, sama dengan layar lain (sebelumnya kartu chat menempel tepi).
+                    Column(Modifier.fillMaxSize().padding(horizontal = 20.dp)) {
                         SectionCard {
                             Row(
                                 modifier = Modifier.fillMaxWidth(),
@@ -141,10 +146,29 @@ fun ChatScreen(
                                         Icon(Icons.Filled.Settings, contentDescription = "Opsi chat")
                                     }
                                 }
-                                IconButton(onClick = onClearHistory) {
+                                // Hapus riwayat meminta konfirmasi: dulu satu ketukan pada ikon
+                                // tempat sampah langsung menghapus seluruh percakapan.
+                                IconButton(onClick = { confirmClear = true }) {
                                     Icon(Icons.Filled.Delete, contentDescription = "Hapus riwayat")
                                 }
                             }
+                        }
+
+                        if (confirmClear) {
+                            AlertDialog(
+                                onDismissRequest = { confirmClear = false },
+                                title = { Text("Hapus riwayat chat?") },
+                                text = { Text("Semua pesan di perangkat ini akan hilang. Kunci API dan persona tidak terhapus.") },
+                                confirmButton = {
+                                    TextButton(onClick = {
+                                        confirmClear = false
+                                        onClearHistory()
+                                    }) { Text("Hapus") }
+                                },
+                                dismissButton = {
+                                    TextButton(onClick = { confirmClear = false }) { Text("Batal") }
+                                },
+                            )
                         }
 
                         if (ui.error != null) {
@@ -152,10 +176,43 @@ fun ChatScreen(
                         }
 
                         if (ui.messages.isEmpty()) {
-                            InfoNote(
-                                "Belum ada percakapan. Contoh: \"Hai, temani aku kerja sebentar.\" " +
-                                    "Riwayat disimpan lokal di perangkat ini.",
-                            )
+                            // Empty state: ikon + satu kalimat + contoh yang bisa langsung dikirim.
+                            Column(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(vertical = 12.dp),
+                                horizontalAlignment = Alignment.CenterHorizontally,
+                            ) {
+                                Icon(
+                                    painter = painterResource(R.drawable.ic_symbol_chat_bubble),
+                                    contentDescription = null,
+                                    tint = MaterialTheme.colorScheme.primary.copy(alpha = 0.6f),
+                                    modifier = Modifier.size(48.dp),
+                                )
+                                Text(
+                                    "Belum ada percakapan",
+                                    style = MaterialTheme.typography.titleSmall,
+                                    modifier = Modifier.padding(top = 8.dp),
+                                )
+                                Text(
+                                    "Riwayat disimpan lokal di perangkat ini. Coba salah satu contoh:",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    textAlign = TextAlign.Center,
+                                    modifier = Modifier.padding(top = 2.dp),
+                                )
+                                Row(
+                                    modifier = Modifier.padding(top = 10.dp),
+                                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                                ) {
+                                    listOf("Hai!", "Temani aku kerja", "Cerita dong").forEach { contoh ->
+                                        AssistChip(
+                                            onClick = { draft = contoh },
+                                            label = { Text(contoh, maxLines = 1) },
+                                        )
+                                    }
+                                }
+                            }
                         }
 
                         LazyColumn(
