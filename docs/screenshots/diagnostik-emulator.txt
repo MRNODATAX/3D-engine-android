@@ -1,46 +1,46 @@
 --- services ---
 ACTIVITY MANAGER SERVICES (dumpsys activity services)
+  Last ANR service:
+ServiceRecord{f485bf3 u0 com.google.android.gms/.chimera.GmsIntentOperationService}
+    intent={act=com.google.android.chimera.FileApkManager.DELETE_UNUSED_FILEAPKS pkg=com.google.android.gms}
+    packageName=com.google.android.gms
+    processName=com.google.android.gms
+    baseDir=/product/priv-app/PrebuiltGmsCore/PrebuiltGmsCore.apk
+    dataDir=/data/user/0/com.google.android.gms
+    app=ProcessRecord{eadc79c 5647:com.google.android.gms/u0a131}
+    mAllowWhileInUsePermissionInFgsReason=BACKGROUND_ACTIVITY_PERMISSION
+    allowUiJobScheduling=false
+    recentCallingPackage=com.google.android.gms
+    recentCallingUid=10131
+    allowStartForeground=BACKGROUND_ACTIVITY_PERMISSION
+    startForegroundCount=0
+    infoAllowStartForeground=[callingPackage: com.google.android.gms; callingUid: 10131; uidState: RCVR; uidBFSL: n/a; intent: Intent { act=com.google.android.chimera.FileApkManager.DELETE_UNUSED_FILEAPKS pkg=com.google.android.gms }; code:BACKGROUND_ACTIVITY_PERMISSION; tempAllowListReason:<,reasonCode:SYSTEM_ALLOW_LISTED,duration:9223372036854775807,callingUid:-1>; targetSdkVersion:33; callerTargetSdkVersion:33; startForegroundCount:0; bindFromPackage:null: isBindService:false]
+    createTime=-3m3s307ms startingBgTimeout=--
+    lastActivity=-22s650ms restartTime=-1m39s30ms createdFromFg=false
+    startRequested=true delayedStop=false stopIfKilled=false callStart=false lastStartId=1368
+ startCommandResult=1
+    executeNesting=5 executeFg=true executingStart=-22s650ms
+    restartCount=1 restartDelay=-3m43s843ms nextRestartTime=-1m38s805ms crashCount=0
+    Delivered Starts:
+    #0 id=1364 dur=-22s882ms dc=1
+      intent=Intent { act=com.google.android.gms.chimera.debug.WRITE_JOURNAL_UPDATE_ACTION cat=[targeted_intent_op_prefix:.chimera.debug.ModuleSetJournalUpdate$ModuleSetJournalIntentOperation] cmp=com.google.android.gms/.chimera.GmsIntentOperationService (has extras) }
+    #1 id=1365 dur=-22s848ms dc=1
+      intent=Intent { act=com.google.android.gms.chimera.debug.WRITE_JOURNAL_UPDATE_ACTION cat=[targeted_intent_op_prefix:.chimera.debug.ModuleSetJournalUpdate$ModuleSetJournalIntentOperation] cmp=com.google.android.gms/.chimera.GmsIntentOperationService (has extras) }
+    #2 id=1366 dur=-22s800ms dc=1
+      intent=Intent { act=com.google.android.gms.chimera.debug.WRITE_JOURNAL_UPDATE_ACTION cat=[targeted_intent_op_prefix:.chimera.debug.ModuleSetJournalUpdate$ModuleSetJournalIntentOperation] cmp=com.google.android.gms/.chimera.GmsIntentOperationService (has extras) }
+    #3 id=1367 dur=-22s731ms dc=1
+      intent=Intent { act=com.google.android.gms.chimera.debug.WRITE_JOURNAL_UPDATE_ACTION cat=[targeted_intent_op_prefix:.chimera.debug.ModuleSetJournalUpdate$ModuleSetJournalIntentOperation] cmp=com.google.android.gms/.chimera.GmsIntentOperationService (has extras) }
+    #4 id=1368 dur=-22s650ms dc=1
+      intent=Intent { act=com.google.android.gms.chimera.debug.WRITE_JOURNAL_UPDATE_ACTION cat=[targeted_intent_op_prefix:.chimera.debug.ModuleSetJournalUpdate$ModuleSetJournalIntentOperation] cmp=com.google.android.gms/.chimera.GmsIntentOperationService (has extras) }
+
   User 0 active services:
-  * ServiceRecord{606439e u0 io.github.mrnodatax.mateengine.debug/org.chromium.content.app.SandboxedProcessService0:0}
+  * ServiceRecord{6f4a9dd u0 io.github.mrnodatax.mateengine.debug/org.chromium.content.app.SandboxedProcessService0:0}
     intent={cmp=io.github.mrnodatax.mateengine.debug/org.chromium.content.app.SandboxedProcessService0:0}
     packageName=io.github.mrnodatax.mateengine.debug
     processName=com.google.android.webview:sandboxed_process0:org.chromium.content.app.SandboxedProcessService0:0
-    baseDir=/data/app/~~vCgXoteBBNLos3QyMeFd6g==/com.google.android.webview-2cR_waFjR3jPdR3LJIWFTw==/WebViewGoogle.apk
-    dataDir=/data/user/0/com.google.android.webview
-    app=ProcessRecord{e1f0587 6210:com.google.android.webview:sandboxed_process0:org.chromium.content.app.SandboxedProcessService0:0/u0a192i1}
-    isolationHostProc=ProcessRecord{e1f0587 6210:com.google.android.webview:sandboxed_process0:org.chromium.content.app.SandboxedProcessService0:0/u0a192i1}
-    mAllowWhileInUsePermissionInFgsReason=PROC_STATE_TOP
-    allowUiJobScheduling=false
-    recentCallingPackage=io.github.mrnodatax.mateengine.debug
-    recentCallingUid=10192
-    allowStartForeground=PROC_STATE_TOP
-    startForegroundCount=0
-    infoAllowStartForeground=[callingPackage: io.github.mrnodatax.mateengine.debug; callingUid: 10192; uidState: TOP ; uidBFSL: [BFSL]; intent: Intent { cmp=io.github.mrnodatax.mateengine.debug/org.chromium.content.app.SandboxedProcessService0:0 (has extras) }; code:PROC_STATE_TOP; tempAllowListReason:<null>; targetSdkVersion:34; callerTargetSdkVersion:34; startForegroundCount:0; bindFromPackage:null: isBindService:true]
-    createTime=-22s344ms startingBgTimeout=--
-    lastActivity=-20s882ms restartTime=-22s309ms createdFromFg=true
-    Bindings:
-    * IntentBindRecord{5ea0470 CREATE}:
-      intent={cmp=io.github.mrnodatax.mateengine.debug/org.chromium.content.app.SandboxedProcessService0:0}
-      binder=android.os.BinderProxy@9e33e9
-      requested=true received=true hasBound=true doRebind=false
-      * Client AppBindRecord{663486e ProcessRecord{8d3ea92 6178:io.github.mrnodatax.mateengine.debug/u0a192}}
-        Per-process Connections:
-          ConnectionRecord{216abd1 u0 CR IMP io.github.mrnodatax.mateengine.debug/org.chromium.content.app.SandboxedProcessService0:0:@72b4af8 flags=0x80000041}
-          ConnectionRecord{55690dd u0 CR WPRI io.github.mrnodatax.mateengine.debug/org.chromium.content.app.SandboxedProcessService0:0:@44eacb4 flags=0x80000021}
-    All Connections:
-      ConnectionRecord{55690dd u0 CR WPRI io.github.mrnodatax.mateengine.debug/org.chromium.content.app.SandboxedProcessService0:0:@44eacb4 flags=0x80000021}
-      ConnectionRecord{216abd1 u0 CR IMP io.github.mrnodatax.mateengine.debug/org.chromium.content.app.SandboxedProcessService0:0:@72b4af8 flags=0x80000041}
-
-  * ServiceRecord{94c38a u0 io.github.mrnodatax.mateengine.debug/io.github.mrnodatax.mateengine.overlay.OverlayService}
-    intent={act=io.github.mrnodatax.mateengine.action.START_OVERLAY cmp=io.github.mrnodatax.mateengine.debug/io.github.mrnodatax.mateengine.overlay.OverlayService}
-    packageName=io.github.mrnodatax.mateengine.debug
-    processName=io.github.mrnodatax.mateengine.debug
-    baseDir=/data/app/~~BrYksxhYmxEYq-Bwj53UOw==/io.github.mrnodatax.mateengine.debug-CJ67qycZFsOHK619qNa6Og==/base.apk
-    dataDir=/data/user/0/io.github.mrnodatax.mateengine.debug
-    app=ProcessRecord{8d3ea92 6178:io.github.mrnodatax.mateengine.debug/u0a192}
-    mAllowWhileInUsePermissionInFgsReason=PROC_STATE_TOP
+    baseDir=/data/app/~~uJl-gIUExl6wzHHaUdOWSg==/com.google.android.webview-k8dSPEVxRmOyu6LRrmP73g==/WebViewGoogle.apk
 --- appops ---
-SYSTEM_ALERT_WINDOW: allow; time=+8s86ms ago (running)
+SYSTEM_ALERT_WINDOW: allow; time=+8s41ms ago (running)
 --- package perms ---
       android.permission.SYSTEM_ALERT_WINDOW
       android.permission.FOREGROUND_SERVICE
@@ -50,68 +50,52 @@ SYSTEM_ALERT_WINDOW: allow; time=+8s86ms ago (running)
       android.permission.FOREGROUND_SERVICE_SPECIAL_USE: granted=true
 --- crash log ---
 --- pratinjau Beranda (MateEnginePreview) ---
-10-28 13:27:29.027  6178  6285 I MateEnginePreview: pesan {"type":"stats","triangles":70116,"calls":20,"textures":28,"geometries":13,"bones":137,"meshes":13,"springJoints":57,"fpsTarget":15,"renderScale":1,"qualityLevel":"high","workMs":6506}
-10-28 13:27:29.031  6178  6285 I MateEnginePreview: pesan {"type":"clip-changed","clip":"idle_loop","reason":"state"}
-10-28 13:27:29.077  6178  6285 I MateEnginePreview: pesan {"type":"fps","value":1,"workMs":5860}
-10-28 13:27:29.078  6178  6285 I MateEnginePreview: pesan {"type":"motion-state","time":0.1,"locomotion":"idle","sleepiness":0,"lookYaw":0,"bones":15,"react":null,"reactionStyle":null,"sway":0,"clip":"idle_loop","behavior":null,"mood":"ceria","armLeftDeg":20.9,"armRightDeg":22.1,"seated":false,"bodyGap":{"top":49,"bottom":-59,"left":120,"right":120}}
-10-28 13:27:29.079  6178  6285 I MateEnginePreview: pesan {"type":"debug-view","cssW":331,"cssH":248,"clientW":331,"clientH":248,"dpr":2.63,"scrollY":0,"vvScale":1,"vvOffsetTop":0,"vvHeight":248,"canvasH":248,"modelScale":1,"camDistance":3.24,"frameHeight":1.54,"pose":54}
-10-28 13:27:29.080  6178  6285 I MateEnginePreview: pesan {"type":"stats","triangles":70116,"calls":20,"textures":28,"geometries":13,"bones":137,"meshes":13,"springJoints":57,"fpsTarget":15,"renderScale":1,"qualityLevel":"high","workMs":5860}
-10-28 13:27:29.144  6178  6178 I MateEnginePreview: console WARNING: createVRMAnimationClip: VRMLookAtQuaternionProxy is not found. Creating a new one automatically. To suppress this warning, create a VRMLookAtQuaternionProxy manually
-10-28 13:27:29.148  6178  6285 I MateEnginePreview: pesan {"type":"animation-playing","name":"idle_loop","duration":2.5}
-10-28 13:27:29.148  6178  6285 I MateEnginePreview: pesan {"type":"animation-playing","name":"idle_loop","duration":2.5}
-10-28 13:27:29.226  6178  6285 I MateEnginePreview: pesan {"type":"body-box","left":0.3867,"top":0.2177,"right":0.3746,"bottom":-0.2782,"cssWidth":331,"cssHeight":248}
-10-28 13:27:30.092  6178  6285 I MateEnginePreview: pesan {"type":"fps","value":16,"workMs":1092}
-10-28 13:27:31.076  6178  6285 I MateEnginePreview: pesan {"type":"stats","triangles":70116,"calls":20,"textures":28,"geometries":13,"bones":137,"meshes":13,"springJoints":57,"fpsTarget":15,"renderScale":1,"qualityLevel":"high","workMs":284}
-10-28 13:27:31.142  6178  6285 I MateEnginePreview: pesan {"type":"fps","value":14,"workMs":255}
-10-28 13:27:31.892  6178  6285 I MateEnginePreview: pesan {"type":"body-box","left":0.4079,"top":0.2218,"right":0.3867,"bottom":-0.2863,"cssWidth":331,"cssHeight":248}
-10-28 13:27:32.092  6178  6285 I MateEnginePreview: pesan {"type":"debug-view","cssW":331,"cssH":248,"clientW":331,"clientH":248,"dpr":2.63,"scrollY":0,"vvScale":1,"vvOffsetTop":0,"vvHeight":248,"canvasH":248,"modelScale":1,"camDistance":3.27,"frameHeight":1.51,"pose":54}
-10-28 13:27:32.157  6178  6285 I MateEnginePreview: pesan {"type":"fps","value":15,"workMs":55}
-10-28 13:27:33.241  6178  6285 I MateEnginePreview: pesan {"type":"fps","value":8,"workMs":25}
-10-28 13:27:33.243  6178  6285 I MateEnginePreview: pesan {"type":"stats","triangles":70116,"calls":20,"textures":28,"geometries":13,"bones":137,"meshes":13,"springJoints":57,"fpsTarget":15,"renderScale":1,"qualityLevel":"high","workMs":25}
-10-28 13:27:34.152  6178  6285 I MateEnginePreview: pesan {"type":"motion-state","time":3.15,"locomotion":"idle","sleepiness":0,"lookYaw":0.058,"bones":15,"react":null,"reactionStyle":null,"sway":0,"clip":"idle_loop","behavior":null,"mood":"ceria","armLeftDeg":26.9,"armRightDeg":30.5,"seated":false,"bodyGap":{"top":55,"bottom":-70,"left":132,"right":125}}
-10-28 13:27:34.199  6178  6285 I MateEnginePreview: pesan {"type":"fps","value":9,"workMs":13}
-10-28 13:27:38.893  6178  6285 I MateEnginePreview: pesan {"type":"fps","value":3,"workMs":10}
-10-28 13:27:38.894  6178  6285 I MateEnginePreview: pesan {"type":"debug-view","cssW":331,"cssH":248,"clientW":331,"clientH":248,"dpr":2.63,"scrollY":0,"vvScale":1,"vvOffsetTop":0,"vvHeight":248,"canvasH":248,"modelScale":1,"camDistance":3.26,"frameHeight":1.5,"pose":54}
-10-28 13:27:38.894  6178  6285 I MateEnginePreview: pesan {"type":"stats","triangles":70116,"calls":20,"textures":28,"geometries":13,"bones":137,"meshes":13,"springJoints":57,"fpsTarget":15,"renderScale":1,"qualityLevel":"high","workMs":10}
-10-28 13:27:39.669  6178  6285 I MateEnginePreview: pesan {"type":"motion-state","time":3.4,"locomotion":"idle","sleepiness":0,"lookYaw":0.065,"bones":15,"react":null,"reactionStyle":null,"sway":0,"clip":"idle_loop","behavior":null,"mood":"ceria","armLeftDeg":27.6,"armRightDeg":33.8,"seated":false,"bodyGap":{"top":56,"bottom":-70,"left":131,"right":125}}
-10-28 13:27:39.951  6178  6285 I MateEnginePreview: pesan {"type":"fps","value":4,"workMs":10}
-10-28 13:27:40.549  6178  6285 I MateEnginePreview: pesan {"type":"body-box","left":0.3867,"top":0.2177,"right":0.3746,"bottom":-0.2863,"cssWidth":331,"cssHeight":248}
-10-28 13:27:40.941  6178  6285 I MateEnginePreview: pesan {"type":"fps","value":4,"workMs":8}
-10-28 13:27:40.950  6178  6285 I MateEnginePreview: pesan {"type":"stats","triangles":70116,"calls":20,"textures":28,"geometries":13,"bones":137,"meshes":13,"springJoints":57,"fpsTarget":15,"renderScale":1,"qualityLevel":"high","workMs":8}
-10-28 13:27:42.061  6178  6285 I MateEnginePreview: pesan {"type":"fps","value":6,"workMs":10}
-10-28 13:27:42.063  6178  6285 I MateEnginePreview: pesan {"type":"debug-view","cssW":331,"cssH":248,"clientW":331,"clientH":248,"dpr":2.63,"scrollY":0,"vvScale":1,"vvOffsetTop":0,"vvHeight":248,"canvasH":248,"modelScale":1,"camDistance":3.25,"frameHeight":1.52,"pose":54}
+10-28 13:28:04.054  6145  6244 I MateEnginePreview: pesan {"type":"debug-view","cssW":331,"cssH":248,"clientW":331,"clientH":248,"dpr":2.63,"scrollY":0,"vvScale":1,"vvOffsetTop":0,"vvHeight":248,"canvasH":248,"modelScale":1,"camDistance":3.27,"frameHeight":1.52,"pose":54}
+10-28 13:28:04.986  6145  6244 I MateEnginePreview: pesan {"type":"fps","value":15,"workMs":2}
+10-28 13:28:04.986  6145  6244 I MateEnginePreview: pesan {"type":"stats","triangles":70116,"calls":20,"textures":28,"geometries":13,"bones":137,"meshes":13,"springJoints":57,"fpsTarget":15,"renderScale":1,"qualityLevel":"high","workMs":2}
+10-28 13:28:05.920  6145  6244 I MateEnginePreview: pesan {"type":"body-box","left":0.3867,"top":0.2177,"right":0.3746,"bottom":-0.2863,"cssWidth":331,"cssHeight":248}
+10-28 13:28:05.987  6145  6244 I MateEnginePreview: pesan {"type":"fps","value":15,"workMs":3}
+10-28 13:28:06.986  6145  6244 I MateEnginePreview: pesan {"type":"fps","value":15,"workMs":3}
+10-28 13:28:06.987  6145  6244 I MateEnginePreview: pesan {"type":"stats","triangles":70116,"calls":20,"textures":28,"geometries":13,"bones":137,"meshes":13,"springJoints":57,"fpsTarget":15,"renderScale":1,"qualityLevel":"high","workMs":3}
+10-28 13:28:07.053  6145  6244 I MateEnginePreview: pesan {"type":"debug-view","cssW":331,"cssH":248,"clientW":331,"clientH":248,"dpr":2.63,"scrollY":0,"vvScale":1,"vvOffsetTop":0,"vvHeight":248,"canvasH":248,"modelScale":1,"camDistance":3.26,"frameHeight":1.51,"pose":54}
+10-28 13:28:07.987  6145  6244 I MateEnginePreview: pesan {"type":"fps","value":15,"workMs":2}
+10-28 13:28:08.054  6145  6244 I MateEnginePreview: pesan {"type":"motion-state","time":29.15,"locomotion":"idle","sleepiness":0,"lookYaw":0.006,"bones":15,"react":null,"reactionStyle":null,"sway":0,"clip":"idle_loop","behavior":null,"mood":"ceria","armLeftDeg":32,"armRightDeg":31.9,"seated":false,"bodyGap":{"top":54,"bottom":-71,"left":132,"right":124}}
+10-28 13:28:08.989  6145  6244 I MateEnginePreview: pesan {"type":"fps","value":15,"workMs":4}
+10-28 13:28:08.991  6145  6244 I MateEnginePreview: pesan {"type":"stats","triangles":70116,"calls":20,"textures":28,"geometries":13,"bones":137,"meshes":13,"springJoints":57,"fpsTarget":15,"renderScale":1,"qualityLevel":"high","workMs":4}
+10-28 13:28:09.986  6145  6244 I MateEnginePreview: pesan {"type":"fps","value":15,"workMs":5}
+10-28 13:28:10.053  6145  6244 I MateEnginePreview: pesan {"type":"debug-view","cssW":331,"cssH":248,"clientW":331,"clientH":248,"dpr":2.63,"scrollY":0,"vvScale":1,"vvOffsetTop":0,"vvHeight":248,"canvasH":248,"modelScale":1,"camDistance":3.27,"frameHeight":1.51,"pose":54}
+10-28 13:28:18.802  6145  6244 I MateEnginePreview: pesan {"type":"fps","value":4,"workMs":6}
+10-28 13:28:18.814  6145  6244 I MateEnginePreview: pesan {"type":"stats","triangles":70116,"calls":20,"textures":28,"geometries":13,"bones":137,"meshes":13,"springJoints":57,"fpsTarget":15,"renderScale":1,"qualityLevel":"high","workMs":6}
+10-28 13:28:33.272  6145  6244 I MateEnginePreview: pesan {"type":"fps","value":1,"workMs":5}
+10-28 13:28:33.284  6145  6244 I MateEnginePreview: pesan {"type":"motion-state","time":30.85,"locomotion":"idle","sleepiness":0,"lookYaw":0.006,"bones":15,"react":null,"reactionStyle":null,"sway":0,"clip":"idle_loop","behavior":null,"mood":"ceria","armLeftDeg":18.1,"armRightDeg":31.2,"seated":false,"bodyGap":{"top":55,"bottom":-70,"left":130,"right":123}}
+10-28 13:28:33.284  6145  6244 I MateEnginePreview: pesan {"type":"debug-view","cssW":331,"cssH":248,"clientW":331,"clientH":248,"dpr":2.63,"scrollY":0,"vvScale":1,"vvOffsetTop":0,"vvHeight":248,"canvasH":248,"modelScale":1,"camDistance":3.26,"frameHeight":1.51,"pose":54}
+10-28 13:28:33.284  6145  6244 I MateEnginePreview: pesan {"type":"stats","triangles":70116,"calls":20,"textures":28,"geometries":13,"bones":137,"meshes":13,"springJoints":57,"fpsTarget":15,"renderScale":1,"qualityLevel":"high","workMs":5}
+10-28 13:28:33.305  6145  6244 I MateEnginePreview: pesan {"type":"fps","value":1,"workMs":5}
+10-28 13:28:33.306  6145  6244 I MateEnginePreview: pesan {"type":"motion-state","time":30.9,"locomotion":"idle","sleepiness":0,"lookYaw":0.006,"bones":15,"react":null,"reactionStyle":null,"sway":0,"clip":"idle_loop","behavior":null,"mood":"ceria","armLeftDeg":18.8,"armRightDeg":31.6,"seated":false,"bodyGap":{"top":55,"bottom":-70,"left":130,"right":123}}
+10-28 13:28:33.312  6145  6244 I MateEnginePreview: pesan {"type":"debug-view","cssW":331,"cssH":248,"clientW":331,"clientH":248,"dpr":2.63,"scrollY":0,"vvScale":1,"vvOffsetTop":0,"vvHeight":248,"canvasH":248,"modelScale":1,"camDistance":3.26,"frameHeight":1.51,"pose":54}
+10-28 13:28:33.312  6145  6244 I MateEnginePreview: pesan {"type":"stats","triangles":70116,"calls":20,"textures":28,"geometries":13,"bones":137,"meshes":13,"springJoints":57,"fpsTarget":15,"renderScale":1,"qualityLevel":"high","workMs":5}
+10-28 13:28:34.302  6145  6244 I MateEnginePreview: pesan {"type":"fps","value":15,"workMs":2}
+10-28 13:28:35.458  6145  6244 I MateEnginePreview: pesan {"type":"fps","value":3,"workMs":6}
+10-28 13:28:35.500  6145  6244 I MateEnginePreview: pesan {"type":"stats","triangles":70116,"calls":20,"textures":28,"geometries":13,"bones":137,"meshes":13,"springJoints":57,"fpsTarget":15,"renderScale":1,"qualityLevel":"high","workMs":6}
+10-28 13:28:36.288  6145  6244 I MateEnginePreview: pesan {"type":"debug-view","cssW":331,"cssH":248,"clientW":331,"clientH":248,"dpr":2.63,"scrollY":0,"vvScale":1,"vvOffsetTop":0,"vvHeight":248,"canvasH":248,"modelScale":1,"camDistance":3.27,"frameHeight":1.51,"pose":54}
+10-28 13:28:36.874  6145  6244 I MateEnginePreview: pesan {"type":"fps","value":7,"workMs":3}
+10-28 13:28:37.452  6145  6244 I MateEnginePreview: pesan {"type":"stats","triangles":70116,"calls":20,"textures":28,"geometries":13,"bones":137,"meshes":13,"springJoints":57,"fpsTarget":15,"renderScale":1,"qualityLevel":"high","workMs":3}
 --- jendela siluet & bingkai (v0.1.10) ---
-10-28 13:27:32.846  6178  6178 I MateEngineRender: jendela siluet 783x1487 di (245, 798) = 100% dari desain 783x1487
-10-28 13:27:33.667  6178  6178 I MateEngineRender: jendela siluet 783x1487 di (245, 798) = 100% dari desain 783x1487
-10-28 13:27:38.857  6178  6178 I MateEngineRender: kotak tubuh: fraksi 0.1572/0.1993/0.1505/-0.2381 -> px (107, 0) - (680, 1487) dari desain 783x1487 (css 299.0x567.0)
-10-28 13:27:38.857  6178  6178 W MateEngineRender: kotak tubuh terlalu kecil (-0.0067000000000000115x-0.4374 fraksi), diabaikan
-10-28 13:27:39.774  6178  6178 I MateEngineRender: kotak tubuh: fraksi 0.0769/0.0529/0.0769/0.0529 -> px (44, 0) - (738, 1487) dari desain 783x1487 (css 299.0x567.0)
-10-28 13:27:39.774  6178  6178 W MateEngineRender: kotak tubuh terlalu kecil (0.0x0.0 fraksi), diabaikan
-10-28 13:27:40.178  6178  6178 I MateEngineRender: kotak tubuh: fraksi -0.0401/0.0476/-0.0368/0.0459 -> px (0, 0) - (783, 1487) dari desain 783x1487 (css 299.0x567.0)
-10-28 13:27:40.178  6178  6178 W MateEngineRender: kotak tubuh terlalu kecil (0.0032999999999999974x-0.0017000000000000001 fraksi), diabaikan
-10-28 13:27:40.543  6178  6178 I MateEngineRender: kotak tubuh: fraksi 0.1003/0.1111/0.107/0.0317 -> px (62, 0) - (714, 1487) dari desain 783x1487 (css 299.0x567.0)
-10-28 13:27:40.544  6178  6178 W MateEngineRender: kotak tubuh terlalu kecil (0.006699999999999998x-0.0794 fraksi), diabaikan
-10-28 13:27:40.930  6178  6178 I MateEngineRender: kotak tubuh: fraksi 0.3545/0.1675/0.3144/0.0511 -> px (261, 0) - (552, 1487) dari desain 783x1487 (css 299.0x567.0)
-10-28 13:27:40.930  6178  6178 W MateEngineRender: kotak tubuh terlalu kecil (-0.04009999999999997x-0.1164 fraksi), diabaikan
-10-28 13:27:41.177  6178  6178 I MateEngineRender: kotak tubuh: fraksi 0.3344/0.1217/0.3344/0.1041 -> px (246, 0) - (536, 1487) dari desain 783x1487 (css 299.0x567.0)
-10-28 13:27:41.178  6178  6178 W MateEngineRender: kotak tubuh terlalu kecil (0.0x-0.017600000000000005 fraksi), diabaikan
-10-28 13:27:41.829  6178  6178 I MateEngineRender: kotak tubuh: fraksi 0.3378/0.1429/0.3177/0.1129 -> px (248, 0) - (549, 1487) dari desain 783x1487 (css 299.0x567.0)
-10-28 13:27:41.829  6178  6178 W MateEngineRender: kotak tubuh terlalu kecil (-0.020100000000000007x-0.03 fraksi), diabaikan
-10-28 13:27:43.235  6178  6178 I MateEngineRender: kotak tubuh: fraksi 0.3445/0.1411/0.3211/0.1252 -> px (254, 0) - (547, 1487) dari desain 783x1487 (css 299.0x567.0)
-10-28 13:27:43.235  6178  6178 W MateEngineRender: kotak tubuh terlalu kecil (-0.023399999999999976x-0.015899999999999997 fraksi), diabaikan
+10-28 13:28:34.633  6145  6145 I MateEngineRender: jendela siluet 783x1487 di (245, 798) = 100% dari desain 783x1487
+10-28 13:28:35.848  6145  6145 I MateEngineRender: jendela siluet 783x1487 di (245, 798) = 100% dari desain 783x1487
 --- penghematan area yang menelan sentuhan ---
 n=2 terkecil=100% median=100% terbesar=100% -> pengurangan luas median 0%
 --- jendela overlay menurut WindowManager ---
-  Window #7 Window{92c5142 u0 MateEngine avatar}:
-    mDisplayId=0 rootTaskId=1 mSession=Session{f22c9dd 6178:u0a10192} mClient=android.os.BinderProxy@de5e424
+  Window #7 Window{d58e294 u0 MateEngine avatar}:
+    mDisplayId=0 rootTaskId=1 mSession=Session{2ec190 6145:u0a10192} mClient=android.os.BinderProxy@d23050b
     mOwnerUid=10192 showForAllUsers=false package=io.github.mrnodatax.mateengine.debug appop=SYSTEM_ALERT_WINDOW
     mAttrs={(245,798)(783x1487) gr=TOP START CENTER sim={adjust=resize} ty=APPLICATION_OVERLAY fmt=TRANSLUCENT
       fl=NOT_FOCUSABLE NOT_TOUCH_MODAL LAYOUT_IN_SCREEN HARDWARE_ACCELERATED
       pfl=USE_BLAST
       bhv=DEFAULT
 --
-    WindowStateAnimator{b9f95ce MateEngine avatar}:
-      mSurface=Surface(name=MateEngine avatar)/@0xdebbcef
+    WindowStateAnimator{908d14a MateEngine avatar}:
+      mSurface=Surface(name=MateEngine avatar)/@0x1c1d8bb
       Surface: shown=true layer=0 alpha=1.0 rect=(0.0,0.0)  transform=(1.0, 0.0, 0.0, 1.0)
       mDrawState=HAS_DRAWN       mLastHidden=false
       mEnterAnimationPending=false      mSystemDecorRect=[0,0][0,0]
@@ -119,52 +103,48 @@ n=2 terkecil=100% median=100% terbesar=100% -> pengurangan luas median 0%
     isVisible=true
     keepClearAreas: restricted=[], unrestricted=[]
 --- jejak gerak renderer (5 detik terakhir) ---
-motion {"type":"motion-state","time":1.58,"locomotion":"idle","sleepiness":0,"lookYaw":0,"bones":15,"react":null,"reactionStyle":null,"sway":0,"clip":"idle_loop","behavior":null,"mood":"ceria","armLeftDeg":102.9,"armRightDeg":105.5,"seated":false,"bodyGap":{"top":59,"bottom":59,"left":6,"right":7}}
-motion {"type":"motion-state","time":2.98,"locomotion":"idle","sleepiness":0,"lookYaw":0.051,"bones":15,"react":null,"reactionStyle":null,"sway":0,"clip":"crouch_idle","behavior":"random_clip","mood":"ceria","armLeftDeg":48.3,"armRightDeg":37.9,"seated":false,"bodyGap":{"top":148,"bottom":138,"left":69,"right":66}}
+motion {"type":"motion-state","time":0.1,"locomotion":"idle","sleepiness":0,"lookYaw":0,"bones":15,"react":null,"reactionStyle":null,"sway":0,"clip":"push_loop","behavior":"random_clip","mood":"ceria","armLeftDeg":20.9,"armRightDeg":22.1,"seated":false,"bodyGap":{"top":113,"bottom":-135,"left":46,"right":45}}
+motion {"type":"motion-state","time":0.33,"locomotion":"idle","sleepiness":0,"lookYaw":0,"bones":15,"react":null,"reactionStyle":null,"sway":0,"clip":"idle_loop","behavior":null,"mood":"ceria","armLeftDeg":43.5,"armRightDeg":51.1,"seated":false,"bodyGap":{"top":36,"bottom":36,"left":27,"right":28}}
+motion {"type":"motion-state","time":1.43,"locomotion":"idle","sleepiness":0,"lookYaw":0,"bones":15,"react":null,"reactionStyle":null,"sway":0,"clip":"idle_loop","behavior":"look_around","mood":"ceria","armLeftDeg":27.1,"armRightDeg":35.8,"seated":false,"bodyGap":{"top":31,"bottom":31,"left":79,"right":79}}
 --- jejak sudut lengan ---
-motion {"type":"motion-state","time":1.58,"locomotion":"idle","sleepiness":0,"lookYaw":0,"bones":15,"react":null,"reactionStyle":null,"sway":0,"clip":"idle_loop","behavior":null,"mood":"ceria","armLeftDeg":102.9,"armRightDeg":105.5,"seated":false,"bodyGap":{"top":59,"bottom":59,"left":6,"right":7}}
-motion {"type":"motion-state","time":2.98,"locomotion":"idle","sleepiness":0,"lookYaw":0.051,"bones":15,"react":null,"reactionStyle":null,"sway":0,"clip":"crouch_idle","behavior":"random_clip","mood":"ceria","armLeftDeg":48.3,"armRightDeg":37.9,"seated":false,"bodyGap":{"top":148,"bottom":138,"left":69,"right":66}}
+motion {"type":"motion-state","time":0.1,"locomotion":"idle","sleepiness":0,"lookYaw":0,"bones":15,"react":null,"reactionStyle":null,"sway":0,"clip":"push_loop","behavior":"random_clip","mood":"ceria","armLeftDeg":20.9,"armRightDeg":22.1,"seated":false,"bodyGap":{"top":113,"bottom":-135,"left":46,"right":45}}
+motion {"type":"motion-state","time":0.33,"locomotion":"idle","sleepiness":0,"lookYaw":0,"bones":15,"react":null,"reactionStyle":null,"sway":0,"clip":"idle_loop","behavior":null,"mood":"ceria","armLeftDeg":43.5,"armRightDeg":51.1,"seated":false,"bodyGap":{"top":36,"bottom":36,"left":27,"right":28}}
+motion {"type":"motion-state","time":1.43,"locomotion":"idle","sleepiness":0,"lookYaw":0,"bones":15,"react":null,"reactionStyle":null,"sway":0,"clip":"idle_loop","behavior":"look_around","mood":"ceria","armLeftDeg":27.1,"armRightDeg":35.8,"seated":false,"bodyGap":{"top":31,"bottom":31,"left":79,"right":79}}
 --- jejak direktur perilaku ---
-random_clip
+random_clip, look_around
 --- jendela saat mode duduk ---
-  Window #7 Window{1784835 u0 MateEngine avatar}:
-    mDisplayId=0 rootTaskId=1 mSession=Session{dad8e16 7015:u0a10192} mClient=android.os.BinderProxy@f89a71f
+  Window #7 Window{1f370b6 u0 MateEngine avatar}:
+    mDisplayId=0 rootTaskId=1 mSession=Session{971f7b 7556:u0a10192} mClient=android.os.BinderProxy@8ee1178
     mOwnerUid=10192 showForAllUsers=false package=io.github.mrnodatax.mateengine.debug appop=SYSTEM_ALERT_WINDOW
     mAttrs={(21,366)(1010x1919) gr=TOP START CENTER sim={adjust=resize} ty=APPLICATION_OVERLAY fmt=TRANSLUCENT
 --
-    WindowStateAnimator{728d4f4 MateEngine avatar}:
-10-28 13:29:05.036  7015  7015 I MateEngineRender: kotak tubuh: fraksi 0.2935/0.1667/0.3013/0.082 -> px (276, 0) - (725, 1919) dari desain 1010x1919 (css 385.0x732.0)
-10-28 13:29:05.037  7015  7015 W MateEngineRender: kotak tubuh terlalu kecil (0.007800000000000029x-0.08469999999999998 fraksi), diabaikan
-10-28 13:29:05.126  7015  7015 I MateEngineRender: kotak tubuh: fraksi 0.2909/0.1954/0.3091/0.0792 -> px (273, 0) - (718, 1919) dari desain 1010x1919 (css 385.0x732.0)
-10-28 13:29:05.131  7015  7015 W MateEngineRender: kotak tubuh terlalu kecil (0.018199999999999994x-0.11619999999999998 fraksi), diabaikan
-10-28 13:29:05.148  7015  7015 I MateEngineRender: kotak tubuh: fraksi 0.2987/0.1407/0.2987/0.1339 -> px (281, 0) - (728, 1919) dari desain 1010x1919 (css 385.0x732.0)
-10-28 13:29:05.148  7015  7015 W MateEngineRender: kotak tubuh terlalu kecil (0.0x-0.0068000000000000005 fraksi), diabaikan
-10-28 13:29:05.252  7015  7015 I MateEngineRender: renderer: debug-view {"type":"debug-view","cssW":385,"cssH":732,"clientW":385,"clientH":732,"dpr":2.63,"scrollY":0,"vvScale":1,"vvOffsetTop":0,"vvHeight":732,"canvasH":732,"modelScale":1,"camDistance":3.64,"frameHeight":1.39,"pose":54}
-10-28 13:29:05.256  7015  7015 I MateEngineRender: debug-view {"type":"debug-view","cssW":385,"cssH":732,"clientW":385,"clientH":732,"dpr":2.63,"scrollY":0,"vvScale":1,"vvOffsetTop":0,"vvHeight":732,"canvasH":732,"modelScale":1,"camDistance":3.64,"frameHeight":1.39,"pose":54}
+    WindowStateAnimator{551ad26 MateEngine avatar}:
+10-28 13:29:54.062  7556  7556 I MateEngineRender: jendela siluet 1010x1919 di (21, 366) = 100% dari desain 1010x1919
+10-28 13:29:55.865  7556  7556 I MateEngineRender: jendela siluet 1010x1919 di (21, 366) = 100% dari desain 1010x1919
 --- celah tubuh saat duduk (piksel) ---
-{"top":103,"bottom":98,"left":115,"right":116}
+{"top":54,"bottom":54,"left":85,"right":85}
 --- jendela tepat setelah digeser ke pojok ---
-  Window #7 Window{1784835 u0 MateEngine avatar}:
-    mDisplayId=0 rootTaskId=1 mSession=Session{dad8e16 7015:u0a10192} mClient=android.os.BinderProxy@f89a71f
+  Window #7 Window{1f370b6 u0 MateEngine avatar}:
+    mDisplayId=0 rootTaskId=1 mSession=Session{971f7b 7556:u0a10192} mClient=android.os.BinderProxy@8ee1178
     mOwnerUid=10192 showForAllUsers=false package=io.github.mrnodatax.mateengine.debug appop=SYSTEM_ALERT_WINDOW
     mAttrs={(21,149)(1010x1919) gr=TOP START CENTER sim={adjust=resize} ty=APPLICATION_OVERLAY fmt=TRANSLUCENT
 --
-    WindowStateAnimator{728d4f4 MateEngine avatar}:
-10-28 13:29:10.583  7015  7015 I MateEngineRender: jendela siluet 992x1919 di (21, 215) = 98% dari desain 1010x1919
-10-28 13:29:10.697  7015  7015 I MateEngineRender: jendela siluet 954x1863 di (21, 149) = 91% dari desain 1010x1919
-10-28 13:29:11.010  7015  7015 I MateEngineRender: jendela siluet 954x1863 di (21, 149) = 91% dari desain 1010x1919
-10-28 13:29:11.015  7015  7015 I MateEngineRender: overlay digeser ke (-35, 93) desain 1010x1919
-10-28 13:29:11.059  7015  7015 I MateEngineRender: jendela siluet 970x1878 di (21, 149) = 93% dari desain 1010x1919
-10-28 13:29:11.352  7015  7015 I MateEngineRender: jendela siluet 1010x1919 di (21, 149) = 100% dari desain 1010x1919
+    WindowStateAnimator{551ad26 MateEngine avatar}:
+10-28 13:30:10.118  7556  7556 W MateEngineRender: kotak tubuh terlalu kecil (-0.007800000000000029x-0.002799999999999997 fraksi), diabaikan
+10-28 13:30:10.238  7556  7556 I MateEngineRender: jendela siluet 1010x1919 di (21, 149) = 100% dari desain 1010x1919
+10-28 13:30:10.244  7556  7556 I MateEngineRender: kotak tubuh: fraksi 0.2727/0.123/0.3143/0.1243 -> px (255, 0) - (712, 1919) dari desain 1010x1919 (css 385.0x732.0)
+10-28 13:30:10.244  7556  7556 W MateEngineRender: kotak tubuh terlalu kecil (0.041600000000000026x0.0012999999999999956 fraksi), diabaikan
+10-28 13:30:12.078  7556  7556 I MateEngineRender: kotak tubuh: fraksi 0.2961/0.1243/0.2909/0.1216 -> px (278, 0) - (736, 1919) dari desain 1010x1919 (css 385.0x732.0)
+10-28 13:30:12.078  7556  7556 W MateEngineRender: kotak tubuh terlalu kecil (-0.005199999999999982x-0.002699999999999994 fraksi), diabaikan
 --- jendela setelah pegas menetap (4 dtk) ---
-  Window #7 Window{1784835 u0 MateEngine avatar}:
-    mDisplayId=0 rootTaskId=1 mSession=Session{dad8e16 7015:u0a10192} mClient=android.os.BinderProxy@f89a71f
+  Window #7 Window{1f370b6 u0 MateEngine avatar}:
+    mDisplayId=0 rootTaskId=1 mSession=Session{971f7b 7556:u0a10192} mClient=android.os.BinderProxy@8ee1178
     mOwnerUid=10192 showForAllUsers=false package=io.github.mrnodatax.mateengine.debug appop=SYSTEM_ALERT_WINDOW
     mAttrs={(21,149)(1010x1919) gr=TOP START CENTER sim={adjust=resize} ty=APPLICATION_OVERLAY fmt=TRANSLUCENT
 --
-    WindowStateAnimator{728d4f4 MateEngine avatar}:
-10-28 13:29:11.015  7015  7015 I MateEngineRender: overlay digeser ke (-35, 93) desain 1010x1919
-10-28 13:29:11.059  7015  7015 I MateEngineRender: jendela siluet 970x1878 di (21, 149) = 93% dari desain 1010x1919
-10-28 13:29:11.352  7015  7015 I MateEngineRender: jendela siluet 1010x1919 di (21, 149) = 100% dari desain 1010x1919
+    WindowStateAnimator{551ad26 MateEngine avatar}:
+10-28 13:30:09.815  7556  7556 I MateEngineRender: overlay digeser ke (-35, 93) desain 1010x1919
+10-28 13:30:09.865  7556  7556 I MateEngineRender: jendela siluet 968x1876 di (21, 149) = 93% dari desain 1010x1919
+10-28 13:30:10.238  7556  7556 I MateEngineRender: jendela siluet 1010x1919 di (21, 149) = 100% dari desain 1010x1919
 --- hasil geser ---
 overlay digeser ke (-35, 93)
