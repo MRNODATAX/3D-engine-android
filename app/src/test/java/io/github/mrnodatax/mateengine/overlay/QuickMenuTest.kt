@@ -87,6 +87,8 @@ class QuickMenuTest {
             "spell_idle", "crouch_idle", "sitting_enter", "sitting_idle", "sitting_exit",
             "sitting_talk", "walk_formal", "jog_loop", "jump_loop", "push_loop",
             "kneel_fix", "crouch_walk", "drive_idle",
+            "sprint_loop", "swim_idle", "swim_fwd", "pickup",
+            "spell_enter", "spell_exit", "spell_shoot", "roll",
         )
         val missing = playedByDirector.filter { BuiltinClips.labelOf(it) == null }
         assertTrue("klip tanpa label: $missing", missing.isEmpty())

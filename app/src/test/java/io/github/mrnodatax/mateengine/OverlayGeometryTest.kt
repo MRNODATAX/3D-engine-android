@@ -8,24 +8,43 @@ import org.junit.Test
 class OverlayGeometryTest {
 
     @Test
-    fun `posisi dijepit agar window tetap di layar`() {
+    fun `menarik terlalu jauh ke kanan tetap menyisakan bagian yang terlihat`() {
         val placement = OverlayGeometry.clamp(5000, -400, 400, 600, 1080, 1920)
-        assertEquals(680, placement.x)
-        assertEquals(0, placement.y)
+        // 62% dari 400 px = 248 px harus tetap di layar.
+        assertEquals(1080 - 248, placement.x)
+        // Ke atas: 62% dari 600 px = 372 px tetap terlihat.
+        assertEquals(-(600 - 372), placement.y)
     }
 
     @Test
-    fun `posisi negatif menjadi nol`() {
+    fun `avatar boleh digeser sampai tepi layar`() {
         val placement = OverlayGeometry.clamp(-120, -30, 400, 600, 1080, 1920)
-        assertEquals(0, placement.x)
-        assertEquals(0, placement.y)
+        assertEquals(-120, placement.x)
+        assertEquals(-30, placement.y)
     }
 
     @Test
-    fun `window lebih besar dari layar tidak menghasilkan posisi negatif`() {
-        val placement = OverlayGeometry.clamp(100, 100, 1400, 2200, 1080, 1920)
-        assertEquals(0, placement.x)
-        assertEquals(0, placement.y)
+    fun `jendela setinggi layar tetap bisa digeser naik turun`() {
+        // Kondisi nyata skala 100%: jendela 1080x1920 di layar 1080x2000.
+        val (width, height) = OverlayGeometry.windowSize(1080, 2000, 100, 2.75f)
+        val top = OverlayGeometry.clamp(0, -height, width, height, 1080, 2000)
+        val bottom = OverlayGeometry.clamp(0, 2000, width, height, 1080, 2000)
+        assertTrue("harus bisa naik, dapat ${top.y}", top.y < 0)
+        assertTrue("harus bisa turun, dapat ${bottom.y}", bottom.y > 0)
+        assertTrue("selisih jangkauan cukup besar", bottom.y - top.y >= (height * 0.7f).toInt())
+    }
+
+    @Test
+    fun `window lebih besar dari layar tetap dijaga agar terlihat`() {
+        val inside = OverlayGeometry.clamp(100, 100, 1400, 2200, 1080, 1920)
+        // Posisi yang masih wajar tidak diubah.
+        assertEquals(100, inside.x)
+        assertEquals(100, inside.y)
+
+        val far = OverlayGeometry.clamp(9999, 9999, 1400, 2200, 1080, 1920)
+        // Jendela lebih besar dari layar: batas dihitung dari sisi layar (62% tetap terlihat).
+        assertEquals(1080 - (1080 * 0.62f).toInt(), far.x)
+        assertEquals(1920 - (1920 * 0.62f).toInt(), far.y)
     }
 
     @Test

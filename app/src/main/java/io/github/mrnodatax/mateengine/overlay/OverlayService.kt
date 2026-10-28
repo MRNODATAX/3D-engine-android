@@ -55,8 +55,10 @@ import java.io.File
  *
  * Batasan platform yang disengaja:
  * - Window overlay berbentuk persegi; sentuhan pada piksel transparan tetap ditangkap overlay.
- * - Bila pengguna mengunci posisi, window menjadi FLAG_NOT_TOUCHABLE sehingga sentuhan
- *   diteruskan sepenuhnya ke aplikasi di bawah, tetapi avatar juga tidak bisa digeser.
+ * - Sentuhan pada area kosong di sekitar model **tidak pernah** diteruskan ke aplikasi di bawah.
+ *   Jendela avatar selalu menangkap sentuhan di dalam batasnya (permintaan pemilik aplikasi:
+ *   area kosong tidak boleh tembus), jadi tidak ada flag NOT_TOUCHABLE sama sekali.
+ * - "Kunci posisi" berarti avatar tidak bisa digeser; sentuhan tetap ditahan oleh overlay.
  */
 class OverlayService : Service() {
 
@@ -199,12 +201,12 @@ class OverlayService : Service() {
             OverlayGeometry.defaultPlacement(width, height, metrics.widthPixels, metrics.heightPixels, density)
         }
 
-        var windowFlags = WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE or
+        // Tanpa FLAG_NOT_TOUCHABLE: seluruh persegi jendela menahan sentuhan, termasuk piksel
+        // transparan di samping model. FLAG_NOT_TOUCH_MODAL hanya membuat jendela lain tetap bisa
+        // fokus (mis. papan ketik), bukan meneruskan sentuhan ke aplikasi di bawah.
+        val windowFlags = WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE or
             WindowManager.LayoutParams.FLAG_NOT_TOUCH_MODAL or
             WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN
-        if (prefs.locked) {
-            windowFlags = windowFlags or WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE
-        }
 
         val layoutParams = WindowManager.LayoutParams(
             width,
@@ -332,13 +334,10 @@ class OverlayService : Service() {
         applyLayout(recenter = false)
         params?.let { layoutParams ->
             layoutParams.alpha = prefs.opacityPercent / 100f
-            layoutParams.flags = if (prefs.locked) {
-                layoutParams.flags or WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE
-            } else {
-                layoutParams.flags and WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE.inv()
-            }
+            // Jendela tetap menangkap sentuhan apa pun status kuncinya; yang berubah hanya
+            // boleh-digeser atau tidak.
             rootView?.let { view ->
-                rootView?.isDragEnabled = !prefs.locked
+                view.isDragEnabled = !prefs.locked
                 runCatching { windowManager.updateViewLayout(view, layoutParams) }
             }
         }
@@ -897,7 +896,12 @@ class OverlayService : Service() {
         private var pinchStartPercent = 100
         private var lastScaleSentAt = 0L
 
-        override fun onInterceptTouchEvent(event: MotionEvent): Boolean = isDragEnabled
+        /**
+         * Selalu `true`: semua sentuhan di dalam jendela ditahan di sini, tidak pernah diteruskan
+         * ke WebView maupun ke aplikasi di bawah. Inilah yang membuat area kosong di sekitar model
+         * tidak "tembus".
+         */
+        override fun onInterceptTouchEvent(event: MotionEvent): Boolean = true
 
         private fun distance(event: MotionEvent): Float {
             if (event.pointerCount < 2) return 0f
@@ -946,6 +950,8 @@ class OverlayService : Service() {
                     }
                     val dx = (event.rawX - downRawX).toInt()
                     val dy = (event.rawY - downRawY).toInt()
+                    // Posisi terkunci: gerakan jari diabaikan, tetapi sentuhan tetap ditahan.
+                    if (!isDragEnabled) return true
                     if (!dragging && (kotlin.math.abs(dx) > 8 || kotlin.math.abs(dy) > 8)) {
                         dragging = true
                         voicePack.play(VoicePack.Event.DRAG_START, 0.5f)

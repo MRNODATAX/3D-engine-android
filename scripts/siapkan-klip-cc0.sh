@@ -54,7 +54,15 @@ node scripts/glb-ke-vrma.mjs \
   --clip Jog_Fwd_Loop:jog_loop \
   --clip Fixing_Kneeling:kneel_fix \
   --clip Crouch_Fwd_Loop:crouch_walk \
-  --clip Driving_Loop:drive_idle
+  --clip Driving_Loop:drive_idle \
+  --clip Sprint_Loop:sprint_loop \
+  --clip Swim_Idle_Loop:swim_idle \
+  --clip Swim_Fwd_Loop:swim_fwd \
+  --clip PickUp_Table:pickup \
+  --clip Spell_Simple_Enter:spell_enter \
+  --clip Spell_Simple_Exit:spell_exit \
+  --clip Spell_Simple_Shoot:spell_shoot \
+  --clip Roll:roll
 
 echo "== selesai. Berkas di $OUT_DIR:"
 ls -l "$OUT_DIR"

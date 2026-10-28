@@ -60,6 +60,10 @@ object BuiltinClips {
         BuiltinClip("crouch_walk", "Merangkak"),
         BuiltinClip("kneel_fix", "Berjongkok"),
         BuiltinClip("drive_idle", "Duduk santai"),
+        BuiltinClip("sprint_loop", "Lari cepat"),
+        BuiltinClip("swim_idle", "Mengambang"),
+        BuiltinClip("swim_fwd", "Berenang"),
+        BuiltinClip("roll", "Berguling"),
     )
 
     /** Klip yang dipakai menu cepat; dibatasi enam supaya panel tetap muat tanpa menggulir. */
@@ -93,6 +97,14 @@ object BuiltinClips {
         "crouch_walk" to "Merangkak",
         "kneel_fix" to "Berjongkok",
         "drive_idle" to "Duduk santai",
+        "sprint_loop" to "Lari cepat",
+        "swim_idle" to "Mengambang",
+        "swim_fwd" to "Berenang",
+        "pickup" to "Memungut",
+        "spell_enter" to "Siap mantra",
+        "spell_exit" to "Selesai mantra",
+        "spell_shoot" to "Sihir",
+        "roll" to "Berguling",
         "sitting_idle" to "Duduk",
         "sitting_enter" to "Duduk",
         "sitting_exit" to "Berdiri",

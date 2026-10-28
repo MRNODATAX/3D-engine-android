@@ -20,7 +20,7 @@ object T {
     const val statusReady = "Siap dijalankan"
     const val statusNoModel = "Belum ada model"
     const val statusNoPermission = "Izin overlay belum aktif"
-    const val bodyReady = "Avatarmu tampil di atas aplikasi lain. Geser untuk memindahkan; kunci posisi agar sentuhan diteruskan ke aplikasi di bawah."
+    const val bodyReady = "Avatarmu tampil di atas aplikasi lain. Geser ke mana saja untuk memindahkan; area kosong di sekitar avatar tidak meneruskan sentuhan ke aplikasi di bawah."
     const val bodyNoModel = "Impor berkas .vrm milikmu. Aplikasi tidak menyertakan avatar bawaan."
     const val bodyNoPermission = "Android memblokir jendela di atas aplikasi lain sampai izin diberikan."
     const val startAvatar = "Jalankan avatar"
@@ -37,7 +37,7 @@ object T {
     const val labelSize = "Ukuran overlay"
     const val labelOpacity = "Opasitas"
     const val lockPosition = "Kunci posisi"
-    const val lockPositionDesc = "Sentuhan diteruskan ke aplikasi di bawah; avatar tidak bisa digeser"
+    const val lockPositionDesc = "Avatar tidak bisa digeser. Area kosong tetap tidak meneruskan sentuhan ke aplikasi di bawah"
     const val recentTitle = "Terakhir dipakai"
 
     // Avatar

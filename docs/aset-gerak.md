@@ -2,7 +2,7 @@
 
 ## Ringkasan
 
-Aplikasi membundel **21 klip animasi** yang bukan buatan saya dan bukan milik Mate Engine:
+Aplikasi membundel **29 klip animasi** yang bukan buatan saya dan bukan milik Mate Engine:
 
 | Berkas | Klip asal | Durasi | Ukuran | SHA-256 |
 | --- | --- | --- | --- | --- |
@@ -27,8 +27,16 @@ Aplikasi membundel **21 klip animasi** yang bukan buatan saya dan bukan milik Ma
 | `kneel_fix.vrma` | `Fixing_Kneeling` | 5,17 s | 73.620 B | `265cf61aa613f938e2c95491f4edd18979bd10174adc68bfe1906677388b3e49` |
 | `crouch_walk.vrma` | `Crouch_Fwd_Loop` | 2,00 s | 36.258 B | `091ba07e494492e9ac78c35fd17125a78ba4441e218c891eacf7ff75d08a61cf` |
 | `drive_idle.vrma` | `Driving_Loop` | 1,67 s | 32.348 B | `924f040914854e6061bd46f6dbe6b5f7818f42f5122b37a3cd1d29aa98612fbc` |
+| `sprint_loop.vrma` | `Sprint_Loop` | 0,67 s | 20.560 B | `871d5535d693b2ee02c36d2a14b7595f81991d015e0f5d662ae2d40f368bd10f` |
+| `swim_idle.vrma` | `Swim_Idle_Loop` | 3,33 s | 52.001 B | `acb4f0e7cb432df0a98cd4bb159d49a726394e023bd0812cd170482eb5b9051e` |
+| `swim_fwd.vrma` | `Swim_Fwd_Loop` | 1,33 s | 28.414 B | `4236d1cebbe96ee20dc316c7d12e905ed907702c098466605dd2d69657b66b0b` |
+| `pickup.vrma` | `PickUp_Table` | 0,83 s | 22.516 B | `fd1223e1d3525f09cc1e92ba447f1e1096ed2fdd02309baafb16950175f522a0` |
+| `spell_enter.vrma` | `Spell_Simple_Enter` | 0,50 s | 18.580 B | `38c450049548d9df47896b4456ba0a7c870f1190f4100cd494ee33e0133b22c7` |
+| `spell_exit.vrma` | `Spell_Simple_Exit` | 0,42 s | 17.613 B | `320c757948762597593f803f06a0c13f07c344bfe9408973a89954d862d3df37` |
+| `spell_shoot.vrma` | `Spell_Simple_Shoot` | 0,50 s | 18.580 B | `d3a928fc9ff518105afafce25552c74869d59abb8f39fe166e2cfa2d8ba34db1` |
+| `roll.vrma` | `Roll` | 1,46 s | 29.883 B | `64b0353031f907fab17f4fba86c76fd8c0c9716cc13b6b40e8e301619c272606` |
 
-Total **758.291 byte (± 740,5 KB)** untuk 21 klip, di bawah anggaran 900 KB
+Total **966.438 byte (± 943,8 KB)** untuk 29 klip, di bawah anggaran 1.200 KB
 (`web/test/vrma.test.mjs` gagal bila melewati). Karena kecil, klip ikut di APK sehingga avatar langsung
 bergerak tanpa impor manual.
 
@@ -48,9 +56,15 @@ bergerak tanpa impor manual.
   pertama, sehingga klip berjalan tidak meluncur keluar jendela overlay (jendela Android berbentuk
   kotak tetap). Sumbu Y dibiarkan agar lompatan tetap terlihat. Renderer juga mengunci X/Z pinggul
   saat runtime sebagai jaring pengaman (`clampRootMotion`).
-- **Klip yang ditolak**: `Roll` (ayunan pinggul 0,64 m walau sudah in-place, melewati batas uji
-  0,6 m), `PickUp_Table` (0,83 s), `Spell_Simple_Enter`/`Shoot` (0,50 s) — terlalu pendek untuk uji
-  durasi minimum 0,9 s, jadi tidak dibundel.
+- **Klip pendek dipakai sebagai gestur**: `pickup` (0,83 s), `spell_enter`/`spell_shoot` (0,50 s),
+  `spell_exit` (0,42 s), dan `roll` diputar **sekali** lalu kembali ke idle (`GESTURE_CLIPS` di
+  renderer), jadi tidak terlihat tersendat seperti kalau diulang. Uji durasi minimum untuk gestur
+  0,4 s, untuk klip loop 0,6 s.
+- **Batas ayunan pinggul dinaikkan 0,6 m → 0,8 m** agar `roll` (tubuh turun ke lantai) lolos.
+  Aman karena bingkai kamera kini mengikuti kerangka (`skeletonBounds`), sehingga tubuh yang turun
+  tetap utuh di kanvas.
+- **Klip yang tetap ditolak**: `Punch_*`, `Sword_*`, `Pistol_*`, `Hit_*`, `Death01` — bertema
+  pertarungan/kekerasan, tidak cocok untuk avatar pendamping; `A_TPose` hanya pose acuan.
 - **Yang berubah**: berkas asli berformat glTF (rig `DEF-*`), saya retarget menjadi `.vrma`
   (VRM Animation) dengan `scripts/glb-ke-vrma.mjs`. Retargeting ini karya sendiri, bukan bagian dari
   paket asli.

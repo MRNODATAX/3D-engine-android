@@ -415,7 +415,25 @@ const BUILTIN_CLIPS = {
   kneel_fix: 'kneel_fix',
   crouch_walk: 'crouch_walk',
   drive_idle: 'drive_idle',
+  // Gelombang v0.1.8 (paket CC0 yang sama, dikonversi --in-place).
+  sprint_loop: 'sprint_loop',
+  swim_idle: 'swim_idle',
+  swim_fwd: 'swim_fwd',
+  pickup: 'pickup',
+  spell_enter: 'spell_enter',
+  spell_exit: 'spell_exit',
+  spell_shoot: 'spell_shoot',
+  roll: 'roll',
 };
+
+/**
+ * Klip gestur: diputar **sekali** lalu kembali ke idle.
+ *
+ * Kalau klip 0,4–0,9 detik ini diulang terus, hasilnya terlihat seperti gerakan tersendat
+ * (mis. memungut berulang). Karena itu mesin keadaan memutarnya dengan `loop:false` dan
+ * merantai ke `idle` setelah selesai.
+ */
+const GESTURE_CLIPS = new Set(['pickup', 'spell_enter', 'spell_exit', 'spell_shoot', 'roll', 'jump_start', 'jump_land']);
 
 function builtinUrl(name) {
   // index.html berada di /assets/renderer/, animasi di /assets/animations/.
@@ -557,7 +575,13 @@ function syncClipState() {
   const desired = desiredClip();
   if (desired === state.clipName) return;
   if (performance.now() - state.clipAppliedAt < CROSSFADE_MS) return;
-  playBuiltin(desired, { manual: false, reason: 'state' }).catch(() => {});
+  const options = { manual: false, reason: 'state' };
+  if (GESTURE_CLIPS.has(desired)) {
+    // Sekali jalan lalu kembali ke idle, supaya gestur pendek tidak berulang seperti tersendat.
+    options.loop = false;
+    options.chain = 'idle';
+  }
+  playBuiltin(desired, options).catch(() => {});
   // Pose klip baru bisa lebih tinggi/rendah (duduk, berguling): bingkai kamera dihitung ulang
   // setelah animasi sempat berjalan, bukan hanya saat model dimuat.
   state.reframeAt = performance.now() + 320;

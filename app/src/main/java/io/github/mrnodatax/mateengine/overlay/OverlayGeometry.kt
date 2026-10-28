@@ -6,15 +6,34 @@ object OverlayGeometry {
     data class Placement(val x: Int, val y: Int)
 
     /**
-     * Menjaga window overlay tetap terlihat penuh di layar.
+     * Menjaga window overlay tetap cukup terlihat, tetapi **tidak lagi mengurungnya** di dalam layar.
+     *
+     * Dulu posisi dijepit ketat (`0 .. screen - window`). Akibatnya avatar di skala 100% — yang
+     * jendelanya setinggi layar — tidak bisa digeser sama sekali; terasa seperti "tertahan bingkai".
+     * Sekarang jendela boleh keluar tepi layar sampai hanya [minVisible] bagiannya yang tersisa,
+     * sehingga avatar bisa diletakkan di mana pun di layar (pojok, tepi, tengah) dan tetap bisa
+     * diambil kembali.
      *
      * @param x posisi kiri window (piksel, relatif gravitasi TOP|START)
      * @param y posisi atas window
+     * @param minVisible bagian window yang harus tetap terlihat (0..1)
      */
-    fun clamp(x: Int, y: Int, width: Int, height: Int, screenWidth: Int, screenHeight: Int): Placement {
-        val maxX = (screenWidth - width).coerceAtLeast(0)
-        val maxY = (screenHeight - height).coerceAtLeast(0)
-        return Placement(x.coerceIn(0, maxX), y.coerceIn(0, maxY))
+    fun clamp(
+        x: Int,
+        y: Int,
+        width: Int,
+        height: Int,
+        screenWidth: Int,
+        screenHeight: Int,
+        minVisible: Float = MIN_VISIBLE,
+    ): Placement {
+        val fraction = minVisible.coerceIn(0.3f, 1f)
+        val keepX = (minOf(width, screenWidth) * fraction).toInt().coerceAtLeast(1)
+        val keepY = (minOf(height, screenHeight) * fraction).toInt().coerceAtLeast(1)
+        return Placement(
+            x.coerceIn(-(width - keepX), screenWidth - keepX),
+            y.coerceIn(-(height - keepY), screenHeight - keepY),
+        )
     }
 
     /**
@@ -49,6 +68,9 @@ object OverlayGeometry {
 
     const val MIN_SCALE = 25
     const val MAX_SCALE = 100
+
+    /** Bagian jendela overlay yang wajib tetap terlihat saat avatar digeser ke tepi. */
+    const val MIN_VISIBLE = 0.62f
 
     /** Rasio tinggi:lebar kotak avatar (potret berdiri). */
     private const val ASPECT = 1.9f

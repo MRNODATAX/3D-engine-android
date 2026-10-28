@@ -35,6 +35,9 @@ export const RANDOM_CLIPS = [
   'kneel_fix',
   'crouch_walk',
   'drive_idle',
+  'sprint_loop',
+  'swim_idle',
+  'swim_fwd',
 ];
 
 /**
@@ -59,8 +62,9 @@ export const BEHAVIORS = [
     gapMin: 1200,
     gapMax: 3200,
     // Bobot tertinggi: pengguna minta avatar berganti-ganti gerakan, bukan mengulang idle.
-    weight: 6,
-    cooldownMs: 3500,
+    // Gestur (sihir, memungut, berguling) tetap muncul, tetapi tidak boleh menggeser fokus.
+    weight: 9,
+    cooldownMs: 3000,
     moods: { ceria: 1.3, kalem: 1, pemalu: 0.9 },
   },
   {
@@ -132,6 +136,43 @@ export const BEHAVIORS = [
     cooldownMs: 150000,
     moods: { ceria: 2.2, kalem: 0.4, pemalu: 1.4 },
     requires: (ctx) => ctx.idleMs >= 45000,
+  },
+  {
+    // Gestur singkat: klip diputar sekali (loop:false) oleh renderer, lalu kembali ke idle.
+    id: 'spell_practice',
+    clip: 'spell_shoot',
+    once: true,
+    minMs: 900,
+    maxMs: 1400,
+    gapMin: 3000,
+    gapMax: 8000,
+    weight: 1.6,
+    cooldownMs: 15000,
+    moods: { ceria: 1.4, kalem: 0.8, pemalu: 0.6 },
+  },
+  {
+    id: 'pick_up',
+    clip: 'pickup',
+    once: true,
+    minMs: 1100,
+    maxMs: 1600,
+    gapMin: 3000,
+    gapMax: 9000,
+    weight: 1.2,
+    cooldownMs: 18000,
+    moods: { ceria: 1, kalem: 1.2, pemalu: 1 },
+  },
+  {
+    id: 'roll_play',
+    clip: 'roll',
+    once: true,
+    minMs: 1500,
+    maxMs: 2000,
+    gapMin: 4000,
+    gapMax: 12000,
+    weight: 0.8,
+    cooldownMs: 25000,
+    moods: { ceria: 1.6, kalem: 0.4, pemalu: 0.5 },
   },
   {
     id: 'sit_down',

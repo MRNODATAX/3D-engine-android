@@ -1,39 +1,33 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!--
-  Ikon aplikasi arah "Expressive Cyan" (opsi desain 1).
+  Ikon peluncur "Monogram M" (kandidat D, dipilih 28 Okt 2026).
 
-  Siluet kepala + helai rambut di dalam safe zone 66dp dari kanvas 108dp, supaya tidak
-  terpotong oleh mask adaptif peluncur mana pun (lingkaran, squircle, kotak membulat).
-  Warna = krem terang di atas latar cyan gradien (lihat ic_launcher_background).
+  Huruf M dari pita tebal + percikan mint. Bentuk digambar pada kanvas 512 lalu diperkecil ke
+  area aman ikon adaptif: 108dp kanvas, safe zone berupa lingkaran 66dp di tengah. Skala 0,15
+  membuat seni berukuran ±43×46dp dengan diagonal 63dp, jadi masih di dalam lingkaran aman dan
+  tidak terpotong mask bulat, squircle, maupun kotak membulat peluncur mana pun.
+
+  Warna: krem #EAFFFD di atas latar cyan #006A66 (ic_launcher_background), percikan mint #9FF2EA.
 -->
 <vector xmlns:android="http://schemas.android.com/apk/res/android"
     android:width="108dp"
     android:height="108dp"
     android:viewportWidth="108"
     android:viewportHeight="108">
-    <group android:translateX="22" android:translateY="22">
-        <!-- Rambut bagian luar -->
+    <group
+        android:scaleX="0.15"
+        android:scaleY="0.15"
+        android:translateX="15.6"
+        android:translateY="16.5">
+
+        <!-- Pita M -->
         <path
             android:fillColor="#EAFFFD"
-            android:pathData="M32,5c15.5,0 25,10.4 25,25.6v24.2c0,3.1 -1.6,5.2 -4,5.2c-2.1,0 -3.6,-1.6 -3.6,-4.2V30.4c0,-11.2 -6.9,-18.6 -17.4,-18.6S14.6,19.2 14.6,30.4v25.4c0,2.6 -1.5,4.2 -3.6,4.2c-2.4,0 -4,-2.1 -4,-5.2V30.6C7,15.4 16.5,5 32,5z" />
-        <!-- Wajah -->
+            android:pathData="M112,404 L112,150 L170,150 L256,272 L342,150 L400,150 L400,404 L344,404 L344,254 L268,362 L244,362 L168,254 L168,404 Z" />
+
+        <!-- Percikan -->
         <path
             android:fillColor="#9FF2EA"
-            android:pathData="M32,15.4c9.6,0 16.4,7.1 16.4,17.2v10.6c0,11.2 -7.2,19.4 -16.4,19.4s-16.4,-8.2 -16.4,-19.4V32.6C15.6,22.5 22.4,15.4 32,15.4z" />
-        <!-- Mata -->
-        <path
-            android:fillColor="#00423F"
-            android:pathData="M23.6,30.4a2.5,2.5 0 1,0 0.1,0zM40.3,30.4a2.5,2.5 0 1,0 0.1,0z" />
-        <!-- Senyum -->
-        <path
-            android:strokeColor="#00423F"
-            android:strokeWidth="2.4"
-            android:strokeLineCap="round"
-            android:fillColor="#00000000"
-            android:pathData="M26.6,42.2c3.4,2.5 8,2.5 11.4,0" />
-        <!-- Bahu: memberi kesan sosok, bukan sekadar wajah -->
-        <path
-            android:fillColor="#EAFFFD"
-            android:pathData="M32,57.4c9.4,0 17.4,4.9 19.6,12.2c0.5,1.7 -0.7,3.4 -2.5,3.4H14.9c-1.8,0 -3,-1.7 -2.5,-3.4C14.6,62.3 22.6,57.4 32,57.4z" />
+            android:pathData="M380,96 L396,132 L432,148 L396,164 L380,200 L364,164 L328,148 L364,132 Z" />
     </group>
 </vector>
