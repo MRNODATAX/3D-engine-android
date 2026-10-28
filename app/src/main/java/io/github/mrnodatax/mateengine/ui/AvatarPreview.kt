@@ -189,8 +189,7 @@ fun AvatarPreview(
 private class PreviewBridge {
     @JavascriptInterface
     fun postMessage(message: String) {
-        val type = Regex("\"type\"\s*:\s*\"([^\"]+)\"").find(message)?.groupValues?.get(1)
-        when (type) {
+        when (typeOf(message)) {
             "avatar-ready" -> {
                 Log.i(TAG, "avatar siap: $message")
                 PreviewState.ready = true
@@ -199,6 +198,23 @@ private class PreviewBridge {
             "preview-mode" -> Log.i(TAG, "mode pratinjau aktif: $message")
             else -> Log.i(TAG, "pesan $message")
         }
+    }
+
+    /**
+     * Mengambil nilai `"type"` dari pesan JSON tanpa pustaka JSON dan tanpa escape regex —
+     * pesan berasal dari halaman milik sendiri, jadi cukup pencarian teks lurus.
+     */
+    private fun typeOf(message: String): String? {
+        val key = "\"type\""
+        val at = message.indexOf(key)
+        if (at < 0) return null
+        val colon = message.indexOf(':', at + key.length)
+        if (colon < 0) return null
+        val open = message.indexOf('"', colon)
+        if (open < 0) return null
+        val close = message.indexOf('"', open + 1)
+        if (close < 0) return null
+        return message.substring(open + 1, close)
     }
 }
 
