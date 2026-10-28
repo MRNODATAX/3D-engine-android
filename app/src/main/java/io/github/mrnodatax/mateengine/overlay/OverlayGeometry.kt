@@ -231,6 +231,39 @@ object OverlayGeometry {
     }
 
     /**
+     * Penghalusan kotak tubuh (rata-rata bergerak eksponensial).
+     *
+     * Tanpa ini, setiap kali bingkai kamera atau klip berubah, jendela ikut melompat — di
+     * emulator tercatat berubah 58 % → 51 % → 67 % → 80 % → 28 % dalam tiga detik. Nilai
+     * `alpha` kecil = lebih halus tetapi lebih lambat mengikuti.
+     */
+    fun smoothBox(previous: BodyBox?, next: BodyBox, alpha: Float = 0.2f): BodyBox {
+        if (previous == null) return next
+        val a = alpha.coerceIn(0.05f, 1f)
+        fun blend(old: Int, new: Int) = (old + (new - old) * a).toInt()
+        return BodyBox(
+            left = blend(previous.left, next.left),
+            top = blend(previous.top, next.top),
+            right = blend(previous.right, next.right),
+            bottom = blend(previous.bottom, next.bottom),
+        )
+    }
+
+    /**
+     * Histeresis: terapkan ukuran baru hanya bila berubah lebih dari [tolerancePx] pada salah
+     * satu sisi. Perubahan 1–2 px tidak boleh memicu `updateViewLayout` — itu membuat jendela
+     * bergetar mengikuti napas avatar dan membuang baterai.
+     */
+    fun shouldResize(previous: Rect?, next: Rect, tolerancePx: Int): Boolean {
+        if (previous == null) return true
+        val tolerance = tolerancePx.coerceAtLeast(1)
+        return kotlin.math.abs(previous.left - next.left) > tolerance ||
+            kotlin.math.abs(previous.top - next.top) > tolerance ||
+            kotlin.math.abs(previous.right - next.right) > tolerance ||
+            kotlin.math.abs(previous.bottom - next.bottom) > tolerance
+    }
+
+    /**
      * Batas maksimum pemotongan per sisi. 0,28 berarti jendela tidak pernah lebih pendek dari
      * 44 % tinggi desain, sekalipun pengukuran tubuh kacau.
      */

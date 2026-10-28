@@ -479,6 +479,27 @@ try {
   );
   console.log(`✓ berdiri kembali: tinggi ${seated.standingAgain.height} px`);
 
+  // Regresi v0.1.10: kotak tubuh dilaporkan dari 8 sudut (bukan bidang z tengah). Kalau
+  // pengukurannya terlalu pendek, jendela siluet Android memotong kaki — pernah terjadi di
+  // emulator, jadi jarak ke tepi kanvas diuji di sini.
+  const gapSample = await page.evaluate(async () => {
+    const count = (window.__MATE_EVENTS__ || []).filter((e) => e.type === 'motion-state').length;
+    const deadline = performance.now() + 8000;
+    while (performance.now() < deadline) {
+      const events = (window.__MATE_EVENTS__ || []).filter((e) => e.type === 'motion-state');
+      if (events.length > count) return events[events.length - 1].bodyGap;
+      await new Promise((resolve) => setTimeout(resolve, 100));
+    }
+    return null;
+  });
+  assert(gapSample, 'jejak bodyGap tidak diterima dalam 8 detik');
+  assert(
+    gapSample.top >= -4 && gapSample.bottom >= -4,
+    `kotak tubuh keluar kanvas (atas ${gapSample.top}, bawah ${gapSample.bottom}) — ` +
+      'pengukuran z tengah akan memotong kaki',
+  );
+  console.log(`✓ kotak tubuh di dalam kanvas (atas ${gapSample.top} px, bawah ${gapSample.bottom} px)`);
+
   assert(seated.swayHot.sway > 200, `ayunan geser tidak terdeteksi (${seated.swayHot.sway})`);
   assert(seated.swayCold.sway < 5, `ayunan tidak mereda setelah digeser (${seated.swayCold.sway})`);
   console.log(`✓ ayunan geser: ${seated.swayHot.sway} → ${seated.swayCold.sway} setelah 1,5 detik`);

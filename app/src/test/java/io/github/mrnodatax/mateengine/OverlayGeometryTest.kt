@@ -184,9 +184,10 @@ class OverlayGeometryTest {
         val blocked = OverlayGeometry.blockedFraction(631, 1200, visible)
         assertTrue("area yang menelan sentuhan harus turun, dapat $blocked", blocked < 0.75f)
 
-        // Kotak sangat kecil: jendela berhenti di batas sentuh minimum 96 dp (264 px @2,75).
-        val tiny = OverlayGeometry.BodyBox(left = 300, top = 600, right = 320, bottom = 640)
-        val small = OverlayGeometry.visibleRect(100, 300, 631, 1200, tiny, 16, 264, frame)
+        // Kotak sempit tetapi masih wajar (lebar 80 px, tinggi 700 px): jendela berhenti di
+        // batas sentuh minimum 96 dp, bukan mengecil sampai tak bisa disentuh.
+        val narrow = OverlayGeometry.BodyBox(left = 300, top = 200, right = 380, bottom = 900)
+        val small = OverlayGeometry.visibleRect(100, 300, 631, 1200, narrow, 16, 264, frame)
         assertTrue("lebar minimum dihormati, dapat ${small.width}", small.width >= 264)
         assertTrue("tinggi minimum dihormati, dapat ${small.height}", small.height >= 264)
     }
@@ -211,6 +212,30 @@ class OverlayGeometryTest {
         assertEquals(336, visible.top)
         // …dan tinggi minimal 44 % kanvas.
         assertTrue("tinggi minimal 44 %, dapat ${visible.height}", visible.height >= (1200 * 0.44f).toInt() - 1)
+    }
+
+    @Test
+    fun `kotak tubuh dihaluskan dan pergeseran kecil diabaikan`() {
+        val previous = OverlayGeometry.BodyBox(100, 200, 500, 1000)
+        val next = OverlayGeometry.BodyBox(200, 200, 600, 1000)
+        // alpha 0,2 → left bergerak 20 px, bukan 100 px.
+        val smoothed = OverlayGeometry.smoothBox(previous, next, 0.2f)
+        assertEquals(120, smoothed.left)
+        assertEquals(520, smoothed.right)
+        assertEquals(200, smoothed.top)
+        // Kotak pertama dipakai apa adanya.
+        assertEquals(next, OverlayGeometry.smoothBox(null, next))
+        // Histeresis: geser 3 px tidak memicu perubahan ukuran, geser 40 px memicu.
+        val rect = OverlayGeometry.Rect(0, 0, 400, 900)
+        assertTrue(
+            "geser 3 px tidak boleh memicu resize",
+            !OverlayGeometry.shouldResize(rect, OverlayGeometry.Rect(3, 0, 403, 900), 8),
+        )
+        assertTrue(
+            "geser 40 px harus memicu resize",
+            OverlayGeometry.shouldResize(rect, OverlayGeometry.Rect(40, 0, 440, 900), 8),
+        )
+        assertTrue("belum ada pembanding → harus resize", OverlayGeometry.shouldResize(null, rect, 8))
     }
 
     @Test

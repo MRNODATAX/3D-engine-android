@@ -93,6 +93,7 @@ class OverlayService : Service() {
     private var bodyBox: OverlayGeometry.BodyBox? = null
     private var bodyBoxAt = 0L
     private var silhouetteSuspended = false
+    private var lastResizeAt = 0L
     private var canvasOffsetX = 0
     private var canvasOffsetY = 0
     private var settleAnim: Runnable? = null
@@ -494,7 +495,14 @@ class OverlayService : Service() {
             minSizePx = (MIN_TOUCH_DP * density).toInt(),
             frame = frame,
         )
-        if (!force && visible == lastVisible) return
+        val tolerance = (SILHOUETTE_TOLERANCE_DP * density).toInt()
+        val now = System.currentTimeMillis()
+        if (!force) {
+            if (!OverlayGeometry.shouldResize(lastVisible, visible, tolerance)) return
+            // Paling cepat 4× per detik: tiap perubahan ukuran memicu relayout jendela.
+            if (now - lastResizeAt < RESIZE_INTERVAL_MS) return
+        }
+        lastResizeAt = now
         lastVisible = visible
         layoutParams.width = visible.width
         layoutParams.height = visible.height
@@ -676,10 +684,13 @@ class OverlayService : Service() {
                 val fracRight = payload.optDouble("right", Double.NaN)
                 val fracBottom = payload.optDouble("bottom", Double.NaN)
                 if (listOf(fracLeft, fracTop, fracRight, fracBottom).all { it.isFinite() }) {
-                    val left = (fracLeft.coerceIn(0.0, 1.0) * designWidth).toInt()
-                    val top = (fracTop.coerceIn(0.0, 1.0) * designHeight).toInt()
-                    val right = ((1.0 - fracRight.coerceIn(0.0, 1.0)) * designWidth).toInt()
-                    val bottom = ((1.0 - fracBottom.coerceIn(0.0, 1.0)) * designHeight).toInt()
+                    // Cadangan 2 % per sisi: pengukuran selalu bisa sedikit meleset (mesh yang
+                    // menonjol, spring bone), dan memotong 2 % terlalu banyak jauh lebih buruk
+                    // daripada jendela 2 % lebih besar.
+                    val left = ((fracLeft - SAFETY_MARGIN).coerceIn(0.0, 1.0) * designWidth).toInt()
+                    val top = ((fracTop - SAFETY_MARGIN).coerceIn(0.0, 1.0) * designHeight).toInt()
+                    val right = ((1.0 - fracRight + SAFETY_MARGIN).coerceIn(0.0, 1.0) * designWidth).toInt()
+                    val bottom = ((1.0 - fracBottom + SAFETY_MARGIN).coerceIn(0.0, 1.0) * designHeight).toInt()
                     Log.i(
                         TAG,
                         "kotak tubuh: fraksi ${fracLeft}/${fracTop}/${fracRight}/${fracBottom} " +
@@ -687,7 +698,10 @@ class OverlayService : Service() {
                             "(css ${payload.optDouble("cssWidth")}x${payload.optDouble("cssHeight")})",
                     )
                     if (right > left && bottom > top) {
-                        bodyBox = OverlayGeometry.BodyBox(left, top, right, bottom)
+                        // Dihaluskan: pengukuran mentah berubah ratusan piksel tiap frame saat
+                        // klip berganti atau kamera membingkai ulang.
+                        val measured = OverlayGeometry.BodyBox(left, top, right, bottom)
+                        bodyBox = OverlayGeometry.smoothBox(bodyBox, measured, SMOOTH_ALPHA)
                         bodyBoxAt = System.currentTimeMillis()
                         if (!silhouetteSuspended) applySilhouette()
                     } else {
@@ -1426,6 +1440,14 @@ class OverlayService : Service() {
         private const val SILHOUETTE_EDGE_DP = 6f
         /** Jendela tidak pernah lebih kecil dari ini, supaya masih nyaman disentuh. */
         private const val MIN_TOUCH_DP = 96f
+        /** Cadangan ruang di sekitar kotak tubuh (fraksi kanvas) — jaring pengaman pengukuran. */
+        private const val SAFETY_MARGIN = 0.02
+        /** Bobot penghalusan kotak tubuh; 0,25 ≈ 4 pembaruan untuk mendekati nilai baru. */
+        private const val SMOOTH_ALPHA = 0.25f
+        /** Perubahan tepi di bawah ini (8 dp) tidak memicu perubahan ukuran jendela. */
+        private const val SILHOUETTE_TOLERANCE_DP = 8f
+        /** Jarak minimum antar-perubahan ukuran jendela. */
+        private const val RESIZE_INTERVAL_MS = 260L
         /** Lama avatar harus ditahan sebelum boleh diseret (supaya elusan tidak jadi geseran). */
         private const val GRAB_HOLD_MS = 300L
         /** Pengukuran tubuh lebih tua dari ini dianggap basi → kembali ke jendela penuh. */

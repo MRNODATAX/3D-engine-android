@@ -202,15 +202,19 @@ function loader() {
 function frameGaps(vrm) {
   const box = skeletonBounds(vrm);
   if (!box || !state.camera) return null;
-  const corners = [
-    [box.min.x, box.min.y], [box.max.x, box.min.y],
-    [box.min.x, box.max.y], [box.max.x, box.max.y],
-    [box.min.x, (box.min.y + box.max.y) / 2], [box.max.x, (box.min.y + box.max.y) / 2],
-  ];
+  // Kedelapan sudut kotak, bukan enam titik di bidang z tengah. Kaki dan tangan menonjol ke
+  // depan kamera; memproyeksikannya di z tengah membuatnya terlihat lebih tinggi/rendah dari
+  // aslinya, dan kotak yang dilaporkan terlalu pendek. Saat jendela mengikuti kotak itu, kaki
+  // ikut terpotong (regresi yang tertangkap di emulator v0.1.10).
+  const xs = [box.min.x, box.max.x];
+  const ys = [box.min.y, box.max.y];
+  const zs = [box.min.z, box.max.z];
+  const corners = [];
+  for (const x of xs) for (const y of ys) for (const z of zs) corners.push([x, y, z]);
   let minX = Infinity; let maxX = -Infinity; let minY = Infinity; let maxY = -Infinity;
   const point = new THREE.Vector3();
-  corners.forEach(([x, y]) => {
-    point.set(x, y, (box.min.z + box.max.z) / 2).project(state.camera);
+  corners.forEach(([x, y, z]) => {
+    point.set(x, y, z).project(state.camera);
     minX = Math.min(minX, point.x); maxX = Math.max(maxX, point.x);
     minY = Math.min(minY, point.y); maxY = Math.max(maxY, point.y);
   });
