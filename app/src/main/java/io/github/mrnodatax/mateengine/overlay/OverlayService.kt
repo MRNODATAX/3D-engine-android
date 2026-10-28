@@ -384,6 +384,11 @@ class OverlayService : Service() {
                 Log.i(TAG, "tekstur diperkecil: ${payload.optInt("resized")}, dipertahankan: ${payload.optInt("kept")}, batas ${payload.optInt("maxSize")}px")
             }
             "talking" -> OverlayRuntime.update { it.copy(talking = true) }
+            "motion-state" -> {
+                // Jejak gerak tiap 5 detik: bukti bahwa sendi benar-benar bergerak, sekaligus
+                // sumber angka "motion {...}" yang dibaca uji emulator.
+                Log.i(TAG, "motion $payload")
+            }
             "memory-trimmed" -> Log.i(TAG, "memori dipangkas: $raw")
             "animation-playing" -> {
                 val name = payload.optString("name").takeIf { it.isNotBlank() }

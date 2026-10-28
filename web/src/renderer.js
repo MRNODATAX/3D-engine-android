@@ -626,7 +626,9 @@ function animate(now) {
     state.fpsReportAt = now;
   }
   // Jejak gerak: dipakai uji emulator untuk membuktikan sendi benar-benar bergerak.
-  if (now - (state.motionLogAt || 0) >= 5000) {
+  // Jejak pertama dikirim cepat (1,5 detik) supaya tangkapan layar otomatis tetap punya bukti pose.
+  const motionInterval = state.motionLogAt ? 5000 : 1500;
+  if (now - (state.motionLogAt || 0) >= motionInterval) {
     state.motionLogAt = now;
     const debug = state.motion.debug();
     // Sertakan sudut lengan terukur supaya bukti "tangan tidak stuck di atas" terbaca di logcat.
