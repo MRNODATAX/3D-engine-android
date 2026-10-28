@@ -234,3 +234,36 @@ Batalkan pratinjau bila ternyata membuat APK/CI tidak stabil — alternatifnya s
    catat keterbatasannya di catatan rilis.
 
 Tahap 3 (katalog Animasi) **tidak bergantung** pada keputusan ini dan bisa langsung dikerjakan.
+
+
+---
+
+## 9. Tahap 3–6 selesai (28 Okt 2026) — hasil & temuan
+
+### Yang berubah
+
+| Tahap | Hasil | Bukti |
+| --- | --- | --- |
+| 3 — Katalog Animasi | 29 klip (sebelumnya katalog hanya 17), pencarian label+nama berkas, 5 chip kategori dengan jumlah, kartu klip 2 kolom + penanda **Diputar** berdenyut, tombol **Putar · Berhenti · Impor** berlabel | `03-animasi.png`, `21-animasi-katalog.png`, `22-animasi-diputar.png` |
+| 4 — Chat | gutter 20 dp, empty state berisi 3 contoh pertanyaan (AssistChip), hapus riwayat berkonfirmasi (kunci API & persona dijelaskan tidak terhapus) | `11-chat.png` |
+| 5 — Gerak & aksesibilitas | `Modifier.pressScale()` (pegas `snappy`) pada tombol utama; tombol aksi Animasi **ditumpuk** saat fontScale > 1,15 | `23-teks-besar.png`, `24-teks-besar-animasi.png` |
+| 6 — Rilis | versionCode 9 / 0.1.9, `release/tag.txt = v0.1.9-test`, rilis uji terbit dari build terbaru | `gh release list` |
+
+### Temuan penting (perilaku, bukan bug)
+
+- **Jendela overlay menahan sentuhan seluruh layar** sesuai permintaan produk. Konsekuensinya: saat
+  overlay berjalan pada skala besar, jari tidak bisa menggulir aplikasi di bawahnya. Ini disengaja,
+  tetapi harus disebut di catatan rilis agar tidak dikira kerusakan. Tangkapan `22` karena itu
+  memakai skala 25% supaya jendela overlay kecil dan daftar klip bisa digulir.
+- **Dua uji render sempat rapuh** dan diperbaiki, bukan dihapus: uji T-pose (median 5 contoh +
+  acuan pose istirahat) dan uji duduk (ukur setelah bingkai diam, maks 6 detik).
+- **Pratinjau Beranda** tetap seperti catatan §8: renderer berjalan (log `fps 15`) tetapi isi
+  WebView tidak tertangkap `screencap` emulator; monogram jadi lapisan dasar.
+
+### Sisa pekerjaan UI (belum dikerjakan)
+
+1. Pratinjau Beranda: putuskan antara diagnosa lapisan atau thumbnail statis (§8).
+2. `AvatarScreen`, `DiagnosticsScreen`, `SettingsScreen`: pengelompokan ulang & empty state setara
+   dengan Chat (Tahap 4 baru menyentuh Chat).
+3. Naik versi Compose (opsional, sudah ditolak untuk v0.1.9) bila ingin `MaterialExpressiveTheme`,
+   `ButtonGroup`, dan `WavyProgressIndicator` asli.

@@ -388,9 +388,12 @@ echo "== tersimpan $OUT/07-beranda-saat-overlay.png"
 # Katalog saat overlay berjalan: kartu klip yang sedang diputar harus bertanda "Diputar".
 # Service dijalankan ulang tanpa `open_menu` supaya panel 3× ketuk dari uji sebelumnya tidak
 # menutupi layar (panel itu tetap terbuka selama service hidup).
+# Skala 25% dipakai supaya jendela overlay kecil dan tidak menutupi seluruh layar — perlu diingat
+# bahwa jendela overlay memang *selalu* menahan sentuhan (permintaan produk), jadi pada skala besar
+# geseran jari tidak sampai ke aplikasi di bawahnya.
 adb shell am force-stop "$PKG" || true
 adb shell am start -W -n "$ACTIVITY" --ez seed_sample true --ez start_overlay true \
-  --es screen animation >/dev/null
+  --ei scale 25 --es screen animation >/dev/null
 for i in $(seq 1 12); do
   sleep 5
   if adb logcat -d | grep -q "MateEngineRender.*avatar-ready"; then break; fi
