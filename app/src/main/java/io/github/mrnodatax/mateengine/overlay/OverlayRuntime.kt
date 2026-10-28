@@ -10,6 +10,9 @@ data class OverlaySnapshot(
     val rendererReady: Boolean = false,
     val modelName: String? = null,
     val animationName: String? = null,
+    /** Klip bawaan yang sedang diputar (mis. `idle_loop`), dipakai daftar klip di layar Animasi. */
+    val clipName: String? = null,
+    val seated: Boolean = false,
     val webgl2: Boolean? = null,
     val fps: Int = 0,
     val lastError: String? = null,

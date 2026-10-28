@@ -29,6 +29,7 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import io.github.mrnodatax.mateengine.ui.theme.SuccessColor
 import io.github.mrnodatax.mateengine.ui.theme.SuccessContainer
 import io.github.mrnodatax.mateengine.ui.theme.WarningColor
@@ -43,12 +44,13 @@ fun SectionCard(
 ) {
     Card(
         modifier = modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(18.dp),
+        // Skala 4/8: kartu 20dp agar sejalan dengan MateShapes.medium.
+        shape = RoundedCornerShape(20.dp),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
         border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
         elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
     ) {
-        Column(Modifier.padding(18.dp), verticalArrangement = Arrangement.spacedBy(10.dp), content = content)
+        Column(Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(12.dp), content = content)
     }
 }
 
@@ -56,9 +58,11 @@ fun SectionCard(
 fun SectionLabel(text: String, modifier: Modifier = Modifier) {
     Text(
         text = text.uppercase(),
-        style = MaterialTheme.typography.labelSmall,
+        // labelMedium (12sp) — teks 11sp sulit dibaca dan melanggar batas minimum.
+        style = MaterialTheme.typography.labelMedium,
         fontWeight = FontWeight.SemiBold,
         color = MaterialTheme.colorScheme.onSurfaceVariant,
+        letterSpacing = 0.6.sp,
         modifier = modifier.padding(top = 8.dp, bottom = 2.dp),
     )
 }

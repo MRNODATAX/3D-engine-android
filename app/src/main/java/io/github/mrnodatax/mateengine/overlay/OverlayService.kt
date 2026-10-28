@@ -118,6 +118,11 @@ class OverlayService : Service() {
             ACTION_TRIM_MEMORY -> trimMemory(forced = true)
             ACTION_LOCOMOTION -> applyLocomotion(intent?.getStringExtra(EXTRA_LOCOMOTION))
             ACTION_PLAY_BUILTIN -> evaluate("window.MateEngine.playBuiltin(${JSONObject.quote(intent?.getStringExtra(EXTRA_BUILTIN) ?: "idle")})")
+            ACTION_SET_SEATED -> {
+                val seated = intent?.getBooleanExtra(EXTRA_SEATED, true) ?: true
+                evaluate("window.MateEngine.setSeated($seated)")
+                Log.i(TAG, "mode duduk: $seated")
+            }
             ACTION_RESET_POSE -> {
                 evaluate("window.MateEngine.resetPose()")
                 Log.i(TAG, "pose avatar direset ke pose rileks")
@@ -200,6 +205,9 @@ class OverlayService : Service() {
             applyLayout(recenter = false)
         }
         container.onTap = { zone -> reactToTouch(zone) }
+        container.onDragVelocity = { vx, vy ->
+            evaluate("window.MateEngine.setDragVelocity($vx, $vy)")
+        }
         container.isDragEnabled = !prefs.locked
 
         runCatching {
@@ -381,7 +389,15 @@ class OverlayService : Service() {
                 val name = payload.optString("name").takeIf { it.isNotBlank() }
                 OverlayRuntime.update { it.copy(animationName = name) }
             }
-            "animation-stopped" -> OverlayRuntime.update { it.copy(animationName = null) }
+            "animation-stopped" -> OverlayRuntime.update { it.copy(animationName = null, clipName = null) }
+            "clip-changed" -> {
+                OverlayRuntime.update { it.copy(clipName = payload.optString("clip").takeIf { value -> value.isNotBlank() }) }
+            }
+            "seated" -> {
+                val seated = payload.optBoolean("seated")
+                OverlayRuntime.update { it.copy(seated = seated) }
+                Log.i(TAG, "avatar ${if (seated) "duduk" else "berdiri"}")
+            }
             "error" -> {
                 val message = payload.optString("message", "Renderer melaporkan kesalahan.")
                 Log.w(TAG, "renderer error ${payload.optString("code")}: $message")
@@ -621,9 +637,15 @@ class OverlayService : Service() {
         var onDragFinished: ((Int, Int) -> Unit)? = null
         var onScaleChanged: ((Int) -> Unit)? = null
         var onTap: ((String) -> Unit)? = null
+        var onDragVelocity: ((Float, Float) -> Unit)? = null
 
         private var downRawX = 0f
         private var downRawY = 0f
+        // Kecepatan geser untuk ayunan badan (piksel/detik).
+        private var lastMoveX = 0f
+        private var lastMoveY = 0f
+        private var lastMoveAt = 0L
+        private var lastVelocitySentAt = 0L
         private var startX = 0
         private var startY = 0
         private var dragging = false
@@ -651,6 +673,9 @@ class OverlayService : Service() {
                     downRawX = event.rawX
                     downRawY = event.rawY
                     downTime = System.currentTimeMillis()
+                    lastMoveX = event.rawX
+                    lastMoveY = event.rawY
+                    lastMoveAt = downTime
                     startX = layoutParams.x
                     startY = layoutParams.y
                     dragging = false
@@ -686,6 +711,21 @@ class OverlayService : Service() {
                         voicePack.play(VoicePack.Event.DRAG_START, 0.5f)
                     }
                     if (!dragging) return true
+
+                    // Kecepatan geser (piksel/detik) dikirim ~20×/detik ke renderer supaya badan
+                    // ikut miring seperti tertinggal, lalu mereda sendiri setelah jari berhenti.
+                    val nowMs = System.currentTimeMillis()
+                    val span = (nowMs - lastMoveAt).coerceAtLeast(16L)
+                    if (nowMs - lastVelocitySentAt >= 50) {
+                        val vx = (event.rawX - lastMoveX) * 1000f / span
+                        val vy = (event.rawY - lastMoveY) * 1000f / span
+                        lastMoveX = event.rawX
+                        lastMoveY = event.rawY
+                        lastMoveAt = nowMs
+                        lastVelocitySentAt = nowMs
+                        onDragVelocity?.invoke(vx, vy)
+                    }
+
                     val metrics = resources.displayMetrics
                     val placement = OverlayGeometry.clamp(
                         startX + dx,
@@ -711,6 +751,7 @@ class OverlayService : Service() {
                 MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> {
                     if (dragging) {
                         onDragFinished?.invoke(layoutParams.x, layoutParams.y)
+                        onDragVelocity?.invoke(0f, 0f)
                         voicePack.play(VoicePack.Event.DRAG_STOP, 0.5f)
                     } else if (!pinching && System.currentTimeMillis() - downTime < 300) {
                         // Ketuk singkat (bukan geser) = sentuhan pada avatar.
@@ -745,6 +786,8 @@ class OverlayService : Service() {
         const val ACTION_PLAY_BUILTIN = "io.github.mrnodatax.mateengine.action.PLAY_BUILTIN"
         const val EXTRA_BUILTIN = "builtin_clip"
         const val ACTION_RESET_POSE = "io.github.mrnodatax.mateengine.action.RESET_POSE"
+        const val ACTION_SET_SEATED = "io.github.mrnodatax.mateengine.action.SET_SEATED"
+        const val EXTRA_SEATED = "seated"
         const val EXTRA_LOCOMOTION = "locomotion"
         const val EXTRA_ANIMATION_ID = "animation_id"
         const val EXTRA_SPEECH_TEXT = "speech_text"
@@ -820,6 +863,15 @@ class OverlayService : Service() {
                 Intent(context, OverlayService::class.java)
                     .setAction(ACTION_PLAY_BUILTIN)
                     .putExtra(EXTRA_BUILTIN, name),
+            )
+        }
+
+        fun setSeated(context: Context, seated: Boolean) {
+            if (!OverlayRuntime.state.value.running) return
+            context.startService(
+                Intent(context, OverlayService::class.java)
+                    .setAction(ACTION_SET_SEATED)
+                    .putExtra(EXTRA_SEATED, seated),
             )
         }
 

@@ -1,6 +1,10 @@
 package io.github.mrnodatax.mateengine.ui.screens
 
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -18,11 +22,14 @@ import androidx.compose.material3.FilterChip
 import androidx.compose.material3.FilterChipDefaults
 import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import io.github.mrnodatax.mateengine.data.AnimationAsset
@@ -41,6 +48,7 @@ import io.github.mrnodatax.mateengine.ui.T
 import io.github.mrnodatax.mateengine.ui.ToggleRow
 import io.github.mrnodatax.mateengine.ui.TwoPane
 
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun AnimationScreen(
     state: AppState,
@@ -57,7 +65,11 @@ fun AnimationScreen(
     onNextDance: () -> Unit,
     onPlayBuiltin: (String) -> Unit,
     onResetPose: () -> Unit,
+    seated: Boolean,
+    onSeatedChange: (Boolean) -> Unit,
+    onStartAvatar: () -> Unit,
 ) {
+    val activeClip = runtime.clipName?.let { clipLabelOf(it) }
     BoxWithConstraints(Modifier.fillMaxWidth()) {
         val wide = maxWidth >= 600.dp
         Column(
@@ -76,30 +88,62 @@ fun AnimationScreen(
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
-                        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                             StatusChip(
                                 if (runtime.running) (runtime.modelName ?: "Avatar aktif") else T.needAvatarFirst,
                                 if (runtime.running) ChipTone.Success else ChipTone.Warning,
                             )
-                            if (runtime.animationName != null) StatusChip(runtime.animationName, ChipTone.Accent)
+                            runtime.animationName?.let { StatusChip(it, ChipTone.Accent) }
+                            if (seated) StatusChip("Duduk", ChipTone.Accent)
                         }
-                        Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                        // Aksi utama satu baris penuh: label tidak pernah terpotong atau membungkus.
+                        Button(
+                            onClick = onStartAvatar,
+                            enabled = !runtime.running,
+                            modifier = Modifier.fillMaxWidth(),
+                        ) {
+                            Icon(Icons.Filled.PlayArrow, contentDescription = null)
+                            Text(
+                                if (runtime.running) "Avatar sudah berjalan" else T.startAvatar,
+                                modifier = Modifier.padding(start = 8.dp),
+                                maxLines = 1,
+                                softWrap = false,
+                            )
+                        }
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                        ) {
                             FilledTonalButton(
                                 onClick = { state.selectedAnimation?.let(onPlay) },
                                 enabled = runtime.running && state.selectedAnimation != null,
+                                modifier = Modifier.weight(1f),
                             ) {
                                 Icon(Icons.Filled.PlayArrow, contentDescription = null)
-                                Text(T.play, modifier = Modifier.padding(start = 8.dp))
+                                Text(
+                                    T.play,
+                                    modifier = Modifier.padding(start = 8.dp),
+                                    maxLines = 1,
+                                    softWrap = false,
+                                )
                             }
-                            OutlinedButton(onClick = onStop, enabled = runtime.running) {
-                                Icon(Icons.Filled.Clear, contentDescription = null)
-                                Text(T.stopAnimation, modifier = Modifier.padding(start = 8.dp))
+                            IconButton(
+                                onClick = onStop,
+                                enabled = runtime.running,
+                                modifier = Modifier.size(48.dp),
+                            ) {
+                                Icon(Icons.Filled.Clear, contentDescription = T.stopAnimation)
                             }
-                            Button(onClick = onImport, enabled = !importing) {
-                                Icon(Icons.Filled.Add, contentDescription = null)
-                                Text(if (importing) "Mengimpor…" else T.importVrma, modifier = Modifier.padding(start = 8.dp))
+                            IconButton(
+                                onClick = onImport,
+                                enabled = !importing,
+                                modifier = Modifier.size(48.dp),
+                            ) {
+                                Icon(Icons.Filled.Add, contentDescription = if (importing) "Mengimpor…" else T.importVrma)
                             }
                         }
+                        InfoNote(T.animationNote)
                     }
 
                     SectionCard {
@@ -109,35 +153,78 @@ fun AnimationScreen(
                             fontWeight = FontWeight.SemiBold,
                         )
                         Text(
-                            "Empat klip animasi asli dari Universal Animation Library (lisensi CC0), " +
+                            "Empat belas klip animasi asli dari Universal Animation Library (lisensi CC0), " +
                                 "dikonversi ke .vrma oleh skrip di repo. Tidak perlu impor.",
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
-                        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                            listOf(
-                                "idle" to "Diam",
-                                "talk" to "Bicara",
-                                "walk" to "Jalan",
-                                "dance" to "Menari",
-                            ).forEach { (value, label) ->
-                                OutlinedButton(
-                                    onClick = { onPlayBuiltin(value) },
-                                    enabled = runtime.running,
-                                ) { Text(label) }
+                        val clips = listOf(
+                            "idle" to "Diam",
+                            "talk" to "Bicara",
+                            "walk" to "Jalan",
+                            "dance" to "Menari",
+                            "interact" to "Melambai",
+                            "sitting_idle" to "Duduk",
+                        )
+                        clips.chunked(2).forEach { pair ->
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                            ) {
+                                pair.forEach { (value, label) ->
+                                    FilterChip(
+                                        selected = activeClip == clipLabelOf(value),
+                                        onClick = { onPlayBuiltin(value) },
+                                        enabled = runtime.running,
+                                        label = {
+                                            Text(
+                                                label,
+                                                maxLines = 1,
+                                                softWrap = false,
+                                                overflow = TextOverflow.Ellipsis,
+                                            )
+                                        },
+                                        modifier = Modifier.weight(1f),
+                                        colors = FilterChipDefaults.filterChipColors(
+                                            selectedContainerColor = MaterialTheme.colorScheme.primaryContainer,
+                                            selectedLabelColor = MaterialTheme.colorScheme.onPrimaryContainer,
+                                        ),
+                                        border = FilterChipDefaults.filterChipBorder(
+                                            enabled = runtime.running,
+                                            selected = activeClip == clipLabelOf(value),
+                                            borderColor = MaterialTheme.colorScheme.outline,
+                                            selectedBorderColor = MaterialTheme.colorScheme.primaryContainer,
+                                        ),
+                                    )
+                                }
+                                if (pair.size == 1) Box(Modifier.weight(1f))
                             }
                         }
-                        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                            OutlinedButton(onClick = onResetPose, enabled = runtime.running) {
-                                Text("Perbaiki pose")
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        ) {
+                            OutlinedButton(
+                                onClick = onResetPose,
+                                enabled = runtime.running,
+                                modifier = Modifier.weight(1f),
+                            ) {
+                                Text("Perbaiki pose", maxLines = 1, softWrap = false, overflow = TextOverflow.Ellipsis)
                             }
-                            OutlinedButton(onClick = onStop, enabled = runtime.running) {
-                                Text("Berhenti bergerak")
+                            OutlinedButton(
+                                onClick = onStop,
+                                enabled = runtime.running,
+                                modifier = Modifier.weight(1f),
+                            ) {
+                                Text("Berhenti", maxLines = 1, softWrap = false, overflow = TextOverflow.Ellipsis)
                             }
                         }
-                        InfoNote(
-                            "Bila tangan sempat terangkat setelah animasi berhenti, tombol " +
-                                "\"Perbaiki pose\" mengembalikannya ke posisi rileks.",
+                        RowDivider()
+                        ToggleRow(
+                            title = "Duduk di tepi layar",
+                            subtitle = "Avatar duduk di tepi bawah dengan kaki melewati tepi. Ketuk avatar untuk berdiri.",
+                            checked = seated,
+                            onCheckedChange = { onSeatedChange(it) },
                         )
                     }
 
@@ -170,7 +257,6 @@ fun AnimationScreen(
                                 enabled = state.overlay.motion == "dance",
                             ) { Text("Gaya lain") }
                         }
-                        InfoNote("Setelah 2 menit tanpa sentuhan, avatar mengantuk lalu tertidur. Ketuk avatar untuk membangunkan.")
                     }
 
                     SectionCard {
@@ -241,4 +327,15 @@ fun AnimationScreen(
             )
         }
     }
+}
+
+/** Nama klip teknis → label yang dipakai tombol, supaya status bisa disorot tanpa menebak. */
+private fun clipLabelOf(clip: String): String = when (clip) {
+    "idle", "idle_loop" -> "Diam"
+    "talk", "idle_talk" -> "Bicara"
+    "walk", "walk_loop" -> "Jalan"
+    "dance", "dance_loop" -> "Menari"
+    "interact" -> "Melambai"
+    "sitting_idle", "sitting_enter" -> "Duduk"
+    else -> ""
 }

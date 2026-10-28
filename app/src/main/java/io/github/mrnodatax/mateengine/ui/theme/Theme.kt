@@ -8,6 +8,10 @@ import androidx.compose.material3.lightColorScheme
 import androidx.compose.material3.Shapes
 import androidx.compose.material3.Typography
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.ui.text.font.Font
+import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.text.font.FontWeight
+import io.github.mrnodatax.mateengine.R
 import androidx.compose.ui.unit.dp
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.SideEffect
@@ -33,14 +37,15 @@ private val LightColors = lightColorScheme(
     onSecondary = Color.White,
     secondaryContainer = Color(0xFFDFF3F0),
     onSecondaryContainer = Color(0xFF0B1B1A),
-    background = Color(0xFFF4FBFA),
-    onBackground = Color(0xFF0B1B1A),
-    surface = Color(0xFFFFFFFF),
-    onSurface = Color(0xFF0B1B1A),
+    background = Color(MateTokens.Background),
+    onBackground = Color(MateTokens.OnSurface),
+    surface = Color(MateTokens.Surface),
+    onSurface = Color(MateTokens.OnSurface),
     surfaceVariant = Color(0xFFE7F2F0),
-    onSurfaceVariant = Color(0xFF4F615E),
-    outline = Color(0xFF9FB4B1),
-    outlineVariant = Color(0xFFDCE9E7),
+    onSurfaceVariant = Color(MateTokens.OnSurfaceVariant),
+    // Batas kartu harus terlihat: 2,18:1 → 3,25:1 (lihat MateTokens & DesignTokenTest).
+    outline = Color(MateTokens.Outline),
+    outlineVariant = Color(MateTokens.OutlineVariant),
     error = Color(0xFFA5352B),
     onError = Color.White,
     errorContainer = Color(0xFFFBEAE8),
@@ -54,24 +59,24 @@ private val DarkColors = darkColorScheme(
     onPrimaryContainer = Color(0xFFC9FBF5),
     secondary = Color(0xFFA6BAC1),
     onSecondary = Color(0xFF0B1418),
-    background = Color(0xFF0E1113),
-    onBackground = Color(0xFFE8EDEF),
-    surface = Color(0xFF171C1F),
-    onSurface = Color(0xFFE8EDEF),
+    background = Color(MateTokens.BackgroundDark),
+    onBackground = Color(MateTokens.OnSurfaceDark),
+    surface = Color(MateTokens.SurfaceDark),
+    onSurface = Color(MateTokens.OnSurfaceDark),
     surfaceVariant = Color(0xFF1F262A),
-    onSurfaceVariant = Color(0xFF9AA7AD),
-    outline = Color(0xFF2B3338),
-    outlineVariant = Color(0xFF232B2F),
+    onSurfaceVariant = Color(MateTokens.OnSurfaceVariantDark),
+    outline = Color(MateTokens.OutlineDark),
+    outlineVariant = Color(MateTokens.OutlineVariantDark),
     error = Color(0xFFF09086),
     onError = Color(0xFF3A1C18),
     errorContainer = Color(0xFF3A1C18),
     onErrorContainer = Color(0xFFFBD9D4),
 )
 
-val SuccessColor: Color @Composable get() = if (isSystemInDarkTheme()) Color(0xFF6CD39C) else Color(0xFF1F7A4D)
-val SuccessContainer: Color @Composable get() = if (isSystemInDarkTheme()) Color(0xFF12301F) else Color(0xFFE6F4EC)
-val WarningColor: Color @Composable get() = if (isSystemInDarkTheme()) Color(0xFFE4B25C) else Color(0xFF8A5A00)
-val WarningContainer: Color @Composable get() = if (isSystemInDarkTheme()) Color(0xFF33290F) else Color(0xFFFBF1DC)
+val SuccessColor: Color @Composable get() = if (isSystemInDarkTheme()) Color(0xFF6CD39C) else Color(MateTokens.Success)
+val SuccessContainer: Color @Composable get() = if (isSystemInDarkTheme()) Color(0xFF12301F) else Color(MateTokens.SuccessContainer)
+val WarningColor: Color @Composable get() = if (isSystemInDarkTheme()) Color(0xFFE4B25C) else Color(MateTokens.Warning)
+val WarningContainer: Color @Composable get() = if (isSystemInDarkTheme()) Color(0xFF33290F) else Color(MateTokens.WarningContainer)
 
 @Composable
 fun MateEngineTheme(content: @Composable () -> Unit) {
@@ -97,7 +102,39 @@ fun MateEngineTheme(content: @Composable () -> Unit) {
     )
 }
 
-private val MateTypography = Typography()
+/**
+ * Tipografi merek: Outfit (variable font, lisensi OFL-1.1) untuk judul dan teks isi.
+ * Berkas: `res/font/outfit.ttf` (110.884 B) + `docs/lisensi/OFL-Outfit.txt`.
+ * Font sistem tetap dipakai sebagai fallback untuk karakter yang tidak ada di Outfit.
+ */
+private val Outfit = FontFamily(
+    Font(R.font.outfit, FontWeight.Light),
+    Font(R.font.outfit, FontWeight.Normal),
+    Font(R.font.outfit, FontWeight.Medium),
+    Font(R.font.outfit, FontWeight.SemiBold),
+    Font(R.font.outfit, FontWeight.Bold),
+)
+
+private val BaseTypography = Typography()
+
+private val MateTypography = Typography(
+    displayLarge = BaseTypography.displayLarge.copy(fontFamily = Outfit),
+    displayMedium = BaseTypography.displayMedium.copy(fontFamily = Outfit),
+    displaySmall = BaseTypography.displaySmall.copy(fontFamily = Outfit),
+    headlineLarge = BaseTypography.headlineLarge.copy(fontFamily = Outfit),
+    headlineMedium = BaseTypography.headlineMedium.copy(fontFamily = Outfit),
+    headlineSmall = BaseTypography.headlineSmall.copy(fontFamily = Outfit),
+    titleLarge = BaseTypography.titleLarge.copy(fontFamily = Outfit),
+    titleMedium = BaseTypography.titleMedium.copy(fontFamily = Outfit),
+    titleSmall = BaseTypography.titleSmall.copy(fontFamily = Outfit),
+    bodyLarge = BaseTypography.bodyLarge.copy(fontFamily = Outfit),
+    bodyMedium = BaseTypography.bodyMedium.copy(fontFamily = Outfit),
+    bodySmall = BaseTypography.bodySmall.copy(fontFamily = Outfit),
+)
+
+/** Nama merek untuk header & kartu Tentang. */
+val BrandName = "Mate Engine"
+
 
 /** Skala bentuk Expressive: kontrol kecil 12dp, kartu 20dp, panel 28dp. */
 private val MateShapes = Shapes(

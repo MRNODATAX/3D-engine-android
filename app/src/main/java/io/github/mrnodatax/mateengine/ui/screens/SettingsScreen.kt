@@ -6,6 +6,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AlertDialog
@@ -15,6 +16,7 @@ import androidx.compose.material3.FilterChipDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
+import androidx.compose.material3.Icon
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -22,8 +24,10 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import io.github.mrnodatax.mateengine.R
 import io.github.mrnodatax.mateengine.data.AppState
 import io.github.mrnodatax.mateengine.ui.ChipTone
 import io.github.mrnodatax.mateengine.ui.InfoNote
@@ -43,6 +47,7 @@ fun SettingsScreen(
     versionName: String,
     versionCode: Int,
     buildType: String,
+    onOpenDiagnostics: () -> Unit,
     onFpsChange: (Int) -> Unit,
     onQualityChange: (String) -> Unit,
     onMemorySaverChange: (Boolean) -> Unit,
@@ -64,6 +69,17 @@ fun SettingsScreen(
             TwoPane(
                 wide = wide,
                 primary = {
+                    SectionLabel("Izin & perawatan")
+                    SectionCard {
+                        Text(
+                            "Pemeriksaan izin overlay, pembatasan latar, notifikasi, dan versi WebView " +
+                                "dipindah ke halaman Diagnosa supaya bilah navigasi tetap lima tujuan.",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                        OutlinedButton(onClick = onOpenDiagnostics) { Text("Buka Diagnosa") }
+                    }
+
                     SectionLabel(T.overlaySection)
                     SectionCard {
                         SliderField(
@@ -127,9 +143,22 @@ fun SettingsScreen(
                         ListRow(
                             title = T.aboutLabel,
                             subtitle = "${T.versionLabel} $versionName ($versionCode) · $buildType",
+                            leading = {
+                                Icon(
+                                    painter = painterResource(R.drawable.ic_brand_mark),
+                                    contentDescription = null,
+                                    tint = MaterialTheme.colorScheme.primary,
+                                    modifier = Modifier.size(40.dp),
+                                )
+                            },
                             trailing = {
                                 OutlinedButton(onClick = onOpenDesktopRelease) { Text("Rilis desktop") }
                             },
+                        )
+                        Text(
+                            "Font Outfit (OFL-1.1) · animasi CC0 Quaternius · model avatar milikmu sendiri.",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
                     }
                 },
@@ -148,7 +177,6 @@ fun SettingsScreen(
                         }
                     }
                     InfoNote(T.storageNote)
-                    InfoNote(T.aboutBody)
                 },
             )
         }

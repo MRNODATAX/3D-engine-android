@@ -8,6 +8,7 @@
  * tidak ada berkas animasi milik Mate Engine yang dipakai.
  */
 import * as THREE from 'three';
+import { clampJoint, decayToward, dragSway } from './limits.js';
 
 const _euler = new THREE.Euler();
 const _quat = new THREE.Quaternion();
@@ -57,6 +58,8 @@ export function createMotion(options = {}) {
     react: { type: null, at: 0, duration: 0 },
     danceVariant: 0,
     lastExpressionChange: 0,
+    /** Kecepatan geser terakhir (piksel/detik) dan peluruhannya. */
+    drag: { vx: 0, vy: 0, lean: 0 },
   };
 
   /** Quaternion acuan per sendi, diambil sesudah mixer.update(). */
@@ -260,6 +263,18 @@ export function createMotion(options = {}) {
       }
     }
 
+    // ---- ayunan karena digeser: badan tertinggal, kepala tetap tegak
+    state.drag.lean = decayToward(state.drag.lean, 0, 260, dt * 1000);
+    const targetVx = state.drag.vx;
+    const targetVy = state.drag.vy;
+    state.drag.vx = decayToward(state.drag.vx, 0, 220, dt * 1000);
+    state.drag.vy = decayToward(state.drag.vy, 0, 220, dt * 1000);
+    const drag = dragSway(targetVx, targetVy);
+    layers.spine.z += drag.spineZ;
+    layers.head.z += drag.headZ;
+    layers.spine.x += drag.spineX;
+    layers.hips.z += drag.spineZ * 0.3;
+
     // ---- pagar lengan: di luar mode tari, offset lengan tidak boleh mengangkat tangan.
     // Batas 0,35 rad (~20°) membuat "tangan stuck di atas" tidak mungkin terjadi karena
     // lapisan prosedural, apa pun kombinasi keadaan sebelumnya.
@@ -276,8 +291,15 @@ export function createMotion(options = {}) {
       if (!base.has(key)) base.set(key, node.quaternion.clone());
       else base.get(key).copy(node.quaternion);
 
-      const l = layers[key];
-      if (!l) continue;
+      const raw = layers[key];
+      if (!raw) continue;
+      // Batas anatomis: menahan kombinasi napas + goyangan + reaksi yang bisa membuat sendi
+      // menekuk ke arah mustahil.
+      const l = key === 'hips' || key === 'spine' || key === 'chest' || key === 'head' || key === 'neck'
+        || key.endsWith('Shoulder') || key.endsWith('UpperArm') || key.endsWith('LowerArm')
+        || key.endsWith('Leg')
+        ? clampJoint(key, raw)
+        : raw;
       if (!l.x && !l.y && !l.z) continue;
       _euler.set(l.x, l.y, l.z, 'XYZ');
       _quat.setFromEuler(_euler);
@@ -306,6 +328,11 @@ export function createMotion(options = {}) {
     setReducedMotion(value) {
       state.reducedMotion = Boolean(value);
     },
+    /** Dipanggil sisi Android saat avatar digeser (piksel/detik). */
+    setDrag(velocityX, velocityY) {
+      state.drag.vx = Math.max(-4000, Math.min(4000, Number(velocityX) || 0));
+      state.drag.vy = Math.max(-4000, Math.min(4000, Number(velocityY) || 0));
+    },
     react(type) {
       state.react = { type, at: state.time, duration: 800 };
       state.idleSeconds = 0;
@@ -323,6 +350,7 @@ export function createMotion(options = {}) {
         lookYaw: Number(state.look.yaw.toFixed(3)),
         bones: bones.size,
         react: state.react.type,
+        sway: Number((Math.abs(state.drag.vx) + Math.abs(state.drag.vy)).toFixed(1)),
       };
     },
   };

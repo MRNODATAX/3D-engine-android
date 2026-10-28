@@ -329,6 +329,105 @@ try {
     `✓ lengan di bawah saat diam: ${builtin.autoIdle.leftArmDeg}° / ${builtin.autoIdle.rightArmDeg}°`,
   );
 
+  // ---------------------------------------------------- F3: duduk, headpat, ayunan geser
+  const seated = await page.evaluate(async () => {
+    const wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+    const until = async (predicate, timeout = 20000) => {
+      const started = performance.now();
+      while (performance.now() - started < timeout) {
+        if (predicate()) return true;
+        await wait(100);
+      }
+      return false;
+    };
+    const bottomGap = () => {
+      const source = document.getElementById('stage');
+      const scratch = document.createElement('canvas');
+      scratch.width = source.width;
+      scratch.height = source.height;
+      scratch.getContext('2d').drawImage(source, 0, 0);
+      const data = scratch.getContext('2d').getImageData(0, 0, scratch.width, scratch.height).data;
+      let maxY = 0;
+      let minY = Infinity;
+      for (let i = 0; i < data.length; i += 4) {
+        if (data[i + 3] <= 24) continue;
+        const py = Math.floor(i / 4 / scratch.width);
+        if (py > maxY) maxY = py;
+        if (py < minY) minY = py;
+      }
+      return { gap: scratch.height - 1 - maxY, height: maxY - minY, total: scratch.height };
+    };
+
+    const standing = bottomGap();
+    window.MateEngine.setSeated(true);
+    const seatedClip = await until(() => window.MateEngine.poseMetrics()?.builtinClip === 'sitting_idle');
+    await wait(700);
+    const seatedGap = bottomGap();
+    const metricsSeated = window.MateEngine.poseMetrics();
+    window.MateEngine.setSeated(false);
+    const stoodUp = await until(() => window.MateEngine.poseMetrics()?.builtinClip === 'idle_loop');
+    await wait(600);
+    const standingAgain = bottomGap();
+
+    // Ayunan saat digeser: kecepatan tinggi → badan miring, lalu mereda.
+    window.MateEngine.setDragVelocity(1800, 0);
+    await wait(180);
+    const swayHot = window.MateEngine.poseMetrics();
+    for (let i = 0; i < 24; i += 1) {
+      window.MateEngine.setDragVelocity(0, 0);
+      await wait(60);
+    }
+    const swayCold = window.MateEngine.poseMetrics();
+
+    // Headpat: ketuk kepala → ekspresi mata menutup.
+    window.MateEngine.react('head');
+    await wait(200);
+    const blinkAfterPat = window.MateEngine.expressionValue('blink');
+    await wait(1800);
+    const blinkAfterWait = window.MateEngine.expressionValue('blink');
+
+    return {
+      standing,
+      seatedGap,
+      metricsSeated,
+      seatedClip,
+      stoodUp,
+      standingAgain,
+      swayHot,
+      swayCold,
+      blinkAfterPat,
+      blinkAfterWait,
+    };
+  });
+
+  assert(seated.seatedClip, 'klip duduk (sitting_idle) tidak pernah aktif setelah setSeated(true)');
+  assert(seated.metricsSeated?.seated === true, 'poseMetrics tidak melaporkan keadaan duduk');
+  assert(
+    seated.seatedGap.gap < seated.standing.gap + 2,
+    `saat duduk, avatar tidak turun ke tepi bawah (jarak bawah ${seated.seatedGap.gap} px vs berdiri ${seated.standing.gap} px)`,
+  );
+  assert(seated.seatedGap.height < seated.standing.height, 'tinggi avatar saat duduk tidak berkurang');
+  console.log(
+    `✓ duduk: klip ${seated.metricsSeated.builtinClip}, jarak bawah ${seated.seatedGap.gap} px ` +
+      `(berdiri ${seated.standing.gap} px), tinggi ${seated.seatedGap.height} vs ${seated.standing.height} px`,
+  );
+  assert(seated.stoodUp, 'berdiri kembali gagal (klip idle tidak aktif)');
+  assert(
+    seated.standingAgain.height >= seated.seatedGap.height,
+    'setelah berdiri, avatar tidak kembali ke tinggi semula',
+  );
+  console.log(`✓ berdiri kembali: tinggi ${seated.standingAgain.height} px`);
+
+  assert(seated.swayHot.sway > 200, `ayunan geser tidak terdeteksi (${seated.swayHot.sway})`);
+  assert(seated.swayCold.sway < 5, `ayunan tidak mereda setelah digeser (${seated.swayCold.sway})`);
+  console.log(`✓ ayunan geser: ${seated.swayHot.sway} → ${seated.swayCold.sway} setelah 1,5 detik`);
+
+  assert(seated.blinkAfterPat > 0.5, `mata tidak menutup saat headpat (blink ${seated.blinkAfterPat})`);
+  assert(seated.blinkAfterWait < 0.2, `mata tetap menutup setelah headpat (blink ${seated.blinkAfterWait})`);
+  console.log(
+    `✓ headpat: mata menutup ${seated.blinkAfterPat.toFixed(2)} lalu kembali ${seated.blinkAfterWait.toFixed(2)}`,
+  );
+
   assert(consoleErrors.length === 0, `error konsol: ${consoleErrors.slice(0, 3).join(' | ')}`);
   console.log('✓ tanpa error konsol');
 } catch (error) {

@@ -17,6 +17,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
@@ -58,6 +59,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -77,21 +79,13 @@ import io.github.mrnodatax.mateengine.ui.screens.ChatScreen
 import io.github.mrnodatax.mateengine.ui.screens.DiagnosticsScreen
 import io.github.mrnodatax.mateengine.ui.screens.HomeScreen
 import io.github.mrnodatax.mateengine.ui.screens.SettingsScreen
+import io.github.mrnodatax.mateengine.R
+import io.github.mrnodatax.mateengine.ui.Screen
+import io.github.mrnodatax.mateengine.ui.theme.BrandName
 import io.github.mrnodatax.mateengine.ui.theme.MateEngineTheme
 import io.github.mrnodatax.mateengine.util.DiagnosticAction
 import io.github.mrnodatax.mateengine.util.Diagnostics
 import kotlinx.coroutines.launch
-
-private enum class Screen(val label: String, val icon: ImageVector, val navLabel: String = label) {
-    Home(T.navHome, Icons.Filled.Home),
-    Avatar(T.navAvatar, Icons.Filled.Person),
-    Chat(T.navChat, Icons.Filled.Email),
-    Animation(T.navAnimation, Icons.Filled.PlayArrow),
-    Diagnostics(T.navDiagnostics, Icons.Filled.Build),
-    // Enam tujuan membuat label bawah sempit; "Setelan" menggantikan "Pengaturan"
-    // hanya pada bilah navigasi, judul halaman tetap "Pengaturan".
-    Settings(T.navSettings, Icons.Filled.Settings, T.navSettingsShort),
-}
 
 /** Penanda layar awal dari intent; dipakai juga saat activity menerima intent baru (singleTask). */
 private object DebugNavigation {
@@ -146,14 +140,14 @@ private fun MateEngineApp() {
         } else {
             val requested = DebugNavigation.requestedScreen.value
                 ?: (context as? android.app.Activity)?.intent?.getStringExtra("screen")
-            Screen.entries.firstOrNull { it.name.equals(requested, ignoreCase = true) } ?: Screen.Home
+            Screen.fromName(requested) ?: Screen.Home
         }
     }
     var screen by remember { mutableStateOf(initialScreen) }
     val requestedScreen by DebugNavigation.requestedScreen
     LaunchedEffect(requestedScreen) {
         if (!BuildConfig.DEBUG) return@LaunchedEffect
-        val target = Screen.entries.firstOrNull { it.name.equals(requestedScreen, ignoreCase = true) }
+        val target = Screen.fromName(requestedScreen)
         if (target != null) screen = target
     }
     var overlayGranted by remember { mutableStateOf(Settings.canDrawOverlays(context)) }
@@ -285,7 +279,7 @@ private fun MateEngineApp() {
                                 horizontalAlignment = Alignment.CenterHorizontally,
                             ) {
                                 if (showRailTitle) AppTitleBlock()
-                                Screen.entries.forEach { entry ->
+                                Screen.bottomBar.forEach { entry ->
                                     NavigationRailItem(
                                         selected = screen == entry,
                                         onClick = { screen = entry },
@@ -385,6 +379,11 @@ private fun MateEngineApp() {
                                     onNextDance = { if (runtime.running) OverlayService.setLocomotion(context, "dance-next") },
                                     onPlayBuiltin = { name -> if (runtime.running) OverlayService.playBuiltin(context, name) },
                                     onResetPose = { if (runtime.running) OverlayService.resetPose(context) },
+                                    seated = runtime.seated,
+                                    onSeatedChange = { seated ->
+                                        if (runtime.running) OverlayService.setSeated(context, seated)
+                                    },
+                                    onStartAvatar = { startOverlay() },
                                 )
                                 Screen.Diagnostics -> DiagnosticsScreen(
                                     snapshot = diagnostics,
@@ -393,6 +392,7 @@ private fun MateEngineApp() {
                                     onCopied = { scope.launch { snackbar.showSnackbar(T.copied) } },
                                 )
                                 Screen.Settings -> SettingsScreen(
+                                    onOpenDiagnostics = { screen = Screen.Diagnostics },
                                     state = state,
                                     versionName = BuildConfig.VERSION_NAME,
                                     versionCode = BuildConfig.VERSION_CODE,
@@ -434,7 +434,7 @@ private fun MateEngineApp() {
                         }
                         if (!wide) {
                             NavigationBar(containerColor = MaterialTheme.colorScheme.surface) {
-                                Screen.entries.forEach { entry ->
+                                Screen.bottomBar.forEach { entry ->
                                     NavigationBarItem(
                                         selected = screen == entry,
                                         onClick = { screen = entry },
@@ -482,12 +482,22 @@ private fun useAvatar(
 @Composable
 private fun AppHeader(screen: Screen) {
     Column(Modifier.padding(start = 20.dp, end = 20.dp, top = 16.dp, bottom = 8.dp)) {
-        Text(
-            "Mate Engine",
-            style = MaterialTheme.typography.labelLarge,
-            color = MaterialTheme.colorScheme.primary,
-            fontWeight = FontWeight.SemiBold,
-        )
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            // Tanda merek 24dp: satu warna, tanpa gradien/bayangan (lihat docs/brand-guidelines.md).
+            Icon(
+                painter = painterResource(R.drawable.ic_brand_mark),
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.primary,
+                modifier = Modifier.size(24.dp),
+            )
+            Text(
+                BrandName,
+                style = MaterialTheme.typography.labelLarge,
+                color = MaterialTheme.colorScheme.primary,
+                fontWeight = FontWeight.SemiBold,
+                modifier = Modifier.padding(start = 8.dp),
+            )
+        }
         Text(
             screen.label,
             style = MaterialTheme.typography.headlineSmall,

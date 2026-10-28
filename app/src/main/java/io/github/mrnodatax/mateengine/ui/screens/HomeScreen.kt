@@ -7,7 +7,9 @@ import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
@@ -24,8 +26,10 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import io.github.mrnodatax.mateengine.R
 import io.github.mrnodatax.mateengine.data.AppState
 import io.github.mrnodatax.mateengine.data.AvatarAsset
 import io.github.mrnodatax.mateengine.overlay.OverlaySnapshot
@@ -77,16 +81,12 @@ fun HomeScreen(
                         onRequestPermission = onRequestPermission,
                         onImportModel = onImportModel,
                     )
+                    // Maksimal satu catatan per layar: sisanya pindah ke Setelan/Diagnosa.
                     if (!overlayGranted) {
                         InfoNote(
-                            text = "Beberapa produsen (mis. HyperOS/ColorOS) mencabut izin setelah pembaruan sistem. Periksa di halaman Diagnosa.",
+                            text = "Beberapa produsen (mis. HyperOS/ColorOS) mencabut izin setelah pembaruan sistem. " +
+                                "Periksa di Setelan → Izin & perawatan.",
                             tone = ChipTone.Warning,
-                        )
-                    }
-                    if (runtime.running) {
-                        InfoNote(
-                            text = "Service berjalan sebagai notifikasi ringan. Hentikan dari notifikasi atau tombol di atas.",
-                            tone = ChipTone.Neutral,
                         )
                     }
                 },
@@ -129,11 +129,28 @@ fun HomeScreen(
                                 leading = { IconTile(Icons.Filled.Person, accent = true) },
                                 trailing = { StatusChip("Aktif", ChipTone.Accent) },
                             )
-                        } ?: Text(
-                            T.noAvatars,
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        )
+                        } ?: Column(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                        ) {
+                            // Empty state: ikon merek + kalimat + aksi, bukan ruang kosong.
+                            Icon(
+                                painter = painterResource(R.drawable.ic_brand_mark),
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.primary,
+                                modifier = Modifier.padding(top = 4.dp).height(56.dp).width(56.dp),
+                            )
+                            Text(
+                                T.noAvatars,
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                modifier = Modifier.padding(top = 8.dp, bottom = 12.dp),
+                            )
+                            Button(onClick = onImportModel) {
+                                Icon(Icons.Filled.Person, contentDescription = null)
+                                Text(T.importModel, modifier = Modifier.padding(start = 8.dp))
+                            }
+                        }
                         state.selectedAnimation?.let { animation ->
                             ListRow(
                                 title = animation.displayName,

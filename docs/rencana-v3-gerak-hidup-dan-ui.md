@@ -1,6 +1,7 @@
 # Rencana v3 — gerak anime yang hidup, UI rapi, dan logo
 
-Status: **F1 dan F2 selesai dan sudah hijau di CI** (run `40615640683`). F3–F6 masih rencana.
+Status: **F1–F6 sudah dikerjakan.** F1 & F2 hijau di CI run `40615640683`; F3–F6 menunggu build CI
+berikutnya (kompilasi Kotlin hanya bisa dibuktikan di CI).
 Semua klaim di bawah punya rujukan berkas/baris atau hasil perintah yang benar-benar saya jalankan
 di sesi ini.
 
@@ -10,10 +11,10 @@ di sesi ini.
 | --- | --- | --- |
 | F1 direktur perilaku | **selesai** | `web/src/behavior.js`, `web/test/behavior.test.mjs` (7 pemeriksaan, jam palsu), step CI "Uji direktur perilaku" |
 | F2 10 klip baru | **selesai** | 14 klip = 477.845 B (466,6 KB), `npm run test:vrma` lulus, `docs/aset-gerak.md` |
-| F3 duduk/headpat/drag | belum | — |
-| F4 smoothing terukur | belum | — |
-| F5 UI rapi | belum | — |
-| F6 logo & splash | belum | — |
+| F3 duduk/headpat/drag | **selesai** | `setSeated()` + rantai klip `sitting_enter→sitting_idle`, ayunan geser (`limits.js`), headpat menutup mata; uji render diperluas |
+| F4 smoothing terukur | **selesai** | `web/src/limits.js` + `web/test/smoothness.test.mjs` (5 pemeriksaan) |
+| F5 UI rapi | **selesai** | `Screen.kt` (5 tab), `MateTokens` + `DesignTokenTest`, `NavigationTest`, layar Animasi dirapikan |
+| F6 logo & splash | **selesai** | `ic_brand_mark.xml`, `splash_background.xml`, Outfit OFL, `docs/brand-guidelines.md` |
 
 Catatan jujur: F1/F2 dibuktikan lewat uji otomatis + build hijau, **belum** lewat tangkapan layar
 emulator. Tangkapan akan diambil bersama F3 supaya sekali jalan.

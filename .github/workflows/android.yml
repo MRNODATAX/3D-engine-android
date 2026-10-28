@@ -35,6 +35,9 @@ jobs:
       - name: Uji direktur perilaku
         working-directory: web
         run: npm run test:behavior
+      - name: Uji batas sendi & ayunan geser
+        working-directory: web
+        run: npm run test:smoothness
       - name: Uji berkas klip .vrma
         working-directory: web
         run: npm run test:vrma

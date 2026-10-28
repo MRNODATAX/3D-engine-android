@@ -66,6 +66,10 @@ const state = {
   clipAppliedAt: 0,
   clipLog: [],
   clipCache: new Map(),
+  seated: false,
+  sittingEnabled: true,
+  pendingChain: null,
+  headpatUntil: 0,
   speech: null,
   animationName: null,
   loop: true,
@@ -182,8 +186,11 @@ function frameModel(vrm) {
   const distanceHeight = distanceForHeight(height * 1.06);
   const distanceWidth = distanceForWidth(Math.max(size.x, 0.1) * 1.06);
   const distance = Math.max(distanceHeight, Math.min(distanceWidth, distanceHeight * 1.25));
-  state.camera.position.set(center.x, center.y, center.z + distance);
-  state.camera.lookAt(center.x, center.y, center.z);
+  // Mode duduk: avatar duduk di tepi bawah layar, jadi kaki sengaja melewati tepi.
+  // Bidikan digeser ke bawah supaya pinggul berada dekat tepi bawah kanvas.
+  const seatedOffset = state.seated ? height * 0.34 : 0;
+  state.camera.position.set(center.x, center.y + seatedOffset, center.z + distance);
+  state.camera.lookAt(center.x, center.y + seatedOffset, center.z);
   state.camera.updateProjectionMatrix();
   // Skala model TIDAK lagi diterapkan di sini: ukuran avatar ditentukan oleh ukuran window
   // overlay di sisi Android, dan kamera selalu membingkai model agar mengisi window itu.
@@ -256,6 +263,7 @@ async function loadAvatar(url) {
     state.renderScale = 1;
     applyPixelRatio();
     state.mixer = new THREE.AnimationMixer(vrm.scene);
+    state.mixer.addEventListener('finished', onActionFinished);
     frameModel(vrm);
     state.ready = true;
     state.idleTime = 0;
@@ -290,6 +298,8 @@ async function loadAnimation(url, name, options = {}) {
     const clip = createVRMAnimationClip(vrmAnimation, state.vrm);
     const action = state.mixer.clipAction(clip);
     action.setLoop(options.loop === false ? THREE.LoopOnce : THREE.LoopRepeat, Infinity);
+    // Rantai klip: mis. sitting_enter → sitting_idle, sitting_exit → idle.
+    state.pendingChain = options.chain ? BUILTIN_CLIPS[options.chain] || options.chain : null;
     action.clampWhenFinished = true;
     action.timeScale = state.speed;
 
@@ -356,6 +366,31 @@ function loadVrmAnimation(url) {
 }
 
 /** Konteks yang dipakai direktur perilaku, diturunkan dari keadaan renderer. */
+/**
+ * Duduk di tepi layar.
+ *
+ * `true`  → putar klip duduk sekali, lalu diam di `sitting_idle` (atau `sitting_talk` saat bicara).
+ * `false` → putar klip berdiri sekali, lalu kembali ke idle.
+ */
+function setSeated(seated) {
+  const target = Boolean(seated);
+  if (target === state.seated) return state.seated;
+  state.seated = target;
+  state.clipOverride = null;
+  state.behavior.reset(performance.now());
+  markInteraction();
+  if (!state.vrm || !state.mixer) return state.seated;
+  if (target) {
+    if (state.motion) state.motion.setLocomotion('idle');
+    playBuiltin('sitting_enter', { manual: false, reason: 'duduk', loop: false, chain: 'sitting_idle' });
+  } else {
+    playBuiltin('sitting_exit', { manual: false, reason: 'berdiri', loop: false, chain: 'idle' });
+  }
+  frameModel(state.vrm);
+  post('seated', { seated: state.seated });
+  return state.seated;
+}
+
 function behaviorContext() {
   const motion = state.motion?.state;
   return {
@@ -363,8 +398,8 @@ function behaviorContext() {
     locomotion: motion?.locomotion ?? 'idle',
     idleMs: Math.round((motion?.idleSeconds ?? 0) * 1000),
     interacted: state.interacted,
-    // Duduk di tepi layar belum aktif pada versi ini (lihat docs/rencana-v3 §5.1).
-    edgeSeatAvailable: false,
+    // Duduk di tepi layar hanya ditawarkan bila pengguna mengizinkannya.
+    edgeSeatAvailable: state.sittingEnabled && !state.seated && state.ready,
     armed: state.interactedEver,
   };
 }
@@ -375,6 +410,10 @@ function behaviorContext() {
  */
 function desiredClip() {
   const context = behaviorContext();
+  if (state.seated) {
+    // Saat duduk, jalan/tari tidak masuk akal: hanya bicara atau duduk tenang.
+    return context.talking ? 'sitting_talk' : 'sitting_idle';
+  }
   if (context.talking) return 'talk';
   if (state.clipOverride) return state.clipOverride;
   if (context.locomotion === 'walk') return 'walk';
@@ -384,6 +423,7 @@ function desiredClip() {
 
 function recordClip(name, reason) {
   state.clipName = name;
+  post('clip-changed', { clip: name, reason });
   state.clipAppliedAt = performance.now();
   state.clipLog.push({ clip: name, reason, at: Math.round(performance.now()) });
   if (state.clipLog.length > 40) state.clipLog.shift();
@@ -410,11 +450,24 @@ async function playBuiltin(name, options = {}) {
 function syncClipState() {
   if (!state.ready || !state.vrm || !state.mixer) return;
   // Direktur memilih perilaku (membaca apakah bicara/berjalan untuk membatalkannya).
-  state.behavior.update(performance.now(), behaviorContext());
+  const behavior = state.behavior.update(performance.now(), behaviorContext());
+  if (behavior?.id === 'sit_down' && !state.seated) {
+    setSeated(true);
+    return;
+  }
   const desired = desiredClip();
   if (desired === state.clipName) return;
   if (performance.now() - state.clipAppliedAt < CROSSFADE_MS) return;
   playBuiltin(desired, { manual: false, reason: 'state' }).catch(() => {});
+}
+
+/** Dipanggil mixer saat klip sekali-jalan selesai: lanjutkan ke klip rantai bila ada. */
+function onActionFinished(event) {
+  if (!state.pendingChain) return;
+  if (state.currentAction && event.action !== state.currentAction) return;
+  const next = state.pendingChain;
+  state.pendingChain = null;
+  playBuiltin(next, { manual: false, reason: 'chain' }).catch(() => {});
 }
 
 /** Tandai ada interaksi pengguna (dipakai suasana perilaku & pematian rasa kantuk). */
@@ -665,6 +718,20 @@ window.MateEngine = {
   },
   clipTimeline: () => state.clipLog.slice(),
   behaviorTimeline: () => state.behavior.timeline(),
+  setSeated: (value) => setSeated(value),
+  seated: () => state.seated,
+  /** Nilai ekspresi (mis. 'blink') untuk uji otomatis. */
+  expressionValue: (name) => state.vrm?.expressionManager?.getValue(name) ?? null,
+  setSittingEnabled: (value) => {
+    state.sittingEnabled = Boolean(value);
+    if (!state.sittingEnabled && state.seated) setSeated(false);
+    return state.sittingEnabled;
+  },
+  /** Kecepatan geser dari sisi Android (piksel/detik) → ayunan badan. */
+  setDragVelocity: (vx, vy) => {
+    state.motion.setDrag(vx, vy);
+    markInteraction();
+  },
   behaviorState: () => ({
     id: state.behavior.currentId(),
     mood: state.behavior.state.mood,
@@ -676,6 +743,19 @@ window.MateEngine = {
   react: (type) => {
     markInteraction();
     state.motion.react(type);
+    if (type === 'head') {
+      // Headpat: mata menutup dan senyum muncul, lalu kembali normal.
+      state.headpatUntil = performance.now() + 1600;
+      const expression = state.vrm?.expressionManager;
+      if (expression) {
+        expression.setValue('blink', 1);
+        expression.setValue('happy', 0.85);
+        setTimeout(() => {
+          expression.setValue('blink', 0);
+          expression.setValue('happy', 0);
+        }, 1600);
+      }
+    }
     const expression = state.vrm?.expressionManager;
     if (expression) {
       // Ekspresi dipilih dari yang benar-benar ada di model ini.
@@ -736,6 +816,10 @@ window.MateEngine = {
       builtinClip: state.builtinClip,
       hasAction: Boolean(state.currentAction),
       baseBones: state.motion?.debug?.().bones ?? 0,
+      seated: state.seated,
+      sway: state.motion?.state?.drag
+        ? Number((Math.abs(state.motion.state.drag.vx) + Math.abs(state.motion.state.drag.vy)).toFixed(1))
+        : 0,
     };
   },
   resetPose: () => {
