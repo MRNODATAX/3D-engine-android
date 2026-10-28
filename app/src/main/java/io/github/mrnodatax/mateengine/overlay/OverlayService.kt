@@ -750,6 +750,7 @@ class OverlayService : Service() {
                 val dy = payload.optInt("dy")
                 if (dx != 0 || dy != 0) applyNudge(dx, dy, payload.optString("style"))
             }
+            "debug-view" -> Log.i(TAG, "debug-view $payload")
             "motion-state" -> {
                 // Jejak gerak tiap 5 detik: bukti bahwa sendi benar-benar bergerak, sekaligus
                 // sumber angka "motion {...}" yang dibaca uji emulator.
