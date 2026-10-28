@@ -192,16 +192,22 @@ function skeletonBounds(vrm) {
     if (name === 'head' && headY === null) headY = point.y;
   });
   if (box.isEmpty()) return null;
-  // Ubun-ubun sedikit di atas tulang kepala; kaki sedikit di bawah pergelangan.
+  // Ruang untuk rambut di atas tulang kepala dan telapak di bawah pergelangan. Rambut bisa
+  // beberapa sentimeter di luar tulang kepala, jadi margin atas dibuat lebih besar.
   const size = new THREE.Vector3();
   box.getSize(size);
-  const margin = Math.max(size.y * 0.06, 0.03);
-  box.min.y -= margin;
-  box.max.y += margin;
+  const topMargin = Math.max(size.y * 0.12, 0.05);
+  const bottomMargin = Math.max(size.y * 0.08, 0.04);
+  box.min.y -= bottomMargin;
+  box.max.y += topMargin;
   return box;
 }
 
-function frameModel(vrm) {
+/**
+ * @param {object} vrm avatar aktif
+ * @param {boolean} [force] hitung ulang walau ukurannya hampir sama
+ */
+function frameModel(vrm, force = false) {
   const skeleton = skeletonBounds(vrm);
   const box = skeleton || new THREE.Box3().setFromObject(vrm.scene);
   if (!box || box.isEmpty()) return;
@@ -226,7 +232,13 @@ function frameModel(vrm) {
   // skala 100% avatar benar-benar mengisi tinggi layar (lengan boleh mendekati tepi).
   // Ruang gerak: seluruh tubuh (termasuk kaki saat duduk) harus muat dengan sisa ±8%, supaya
   // model tidak "menabrak" tepi jendela saat mengayun atau melambai.
-  const padding = 1.12;
+  const padding = 1.18;
+  // Deadband: perubahan kecil (napas, ayunan) tidak perlu menggeser kamera; tanpa ini avatar
+  // terlihat "berdenyut" karena bingkai dihitung ulang tiap kali.
+  if (!force && state.frameHeight && Math.abs(height - state.frameHeight) / state.frameHeight < 0.06) {
+    state.cameraLookAt = center.clone();
+    return;
+  }
   const distanceHeight = distanceForHeight(height * padding);
   const distanceWidth = distanceForWidth(Math.max(size.x, 0.1) * padding);
   const distance = Math.max(distanceHeight, Math.min(distanceWidth, distanceHeight * 1.25));
@@ -693,6 +705,11 @@ function animate(now) {
     state.vrm.update(delta);
     if (state.reframeAt && performance.now() >= state.reframeAt) {
       state.reframeAt = 0;
+      frameModel(state.vrm, true);
+    } else if (now - (state.lastFrameCheck || 0) > 600) {
+      // Klip lompat/mendorong mengangkat atau menurunkan tubuh; periksa berkala supaya tidak
+      // ada bagian tubuh yang keluar kanvas di tengah klip.
+      state.lastFrameCheck = now;
       frameModel(state.vrm);
     }
     easeCamera(delta);
