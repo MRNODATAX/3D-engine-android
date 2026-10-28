@@ -50,6 +50,9 @@ emulator Android 14 (diambil otomatis lewat `adb screencap` di CI, bukan mockup)
 
 ## Unduh dan pasang (build uji)
 
+Hanya build uji terbaru yang disimpan; rilis versi lama sudah dihapus agar tidak ada yang
+mengunduh APK dengan bug gerak.
+
 Build uji terbaru: [Release `v0.1.5-test`](https://github.com/MRNODATAX/3D-engine-android/releases/tag/v0.1.5-test)
 (`MateEngine-v0.1.5-test-debug.apk`, ditandatangani kunci debug). Rilis ini membawa animasi asli:
 empat klip CC0 yang dikonversi ke `.vrma`, mesin keadaan klip (bicara / jalan / tari / diam), dan

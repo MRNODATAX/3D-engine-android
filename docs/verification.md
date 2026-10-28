@@ -4,6 +4,12 @@ Semua bukti di bawah berasal dari eksekusi CI yang benar-benar berjalan di repos
 Log mentah Actions tidak dapat diunduh dari lingkungan pengembangan, jadi hasil dibaca dari
 status job, langkah job, anotasi check-run, dan artefak yang dipublikasikan.
 
+> **Kebijakan rilis:** hanya build uji **terbaru** yang disimpan di halaman Releases. Rilis
+> `v0.1.0-test`, `v0.1.2-test`, `v0.1.3-test`, dan `v0.1.4-test` sudah dihapus (beserta APK-nya)
+> agar pengguna tidak salah mengunduh versi lama yang masih punya bug gerak. Catatan di bawah
+> tetap dipertahankan sebagai riwayat apa yang pernah diverifikasi; tautan ke rilis lama akan
+> menampilkan 404 karena rilisnya memang sengaja dihapus, bukan karena verifikasinya tidak terjadi.
+
 ## Eksekusi terakhir (commit `661878f` dan turunannya)
 
 | Run | Isi | Hasil |
@@ -68,7 +74,8 @@ laporan lewat jembatan JavaScript.
   berubah setelah 5 detik), `.vrma` terputar.
 - `Screenshots` di emulator: 10 gambar, termasuk overlay di atas launcher dan status
   "Sedang tampil · Renderer siap · 8–9 fps" dari renderer sungguhan.
-- APK: Release `v0.1.2-test`, `MateEngine-v0.1.2-test-debug.apk` (16,1 MB, tanda tangan debug).
+- APK saat itu: `MateEngine-v0.1.2-test-debug.apk` (16,1 MB, tanda tangan debug). Rilis ini sudah
+  dihapus; APK yang tersedia sekarang hanya `v0.1.5-test`.
 - Log perangkat menyimpan bukti `avatar-loading` → `avatar-ready` untuk
   `sample-vrm1-twist.vrm` dan laporan `fps` berkala.
 
