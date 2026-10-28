@@ -142,6 +142,10 @@ Uji render membutuhkan Chromium: `npx playwright install chromium`.
 2. `android` — uji unit JVM, `assembleDebug`, `assembleRelease`, unggah APK.
 3. `release` — hanya untuk tag `v*`: menandatangani APK dan membuat GitHub Release.
 
+Rilis normal diterbitkan saat tag `v*` di-push. Bila push tag tidak memicu workflow (pernah
+terjadi), `release/tag.txt` yang berisi versi baru akan memicu job rilis yang sama; berkas itu
+diabaikan bila rilis dengan versi tersebut sudah ada, jadi aman dibiarkan di repo.
+
 Penandatanganan rilis memerlukan secret repo berikut (tidak pernah disimpan di Git):
 
 | Secret | Isi |
