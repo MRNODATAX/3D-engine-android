@@ -10,6 +10,7 @@ import androidx.compose.material3.Typography
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.ui.text.font.Font
 import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.text.ExperimentalTextApi
 import androidx.compose.ui.text.font.FontVariation
 import androidx.compose.ui.text.font.FontWeight
 import io.github.mrnodatax.mateengine.R
@@ -79,6 +80,7 @@ val SuccessContainer: Color @Composable get() = if (isSystemInDarkTheme()) Color
 val WarningColor: Color @Composable get() = if (isSystemInDarkTheme()) Color(0xFFE4B25C) else Color(MateTokens.Warning)
 val WarningContainer: Color @Composable get() = if (isSystemInDarkTheme()) Color(0xFF33290F) else Color(MateTokens.WarningContainer)
 
+@OptIn(ExperimentalTextApi::class)
 @Composable
 fun MateEngineTheme(content: @Composable () -> Unit) {
     val dark = isSystemInDarkTheme()
@@ -108,6 +110,7 @@ fun MateEngineTheme(content: @Composable () -> Unit) {
  * Berkas: `res/font/outfit.ttf` (110.884 B) + `docs/lisensi/OFL-Outfit.txt`.
  * Font sistem tetap dipakai sebagai fallback untuk karakter yang tidak ada di Outfit.
  */
+@OptIn(ExperimentalTextApi::class)
 private fun outfit(weight: Int) = Font(
     resId = R.font.outfit,
     weight = FontWeight(weight),
