@@ -10,6 +10,7 @@ import androidx.compose.material3.Typography
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.ui.text.font.Font
 import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.text.font.FontVariation
 import androidx.compose.ui.text.font.FontWeight
 import io.github.mrnodatax.mateengine.R
 import androidx.compose.ui.unit.dp
@@ -107,12 +108,21 @@ fun MateEngineTheme(content: @Composable () -> Unit) {
  * Berkas: `res/font/outfit.ttf` (110.884 B) + `docs/lisensi/OFL-Outfit.txt`.
  * Font sistem tetap dipakai sebagai fallback untuk karakter yang tidak ada di Outfit.
  */
+private fun outfit(weight: Int) = Font(
+    resId = R.font.outfit,
+    weight = FontWeight(weight),
+    // Berkas ini font VARIABEL dengan sumbu wght. Tanpa `variationSettings`, Android memakai
+    // instance default berkas (terlalu tipis) sehingga teks tampak pucat. Setiap berat harus
+    // dipatok eksplisit.
+    variationSettings = FontVariation.Settings(FontVariation.weight(weight)),
+)
+
 private val Outfit = FontFamily(
-    Font(R.font.outfit, FontWeight.Light),
-    Font(R.font.outfit, FontWeight.Normal),
-    Font(R.font.outfit, FontWeight.Medium),
-    Font(R.font.outfit, FontWeight.SemiBold),
-    Font(R.font.outfit, FontWeight.Bold),
+    outfit(300),
+    outfit(400),
+    outfit(500),
+    outfit(600),
+    outfit(700),
 )
 
 private val BaseTypography = Typography()
@@ -130,6 +140,10 @@ private val MateTypography = Typography(
     bodyLarge = BaseTypography.bodyLarge.copy(fontFamily = Outfit),
     bodyMedium = BaseTypography.bodyMedium.copy(fontFamily = Outfit),
     bodySmall = BaseTypography.bodySmall.copy(fontFamily = Outfit),
+    // Label memakai Outfit juga, dengan berat tegas agar tetap terbaca di ukuran kecil.
+    labelLarge = BaseTypography.labelLarge.copy(fontFamily = Outfit, fontWeight = FontWeight.Medium),
+    labelMedium = BaseTypography.labelMedium.copy(fontFamily = Outfit, fontWeight = FontWeight.Medium),
+    labelSmall = BaseTypography.labelSmall.copy(fontFamily = Outfit, fontWeight = FontWeight.Medium),
 )
 
 /** Nama merek untuk header & kartu Tentang. */
