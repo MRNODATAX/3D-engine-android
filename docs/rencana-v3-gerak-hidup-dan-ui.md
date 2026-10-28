@@ -346,6 +346,17 @@ uji otomatis.
 
 ---
 
+## Bukti di emulator (2026-10-28)
+
+| Bukti | Hasil |
+| --- | --- |
+| Jejak gerak terbaca | `motion {"time":2.48,…, "armLeftDeg":21.2, "armRightDeg":10.8, "clip":"idle_loop"}` |
+| Avatar bergerak otomatis | jejak direktur perilaku: `weight_shift` (tanpa disentuh) |
+| Sudut lengan saat diam | 10,8°–25,4° (< 45°, tangan tidak terangkat) |
+| Dua tangkapan berbeda | `12-gerak-a.png` ≠ `12-gerak-b.png` |
+| Tata letak | 15 tangkapan: beranda, avatar, animasi, diagnosa, setelan, chat, overlay, gelap, lebar, skala 100/40% |
+| Rilis | `v0.1.6-test`, APK debug 16.626.462 B |
+
 ## 12. Keputusan (sudah kamu jawab)
 
 | Pertanyaan | Jawabanmu | Konsekuensi teknis |

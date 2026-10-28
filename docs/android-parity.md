@@ -19,17 +19,18 @@ Arti label:
 | Opasitas avatar | **Diport** | Slider 30–100% (alpha window) |
 | Batas FPS | **Diport** | 15/30/45/60 |
 | FPS terukur | **Diport** | Angka berasal dari renderer, ditampilkan setelah benar-benar ada |
-| Idle animation | **Diport sebagian** | Napas + kedip prosedural, bukan set animasi idle desktop |
-| Dance/animation player | **Diport sebagian** | Impor `.vrma`, putar/berhenti, loop, kecepatan. Belum ada audio/musik dan shuffle berbasis waktu |
-| Shuffle | **Diport sebagian** | Tersimpan sebagai opsi; pemilihan acak otomatis belum dijalankan renderer |
-| Window/taskbar sitting | **Belum ada** | Android tidak memiliki taskbar; duduk di jendela aplikasi lain butuh deteksi inset per aplikasi |
+| Idle animation | **Diport sebagian** | 14 klip CC0 (`.vrma`) + direktur perilaku yang memilih sendiri aksi idle; bukan salinan set animasi idle desktop |
+| Dance/animation player | **Diport sebagian** | Impor `.vrma`, putar/berhenti, loop, kecepatan, rantai klip (`sitting_enter → sitting_idle`). Belum ada audio/musik |
+| Shuffle | **Diport sebagian** | Opsi tersimpan; pemilihan acak otomatis oleh renderer belum dijalankan |
+| Window/taskbar sitting | **Diport sebagian** | Duduk di **tepi layar** (`sitting_idle`/`sitting_talk`, kamera digeser 0,34 × tinggi). Duduk di jendela aplikasi lain belum ada |
+| Ayunan saat digeser | **Diport** | Kecepatan geser (px/s) dikirim overlay tiap ≥ 50 ms → `dragSway` ≤ 8°, meluruh dengan paruh 220 ms |
+| Headpat | **Diport sebagian** | Ketuk kepala saat mode sentuh avatar: mata menutup 1,6 detik + senyum. Belum ada partikel hati |
 | Screenshot transparan | **Belum ada** | Butuh pipeline capture terpisah dari renderer |
 | Alarm/timer | **Belum ada** | — |
 | AI chat | **Belum ada** | — |
 | Steam Workshop / mod | **Tidak berlaku** | Tidak ada Steam di Android; impor berkas manual sebagai gantinya |
 | Food system (alpha) | **Belum ada** | — |
 | Screen saver | **Belum ada** | — |
-| Touch regions (headpat) | **Belum ada** | Sentuhan saat ini dipakai untuk menggeser overlay |
 | Head/eye/spine tracking | **Belum ada** | — |
 | Chibi mode, bloom/AO, MSAA | **Belum ada** | Kualitas render baru sebatas pixel ratio |
 | System tray | **Diport sebagian** | Notifikasi foreground dengan aksi Hentikan dan Putar animasi |
