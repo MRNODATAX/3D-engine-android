@@ -24,6 +24,13 @@ const CONFIG = {
   heightPadding: 1.06,
 };
 
+/**
+ * Mode pratinjau untuk kartu Beranda di aplikasi Android: `index.html?mode=preview`.
+ * Lebih hemat daripada overlay (15 fps, kualitas rendah, direktur perilaku mati) karena kartu
+ * kecil dan tidak perlu reaksi; lihat docs/rencana-v0.1.9-ui-modern.md §7a.
+ */
+const PREVIEW_MODE = new URLSearchParams(window.location.search).get('mode') === 'preview';
+
 const state = {
   renderer: null,
   scene: null,
@@ -76,6 +83,7 @@ const state = {
   loop: true,
   speed: 1,
   lostContext: false,
+  preview: PREVIEW_MODE,
 };
 
 function post(type, payload = {}) {
@@ -1079,6 +1087,7 @@ window.MateEngine = {
     avatar: state.avatarInfo,
     animation: state.animationName,
     fps: state.targetFps,
+    preview: state.preview,
     quality: state.quality,
   }),
 };
@@ -1086,6 +1095,16 @@ window.MateEngine = {
 async function boot() {
   try {
     initThree();
+    if (state.preview) {
+      // Pratinjau: tanpa direktur perilaku, fps rendah, dan skala render lebih kecil supaya
+      // tidak berebut GPU dengan overlay yang mungkin sedang berjalan.
+      state.targetFps = 15;
+      state.governor.setTargetFps(15);
+      state.renderScale = 0.75;
+      state.behaviorEnabled = false;
+      applyPixelRatio();
+      post('preview-mode', { fps: state.targetFps });
+    }
     window.addEventListener('resize', resize);
     window.addEventListener('orientationchange', () => setTimeout(resize, 120));
     document.addEventListener('visibilitychange', () => post('visibility', { hidden: document.hidden }));
