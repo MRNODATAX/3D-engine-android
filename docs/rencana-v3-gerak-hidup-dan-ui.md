@@ -325,7 +325,7 @@ state; satu tangkapan layar untuk masing-masing + ikon peluncur; tidak ada gradi
 | F4 | Smoothing, clamp anatomis, saccade, foot-lock | `smoothness.test.mjs` | 1 sesi |
 | F5 | Token, IA 5 tab, semua cacat §7.2 | tangkapan + `DesignTokenTest` | 1–2 sesi |
 | F6 | Logo, splash, brand guidelines | 4 tangkapan + dokumen | 1 sesi |
-| Rilis | `v0.1.6-test` (hapus `v0.1.5-test` sesuai kebijakan "hanya terbaru") | CI hijau + galeri | 1 sesi |
+| Rilis | `v0.1.6-test` (hapus `v0.1.5-test` sesuai kebijakan "hanya terbaru") | CI hijau + galeri | **selesai** |
 
 Setiap fase punya gerbang CI sendiri; tidak ada fase yang "selesai" tanpa bukti tangkapan layar atau
 uji otomatis.

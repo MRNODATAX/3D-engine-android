@@ -23,9 +23,10 @@ Sudah berjalan di kode dan diuji otomatis:
   (navigation bar di ponsel, navigation rail di jendela lebar);
 - **chat waifu** memakai Gemini API key milikmu sendiri (kunci dienkripsi di Android Keystore),
   persona siap pakai yang bisa diedit, riwayat lokal, reaksi mulut avatar, TTS opsional;
-- **gerak otomatis** tanpa berkas animasi: napas, goyangan badan, pandangan mata, tidur setelah
-  2 menit, jalan di tempat, 3 gaya tari, dan reaksi saat avatar disentuh — parameternya
-  dikalibrasi dari pengukuran `.anim` Mate Engine (`docs/gerak-kalibrasi.md`);
+- **gerak hidup**: 14 klip CC0 (idle, bicara, jalan, tari, melambai, duduk, tidur) + direktur
+  perilaku yang memilih sendiri kapan melambai, melihat sekitar, menggeser berat badan, duduk di
+  tepi layar, atau tertidur — dengan suasana yang berubah (ceria setelah disentuh, kalem saat lama
+  diam). Ayunan badan saat avatar digeser, mata menutup saat kepala ditepuk;
 - **ukuran avatar** 25–100% tinggi layar, bisa dicubit dua jari langsung di overlay;
 - **suara waifu** lewat Gemini TTS (suara natural, mulut bergerak mengikuti amplitudo audio asli),
   dengan cadangan TTS perangkat;
@@ -53,10 +54,11 @@ emulator Android 14 (diambil otomatis lewat `adb screencap` di CI, bukan mockup)
 Hanya build uji terbaru yang disimpan; rilis versi lama sudah dihapus agar tidak ada yang
 mengunduh APK dengan bug gerak.
 
-Build uji terbaru: [Release `v0.1.5-test`](https://github.com/MRNODATAX/3D-engine-android/releases/tag/v0.1.5-test)
-(`MateEngine-v0.1.5-test-debug.apk`, ditandatangani kunci debug). Rilis ini membawa animasi asli:
-empat klip CC0 yang dikonversi ke `.vrma`, mesin keadaan klip (bicara / jalan / tari / diam), dan
-perbaikan "tangan terangkat" setelah animasi berhenti.
+Build uji terbaru: [Release `v0.1.6-test`](https://github.com/MRNODATAX/3D-engine-android/releases/tag/v0.1.6-test)
+(`MateEngine-v0.1.6-test-debug.apk`, ditandatangani kunci debug). Rilis ini membawa **gerak hidup**:
+direktur perilaku (avatar bergerak sendiri, suasana ceria/kalem), 14 klip CC0, duduk di tepi layar,
+ayunan saat digeser, headpat, serta wajah baru — 5 tab, kontras batas kartu diperbaiki, logo dan
+splash, dan font Outfit.
 
 1. Unduh APK di perangkat, lalu izinkan pemasangan dari sumber tidak dikenal untuk aplikasi
    pengelola berkas/browser yang dipakai.
