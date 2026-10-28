@@ -354,6 +354,30 @@ function frameModel(vrm, force = false) {
   state.vrm.scene.scale.setScalar(1);
 }
 
+/** Ringkasan tiap mesh: dipakai `debug-mesh` untuk membedakan masalah material vs kamera. */
+function describeMeshes(vrm) {
+  const parts = [];
+  vrm.scene.traverse((object) => {
+    if (!object.isMesh) return;
+    const material = Array.isArray(object.material) ? object.material[0] : object.material;
+    parts.push({
+      name: (object.name || 'mesh').slice(0, 24),
+      skinned: Boolean(object.isSkinnedMesh),
+      visible: object.visible !== false,
+      alphaMode: material?.alphaMode || null,
+      transparent: Boolean(material?.transparent),
+      opacity: material?.opacity ?? null,
+      alphaTest: material?.alphaTest ?? null,
+      depthWrite: material?.depthWrite ?? null,
+      colorWrite: material?.colorWrite ?? null,
+      hasMap: Boolean(material?.map),
+      mapLoaded: material?.map ? Boolean(material.map.image) : null,
+      count: object.geometry?.attributes?.position?.count ?? 0,
+    });
+  });
+  return { total: parts.length, parts: parts.slice(0, 8) };
+}
+
 function describeVrm(vrm) {
   const meta = vrm.meta || {};
   const expressionNames = Object.keys(vrm.expressionManager?.expressionMap || {});
@@ -415,6 +439,9 @@ async function loadAvatar(url) {
 
     state.scene.add(vrm.scene);
     state.vrm = vrm;
+    // Diagnostik sekali saat muat: kalau sebagian badan tidak terlukis, penyebabnya ada di
+    // mesh/material (alphaMode, opacity, urutan gambar), bukan di jendela overlay.
+    post('debug-mesh', describeMeshes(vrm));
     captureSceneBaseYaw();
     state.avatarInfo = describeVrm(vrm);
     state.governor.reset();
