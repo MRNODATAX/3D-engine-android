@@ -369,7 +369,9 @@ try {
         if (py > maxY) maxY = py;
         if (py < minY) minY = py;
       }
-      return { gap: scratch.height - 1 - maxY, height: maxY - minY, total: scratch.height };
+      // `top` = jarak dari tepi atas kanvas ke piksel pertama. Kedua tepi dipakai untuk
+      // membuktikan tubuh tidak terpotong (dulu kaki hilang saat duduk).
+      return { gap: scratch.height - 1 - maxY, top: minY, height: maxY - minY, total: scratch.height };
     };
 
     const standing = bottomGap();
@@ -416,19 +418,21 @@ try {
 
   assert(seated.seatedClip, 'klip duduk (sitting_idle) tidak pernah aktif setelah setSeated(true)');
   assert(seated.metricsSeated?.seated === true, 'poseMetrics tidak melaporkan keadaan duduk');
-  assert(
-    seated.seatedGap.gap < seated.standing.gap + 2,
-    `saat duduk, avatar tidak turun ke tepi bawah (jarak bawah ${seated.seatedGap.gap} px vs berdiri ${seated.standing.gap} px)`,
-  );
-  assert(seated.seatedGap.height < seated.standing.height, 'tinggi avatar saat duduk tidak berkurang');
+  // Sejak v0.1.8 bingkai kamera mengikuti kerangka: seluruh tubuh harus muat, termasuk kaki saat
+  // duduk. Yang diuji karena itu "tidak terpotong", bukan lagi "turun ke tepi bawah".
+  for (const [label, shot] of [['berdiri', seated.standing], ['duduk', seated.seatedGap]]) {
+    assert(shot.height > 0, `siluet avatar kosong saat ${label}`);
+    assert(shot.top > 1, `kepala terpotong di tepi atas saat ${label} (top ${shot.top} px)`);
+    assert(shot.gap > 1, `kaki terpotong di tepi bawah saat ${label} (jarak ${shot.gap} px)`);
+  }
   console.log(
-    `✓ duduk: klip ${seated.metricsSeated.builtinClip}, jarak bawah ${seated.seatedGap.gap} px ` +
-      `(berdiri ${seated.standing.gap} px), tinggi ${seated.seatedGap.height} vs ${seated.standing.height} px`,
+    `✓ duduk: klip ${seated.metricsSeated.builtinClip}, seluruh tubuh muat ` +
+      `(atas ${seated.seatedGap.top} px, bawah ${seated.seatedGap.gap} px, tinggi ${seated.seatedGap.height} px)`,
   );
   assert(seated.stoodUp, 'berdiri kembali gagal (klip idle tidak aktif)');
   assert(
-    seated.standingAgain.height >= seated.seatedGap.height,
-    'setelah berdiri, avatar tidak kembali ke tinggi semula',
+    seated.standingAgain.height > seated.standing.height * 0.8,
+    `setelah berdiri, tinggi avatar tidak kembali (${seated.standingAgain.height} px vs ${seated.standing.height} px)`,
   );
   console.log(`✓ berdiri kembali: tinggi ${seated.standingAgain.height} px`);
 
