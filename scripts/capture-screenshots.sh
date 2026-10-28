@@ -2,6 +2,8 @@
 # Berjalan di dalam emulator CI: memasang APK debug apa adanya, menjalankan aplikasi,
 # lalu mengambil tangkapan layar asli (bukan mockup) lewat adb screencap.
 set -euo pipefail
+# Tanpa ini, `set -e` hanya menghasilkan "exit code 1" tanpa petunjuk perintah mana yang gagal.
+trap 'echo "::error::perintah gagal (baris $LINENO): $BASH_COMMAND"' ERR
 
 PKG="io.github.mrnodatax.mateengine.debug"
 ACTIVITY="$PKG/io.github.mrnodatax.mateengine.MainActivity"
