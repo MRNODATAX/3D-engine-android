@@ -330,12 +330,18 @@ uji otomatis.
 
 ---
 
-## 12. Keputusan yang saya butuh darimu (4)
+## 12. Keputusan (sudah kamu jawab)
 
-1. **Gaya idle**: pemalu (menunduk, tangan dekat dada) / ceria (melambai, goyang) / kalem?
-2. **Duduk di tepi bawah layar**: ya (butuh framing ulang) atau cukup berdiri saja?
-3. **Font**: tetap font sistem (0 KB) atau bundel Outfit (OFL, ±150 KB)?
-4. **Navigasi 6 → 5 tab** dengan Diagnosa masuk ke Setelan: setuju?
+| Pertanyaan | Jawabanmu | Konsekuensi teknis |
+| --- | --- | --- |
+| Gaya idle | **Campur otomatis** | Direktur punya "suasana": `ceria` (baru disentuh / habis chat, 60 s pertama), `kalem` (lama diam > 90 s), dan `pemalu` sesekali sebagai variasi berbobot rendah. Bobot perilaku ikut berubah, bukan satu set tetap. |
+| Duduk di tepi layar | **Ya** | F3 dikerjakan penuh: klip `sitting_enter/idle/exit`, framing ulang, tangkapan bukti di skala 40% & 100%. |
+| Font | **Bundel Outfit** | `Outfit[wght].ttf` **110.884 byte** (variable font, sumbu wght) dari `google/fonts` → `ofl/outfit`, lisensi **OFL-1.1**. Ditambah `res/font/outfit.ttf` + salinan `OFL.txt` di `docs/lisensi/`. `minSdk = 26` sehingga font variabel didukung. |
+| Navigasi | **Gabung Diagnosa ke Setelan** | 5 tab; halaman Diagnosa tetap bisa dibuka lewat `--es screen diagnostics` untuk CI dan lewat tautan "Izin & perawatan". |
 
-Kalau kamu tidak memilih, saya jalan dengan default: ceria, duduk di tepi **ya**, font sistem,
-navigasi 5 tab.
+### Catatan implementasi font (diverifikasi, bukan asumsi)
+
+- Berkas: `google/fonts` → `ofl/outfit/Outfit[wght].ttf` — 110.884 B; lisensi `ofl/outfit/OFL.txt` (4.389 B).
+- Font variabel didukung sejak API 26; Compose `Font(resId, weight, style)` memakai instansiasi statis,
+  jadi satu berkas cukup untuk beberapa berat.
+- Ukuran APK bertambah ±111 KB. Tidak ada font lain yang dibundel; angka & simbol memakai fallback sistem.
