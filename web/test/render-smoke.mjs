@@ -230,7 +230,10 @@ try {
       return false;
     };
 
-    // 0) hentikan klip fixture yang diputar oleh uji animasi sebelumnya, lalu tunggu idle.
+    // 0) matikan direktur perilaku selama uji mesin keadaan: sejak v0.1.8 avatar memilih klip
+    //    acak sendiri (mis. jump_loop) sehingga "diam" tidak selalu berarti klip idle.
+    window.MateEngine.setBehaviorEnabled(false);
+    // 0b) hentikan klip fixture yang diputar oleh uji animasi sebelumnya, lalu tunggu idle.
     window.MateEngine.stopAnimation();
     await until(() => window.MateEngine.poseMetrics()?.builtinClip === 'idle_loop');
     await wait(800);
@@ -267,6 +270,8 @@ try {
     const afterStop = window.MateEngine.poseMetrics();
     window.MateEngine.resetPose();
     const afterReset = window.MateEngine.poseMetrics();
+    // Nyalakan lagi agar uji berikutnya (duduk, ayunan) memakai perilaku normal.
+    window.MateEngine.setBehaviorEnabled(true);
 
     return {
       list,
