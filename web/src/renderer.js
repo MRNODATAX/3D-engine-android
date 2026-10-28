@@ -284,6 +284,23 @@ function projectBox(box) {
   };
 }
 
+/**
+ * Kotak dari tulang **mentah** (yang benar-benar menggerakkan mesh), bukan tulang
+ * ternormalisasi. Kalau dua kotak ini berbeda jauh, mesh dan pengukuran tidak satu rig.
+ */
+function rawBoneBounds(vrm) {
+  const box = new THREE.Box3();
+  const point = new THREE.Vector3();
+  const names = ['head', 'hips', 'leftFoot', 'rightFoot', 'leftHand', 'rightHand'];
+  for (const name of names) {
+    const bone = vrm.humanoid?.getRawBoneNode?.(name);
+    if (!bone) continue;
+    bone.getWorldPosition(point);
+    box.expandByPoint(point.clone());
+  }
+  return box.isEmpty() ? null : box;
+}
+
 /** Kotak mesh sesungguhnya (tanpa proyeksi tulang): inilah yang benar-benar dilukis GPU. */
 function meshBounds(vrm) {
   if (!vrm?.scene) return null;
@@ -1062,6 +1079,7 @@ function animate(now) {
       frameHeight: state.frameHeight ? Number(state.frameHeight.toFixed(2)) : null,
       pose: state.vrm ? Object.keys(state.vrm.humanoid?.humanBones || {}).length : 0,
       boneBox: projectBox(skeletonBounds(state.vrm)),
+      rawBoneBox: projectBox(rawBoneBounds(state.vrm)),
       meshBox: projectBox(meshBounds(state.vrm)),
     });
   }
