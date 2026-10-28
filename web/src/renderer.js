@@ -757,7 +757,11 @@ function animate(now) {
     state.motion.update(state.vrm, delta, { talking: state.talking > 0, interacted: state.interacted });
     state.interacted = false;
     clampRootMotion();
-    state.vrm.update(delta);
+    // Spring bone (rambut, rok, tali) tidak stabil bila diberi langkah waktu besar: pada
+    // perangkat lambat (6–10 fps) delta bisa 50 ms dan rambut "melonjak" ke atas. Pecah jadi
+    // beberapa langkah kecil tanpa mengubah total waktu.
+    const springSteps = delta > 0.02 ? Math.min(4, Math.ceil(delta / 0.02)) : 1;
+    for (let step = 0; step < springSteps; step += 1) state.vrm.update(delta / springSteps);
     if (state.reframeAt && performance.now() >= state.reframeAt) {
       state.reframeAt = 0;
       frameModel(state.vrm, true);
