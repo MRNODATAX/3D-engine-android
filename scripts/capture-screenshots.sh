@@ -300,7 +300,7 @@ sleep 8
 {
   echo "--- jendela saat mode duduk ---"
   adb shell dumpsys window windows | grep -A 3 "MateEngine avatar" | head -6
-  adb logcat -d -s MateEngineRender:I | grep -E "debug-view|debug-paint|debug-mesh|jendela siluet|kotak tubuh" | tail -12
+  adb logcat -d -s MateEngineRender:I | grep -E "debug-view|debug-paint|debug-wide|debug-mesh|jendela siluet|kotak tubuh" | tail -14
 } >> "$DIAG" 2>&1 || true
 adb exec-out screencap -p > "$OUT/19-overlay-duduk.png"
 echo "== tersimpan $OUT/19-overlay-duduk.png (mode duduk)"

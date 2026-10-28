@@ -263,6 +263,45 @@ function skeletonBounds(vrm) {
   return box;
 }
 
+/**
+ * Render adegan sekali dengan kamera lebar ke target kecil di luar layar, lalu ukur piksel
+ * yang terlukis. Tidak mengubah apa pun yang terlihat pengguna.
+ */
+function probeWideView() {
+  const renderer = state.renderer;
+  if (!renderer?.setRenderTarget || !state.vrm) return null;
+  const width = 96;
+  const height = 192;
+  const target = new THREE.WebGLRenderTarget(width, height);
+  const camera = new THREE.PerspectiveCamera(30, width / height, 0.05, 60);
+  camera.position.set(0, 0.8, 6);
+  camera.lookAt(0, 0.8, 0);
+  renderer.setRenderTarget(target);
+  renderer.setClearColor(0x000000, 0);
+  renderer.clear();
+  renderer.render(state.scene, camera);
+  const pixels = new Uint8Array(width * height * 4);
+  renderer.readRenderTargetPixels(target, 0, 0, width, height, pixels);
+  renderer.setRenderTarget(null);
+  target.dispose();
+  let minY = height; let maxY = -1;
+  for (let y = 0; y < height; y += 1) {
+    for (let x = 0; x < width; x += 1) {
+      if (pixels[(y * width + x) * 4 + 3] > 8) {
+        if (y < minY) minY = y;
+        if (y > maxY) maxY = y;
+        break;
+      }
+    }
+  }
+  if (maxY < 0) return { empty: true };
+  return {
+    top: Number((1 - (maxY + 1) / height).toFixed(3)),
+    bottom: Number((minY / height).toFixed(3)),
+    heightPx: maxY - minY + 1,
+  };
+}
+
 /** Proyeksikan kotak dunia ke fraksi kanvas (celah dari tiap tepi), sama seperti frameGaps. */
 function projectBox(box) {
   if (!box || box.isEmpty() || !state.camera) return null;
@@ -992,6 +1031,10 @@ function animate(now) {
     state.paintReportAt = now;
     const painted = paintedBox();
     if (painted) post('debug-paint', painted);
+    // Uji kamera lebar terpisah: kalau badan utuh muncul di sini tetapi tidak di layar,
+    // masalahnya frustum/kamera; kalau tetap terpotong, mesh-nya yang tidak lengkap.
+    const wide = probeWideView();
+    if (wide) post('debug-wide', wide);
   }
   const workMs = performance.now() - workStart;
   state.workMsAvg = state.workMsAvg === 0 ? workMs : state.workMsAvg * 0.9 + workMs * 0.1;
