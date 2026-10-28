@@ -194,3 +194,43 @@ konteks WebGL dan dua salinan model (±30–60 MB). Karena itu pratinjau dibuat 
 
 Batalkan pratinjau bila ternyata membuat APK/CI tidak stabil — alternatifnya sudah disiapkan
 (monogram + nama avatar), dan itu akan dicatat apa adanya.
+
+
+---
+
+## 8. Catatan pelaksanaan (28 Okt 2026, setelah Tahap 1 & 2 dicoba)
+
+### Sudah jalan dan terbukti
+
+| Hal | Bukti |
+| --- | --- |
+| Ikon Material Symbols (home/person/chat_bubble/animation/settings/troubleshoot) | `01-beranda.png`: tab Chat tidak lagi ikon surat, tab Animasi tidak lagi segitiga putar |
+| Subjudul kontekstual | `01-beranda.png`: "1 avatar · 17 klip · overlay berhenti" (dihitung dari state) |
+| Judul lebih tegas (headlineMedium 28 sp SemiBold) | `01-beranda.png` |
+| Nilai slider besar & berwarna merek | `01-beranda.png` (62% / 100%) |
+| Token radius + `RadiusTokenTest` + 4 pasangan kontras baru | CI APK hijau (uji unit lulus) |
+| Pratinjau hidup: renderer jalan di kartu Beranda | logcat `MateEnginePreview`: `clip-changed idle_loop`, `fps 15`, `workMs 2–4` |
+
+### Belum berhasil (jujur)
+
+- **Isi WebView pratinjau tidak tertangkap di tangkapan emulator.** Renderer jelas berjalan
+  (log `fps 15`, `clip idle_loop`, `avatar-ready`), tetapi area kartu tetap transparan di
+  `screencap`. Lapisan monogram (alpha 0,18) kini selalu digambar sebagai dasar sehingga kartu
+  **tidak pernah kosong** — itu yang terlihat di tangkapan.
+- Dugaan penyebab (belum terbukti): komposisi WebView di dalam Compose di emulator software-GL,
+  atau `screencap` tidak menangkap lapisan WebView pada jendela non-overlay. Di perangkat fisik
+  bisa jadi baik; belum diuji.
+- `renderScale` yang diminta 0,5 ditimpa governor kembali ke 1 (log `stats`), jadi penghematan GPU
+  pratinjau belum benar-benar berlaku.
+
+### Langkah berikutnya (pilih satu sebelum lanjut Tahap 3)
+
+1. **Diagnosa lapisan**: uji di perangkat fisik / pakai `adb shell dumpsys SurfaceFlinger`, atau
+   ganti `AndroidView` menjadi `TextureView`-berbasis WebView. Risiko: waktu, hasil belum pasti.
+2. **Thumbnail statis (disarankan)**: renderer menghasilkan satu PNG 512×640 sekali saat avatar
+   dipilih, disimpan di cache, lalu Beranda menampilkan gambar itu + animasi Compose halus
+   (mis. napas 1,5% scale). Jauh lebih ringan, pasti terlihat di tangkapan, tidak berebut GPU.
+3. **Biarkan apa adanya**: pratinjau hidup untuk perangkat nyata, monogram sebagai fallback;
+   catat keterbatasannya di catatan rilis.
+
+Tahap 3 (katalog Animasi) **tidak bergantung** pada keputusan ini dan bisa langsung dikerjakan.
