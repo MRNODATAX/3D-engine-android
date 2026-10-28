@@ -90,13 +90,22 @@ try {
   assert(ready?.info?.humanoidBones > 0, 'avatar tidak memiliki humanoid bone');
   console.log(`✓ avatar-ready: ${ready.info.name} (${ready.info.version}, ${ready.info.humanoidBones} bone, ${ready.info.springJoints} spring)`);
 
-  await page.waitForTimeout(1200);
   // Regresi: pose rileks tidak boleh terakumulasi tiap frame.
+  // Direktur perilaku dimatikan dulu — sejak v0.1.8 avatar berganti klip sendiri (gerak acak),
+  // sehingga perubahan rotasi lengan bisa berasal dari klip baru, bukan penumpukan offset.
+  await page.evaluate(() => window.MateEngine.setBehaviorEnabled(false));
+  await page.waitForTimeout(1200);
   // Tunggu blend selesai (1 detik) agar pembacaan tidak menangkap transisi.
   await page.waitForFunction(() => window.MateEngine.debugPose().blend >= 1, null, { timeout: 20000 });
   const poseEarly = await page.evaluate(() => window.MateEngine.debugPose());
   await page.waitForTimeout(3000);
   const poseLate = await page.evaluate(() => window.MateEngine.debugPose());
+  // Klip harus sama selama pengukuran; kalau berbeda, yang terukur adalah pergantian klip.
+  assert(
+    poseEarly.animation === poseLate.animation,
+    `klip berganti saat mengukur pose (${poseEarly.animation} -> ${poseLate.animation})`,
+  );
+  await page.evaluate(() => window.MateEngine.setBehaviorEnabled(true));
   assert(poseEarly.hasRestPose, 'pose istirahat tidak tertangkap');
   assert(
     Math.abs(poseLate.leftUpperArmZ - poseEarly.leftUpperArmZ) < 0.05,

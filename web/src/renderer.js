@@ -58,6 +58,7 @@ const state = {
   talkSeed: 0,
   motion: createMotion(),
   behavior: createBehaviorDirector(),
+  behaviorEnabled: true,
   interacted: false,
   interactedEver: false,
   builtinClip: null,
@@ -532,7 +533,11 @@ function easeCamera(delta) {
 function syncClipState() {
   if (!state.ready || !state.vrm || !state.mixer) return;
   // Direktur memilih perilaku (membaca apakah bicara/berjalan untuk membatalkannya).
-  const behavior = state.behavior.update(performance.now(), behaviorContext());
+  // Bisa dimatikan lewat `setBehaviorEnabled(false)` — dipakai uji pose (supaya klip tidak
+  // berganti di tengah pengukuran) dan pengguna yang ingin avatar benar-benar diam.
+  const behavior = state.behaviorEnabled
+    ? state.behavior.update(performance.now(), behaviorContext())
+    : null;
   if (behavior?.id === 'sit_down' && !state.seated) {
     setSeated(true);
     return;
@@ -840,6 +845,15 @@ window.MateEngine = {
   setReducedMotion: (value) => {
     state.motion.setReducedMotion(value);
   },
+  /** Matikan/nyalakan direktur perilaku (gerak acak otomatis). */
+  setBehaviorEnabled: (value) => {
+    state.behaviorEnabled = Boolean(value);
+    state.behavior.reset(performance.now());
+    state.clipOverride = null;
+    post('behavior-enabled', { enabled: state.behaviorEnabled });
+    return state.behaviorEnabled;
+  },
+  behaviorEnabled: () => state.behaviorEnabled,
   react: (type) => {
     markInteraction();
     state.motion.react(type);
