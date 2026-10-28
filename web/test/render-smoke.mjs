@@ -433,9 +433,12 @@ try {
     // Mata harus terbuka lagi setelah headpat. Ambang waktunya tidak dipatok 1,8 detik: di CI
     // lambat (beberapa fps) peluruhan ekspresi bisa butuh lebih lama, dan yang diuji adalah
     // "kembali terbuka", bukan kecepatannya. Tunggu sampai nilainya turun, maksimal 5 detik.
+    // Batas 20 detik, bukan 5: di CI ber-SwiftShader kecepatan render bisa 3–5 fps, sehingga
+    // waktu simulasi jauh lebih lambat dari jam dinding. Yang diuji "mata kembali terbuka",
+    // bukan seberapa cepat.
     const blinkClosedAgain = await until(
       () => window.MateEngine.expressionValue('blink') < 0.2,
-      5000,
+      20000,
     );
     const reactionAfterPat = window.MateEngine.reactionDebug();
     const blinkAfterWait = window.MateEngine.expressionValue('blink');

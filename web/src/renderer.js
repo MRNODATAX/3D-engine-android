@@ -83,6 +83,7 @@ const state = {
   touch: createTouchTracker(),
   reactions: createReactions(),
   reactionFrame: null,
+  lastReactionAt: 0,
   reactionExprKeys: new Set(),
   reactionEyesActive: false,
   reactionStyle: null,
@@ -809,7 +810,16 @@ function animate(now) {
   if (state.vrm) {
     // Reaksi dihitung sebelum mesin gerak: lapisannya digabung secara aditif di dalam
     // `motion.update` supaya quaternion acuan tidak tercemar offset.
-    const reactionFrame = updateReactionState(delta);
+    //
+    // Waktu reaksi memakai jam dinding, bukan `delta` yang dibatasi 50 ms: di perangkat lambat
+    // (atau SwiftShader di CI, 3–5 fps) reaksi 2,2 detik bisa menjadi 9 detik nyata, dan gaya
+    // bermata tertutup jadi terasa "nyangkut". Pose tetap memakai `delta` terbatas agar stabil.
+    const wallNow = performance.now();
+    const wallDelta = state.lastReactionAt > 0
+      ? Math.min(1.5, Math.max(0.001, (wallNow - state.lastReactionAt) / 1000))
+      : delta;
+    state.lastReactionAt = wallNow;
+    const reactionFrame = updateReactionState(wallDelta);
     state.motion.update(state.vrm, delta, {
       talking: state.talking > 0,
       interacted: state.interacted,
