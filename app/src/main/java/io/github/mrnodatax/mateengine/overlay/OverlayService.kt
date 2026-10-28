@@ -702,8 +702,10 @@ class OverlayService : Service() {
                             "-> px ($left, $top) - ($right, $bottom) dari desain ${designWidth}x$designHeight " +
                             "(css ${payload.optDouble("cssWidth")}x${payload.optDouble("cssHeight")})",
                     )
-                    val fracWidth = fracRight - fracLeft
-                    val fracHeight = fracBottom - fracTop
+                    // Nilai dari renderer adalah **celah** dari tiap tepi, bukan tepi kotak:
+                    // lebar badan = 1 - kiri - kanan, tinggi = 1 - atas - bawah.
+                    val fracWidth = 1.0 - fracLeft - fracRight
+                    val fracHeight = 1.0 - fracTop - fracBottom
                     if (fracWidth < MIN_BODY_FRACTION || fracHeight < MIN_BODY_FRACTION) {
                         // Frame pengukuran belum sah (tulang tanpa matriks dunia). Dulu kotak
                         // setipis 0,3 % sempat dipakai: jendela menyempit jadi garis dan hanya
@@ -751,6 +753,7 @@ class OverlayService : Service() {
                 if (dx != 0 || dy != 0) applyNudge(dx, dy, payload.optString("style"))
             }
             "debug-view" -> Log.i(TAG, "debug-view $payload")
+            "debug-paint" -> Log.i(TAG, "debug-paint $payload")
             "motion-state" -> {
                 // Jejak gerak tiap 5 detik: bukti bahwa sendi benar-benar bergerak, sekaligus
                 // sumber angka "motion {...}" yang dibaca uji emulator.

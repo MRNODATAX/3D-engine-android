@@ -264,6 +264,45 @@ function skeletonBounds(vrm) {
 }
 
 /**
+ * Kotak piksel yang benar-benar terlukis (fraksi kanvas), dibaca langsung dari framebuffer.
+ * Pemindaian dilakukan tiap 4 piksel supaya ringan; ini alat diagnosa, bukan jalur render.
+ */
+function paintedBox() {
+  const gl = state.renderer?.getContext?.();
+  if (!gl) return null;
+  const w = gl.drawingBufferWidth;
+  const h = gl.drawingBufferHeight;
+  if (!w || !h) return null;
+  const pixels = new Uint8Array(w * h * 4);
+  gl.readPixels(0, 0, w, h, gl.RGBA, gl.UNSIGNED_BYTE, pixels);
+  let minX = w; let maxX = -1; let minY = h; let maxY = -1; let count = 0;
+  for (let y = 0; y < h; y += 4) {
+    const row = y * w * 4;
+    for (let x = 0; x < w; x += 4) {
+      if (pixels[row + x * 4 + 3] > 8) {
+        count += 1;
+        if (x < minX) minX = x;
+        if (x > maxX) maxX = x;
+        if (y < minY) minY = y;
+        if (y > maxY) maxY = y;
+      }
+    }
+  }
+  if (maxX < 0) return { empty: true, width: w, height: h };
+  return {
+    // readPixels memakai titik asal kiri-bawah; fraksi dibuat dari atas untuk dibandingkan
+    // dengan `frameGaps` yang juga diukur dari atas.
+    left: Number((minX / w).toFixed(3)),
+    right: Number((1 - (maxX + 1) / w).toFixed(3)),
+    top: Number((1 - (maxY + 1) / h).toFixed(3)),
+    bottom: Number((minY / h).toFixed(3)),
+    coverage: Number(((count * 16) / (w * h)).toFixed(3)),
+    drawW: w,
+    drawH: h,
+  };
+}
+
+/**
  * @param {object} vrm avatar aktif
  * @param {boolean} [force] hitung ulang walau ukurannya hampir sama
  */
@@ -856,6 +895,15 @@ function animate(now) {
   }
 
   state.renderer.render(state.scene, state.camera);
+  // Bukti piksel: baca kembali frame yang baru saja dilukis dan cari kotak piksel yang tidak
+  // transparan. Pengukuran tulang (`frameGaps`) hanya tahu di mana tulang *seharusnya*
+  // berada; kalau mesh tidak terlukis atau kanvas terpotong, angkanya tetap terlihat sehat.
+  // Pemeriksaan ini yang membedakannya (dipakai untuk mendiagnosis avatar hanya tampak kaki).
+  if (now - (state.paintReportAt || 0) >= 3000) {
+    state.paintReportAt = now;
+    const painted = paintedBox();
+    if (painted) post('debug-paint', painted);
+  }
   const workMs = performance.now() - workStart;
   state.workMsAvg = state.workMsAvg === 0 ? workMs : state.workMsAvg * 0.9 + workMs * 0.1;
 
