@@ -131,6 +131,11 @@ private fun MateEngineApp() {
             (context as? android.app.Activity)?.intent?.getBooleanExtra("start_overlay", false) == true
         ) {
             OverlayService.start(context)
+            // Tangkapan layar CI: paksa mode duduk supaya bukti "kaki tidak terpotong" nyata.
+            if ((context as? android.app.Activity)?.intent?.getBooleanExtra("seated", false) == true) {
+                kotlinx.coroutines.delay(6000)
+                OverlayService.setSeated(context, true)
+            }
             // Tangkapan layar CI: buka menu cepat tanpa perlu mengetuk avatar tiga kali.
             val quick = (context as? android.app.Activity)?.intent?.getStringExtra("open_menu")
             if (quick != null) {

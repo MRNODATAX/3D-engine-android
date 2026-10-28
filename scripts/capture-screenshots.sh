@@ -255,6 +255,49 @@ shoot_scale() {
 shoot_scale 100 13-overlay-skala-100
 shoot_scale 40 14-overlay-skala-40
 
+# ---- bukti mode duduk: kaki harus tetap utuh di dalam kanvas ----
+# Angka `bodyGap {top,bottom}` dikirim renderer tiap 5 detik (lihat frameGaps()).
+adb shell am force-stop "$PKG" || true
+adb logcat -c || true
+adb shell am start -W -n "$ACTIVITY" --ez seed_sample true --ez start_overlay true \
+  --ez seated true --ei scale 80 --es screen home >/dev/null
+for i in $(seq 1 18); do
+  sleep 5
+  if adb logcat -d | grep -q "MateEngineRender.*avatar-ready"; then break; fi
+done
+sleep 8
+adb exec-out screencap -p > "$OUT/19-overlay-duduk.png"
+echo "== tersimpan $OUT/19-overlay-duduk.png (mode duduk)"
+seat_gap="$(adb logcat -d | grep -o 'motion {.*}' | python3 scripts/periksa-celah-tubuh.py --seated || true)"
+{
+  echo "--- celah tubuh saat duduk (piksel) ---"
+  echo "${seat_gap:-kosong}"
+} >> "$DIAG" 2>&1 || true
+if [ -z "$seat_gap" ]; then
+  echo "::warning::Tidak ada angka bodyGap saat duduk; bukti kaki utuh tidak terbaca"
+elif adb logcat -d | grep -o 'motion {.*}' | python3 scripts/periksa-celah-tubuh.py --seated --tegas >/dev/null 2>&1; then
+  echo "== bukti duduk: seluruh tubuh muat (${seat_gap})"
+else
+  echo "::error::Tubuh terpotong saat duduk (${seat_gap}); kaki hilang"
+fi
+
+# ---- bukti geser bebas: avatar dipindah ke pojok kiri-atas melewati batas lama ----
+read -r DRAG_W DRAG_H <<<"$(screen_size)"
+adb logcat -c || true
+adb shell input swipe $((DRAG_W / 2)) $((DRAG_H / 2)) 20 20 700
+sleep 3
+adb exec-out screencap -p > "$OUT/20-overlay-geser-pojok.png"
+echo "== tersimpan $OUT/20-overlay-geser-pojok.png (avatar digeser ke pojok)"
+drag_line="$(adb logcat -d | grep -o 'overlay digeser ke ([0-9-]*, [0-9-]*)' | tail -1)"
+echo "--- hasil geser ---" >> "$DIAG"
+echo "${drag_line:-kosong}" >> "$DIAG" 2>&1 || true
+if [ -z "$drag_line" ]; then
+  echo "::warning::Geseran tidak tercatat di logcat; bukti geser bebas tidak terbaca"
+else
+  echo "== bukti geser bebas: ${drag_line}"
+fi
+adb shell am force-stop "$PKG" || true
+
 
 echo "== menunggu renderer memuat model (maks 90 detik)"
 for i in $(seq 1 18); do

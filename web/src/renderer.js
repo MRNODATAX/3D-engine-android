@@ -174,6 +174,37 @@ function loader() {
  * yang membuat kaki "hilang" saat duduk. Dengan membaca posisi tulang sungguhan, bingkai kamera
  * selalu memuat seluruh tubuh pada pose apa pun.
  */
+/**
+ * Jarak (piksel CSS) antara tubuh hasil pembacaan tulang dengan tiap tepi kanvas.
+ *
+ * Dipakai sebagai bukti terukur bahwa tubuh — termasuk kaki saat duduk — tidak terpotong,
+ * dan dilaporkan ke Android lewat jejak `motion-state` (lihat scripts/capture-screenshots.sh).
+ */
+function frameGaps(vrm) {
+  const box = skeletonBounds(vrm);
+  if (!box || !state.camera) return null;
+  const corners = [
+    [box.min.x, box.min.y], [box.max.x, box.min.y],
+    [box.min.x, box.max.y], [box.max.x, box.max.y],
+    [box.min.x, (box.min.y + box.max.y) / 2], [box.max.x, (box.min.y + box.max.y) / 2],
+  ];
+  let minX = Infinity; let maxX = -Infinity; let minY = Infinity; let maxY = -Infinity;
+  const point = new THREE.Vector3();
+  corners.forEach(([x, y]) => {
+    point.set(x, y, (box.min.z + box.max.z) / 2).project(state.camera);
+    minX = Math.min(minX, point.x); maxX = Math.max(maxX, point.x);
+    minY = Math.min(minY, point.y); maxY = Math.max(maxY, point.y);
+  });
+  const { width, height } = canvasSize();
+  const round = (value) => Math.round(value);
+  return {
+    top: round(((1 - maxY) / 2) * height),
+    bottom: round(((1 + minY) / 2) * height),
+    left: round(((1 + minX) / 2) * width),
+    right: round(((1 - maxX) / 2) * width),
+  };
+}
+
 function skeletonBounds(vrm) {
   const box = new THREE.Box3();
   const point = new THREE.Vector3();
@@ -777,6 +808,8 @@ function animate(now) {
       mood: state.behavior.state.mood,
       armLeftDeg: pose?.leftArmDeg ?? null,
       armRightDeg: pose?.rightArmDeg ?? null,
+      seated: state.seated,
+      bodyGap: frameGaps(state.vrm),
     };
     // Satu jalur saja: bridge. Menulis juga lewat console membuat tiap jejak tercatat dua kali.
     post('motion-state', trace);

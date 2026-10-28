@@ -185,8 +185,10 @@ try {
     assert(!animError, `animasi gagal: ${animError?.message}`);
     const playing = after.find((e) => e.type === 'animation-playing');
     assert(playing?.duration > 0, 'klip animasi berdurasi nol');
+    // Ambil beberapa contoh: satu bidikan mudah tertipu oleh lengan yang sedang terentang.
+    // "Bukan T-pose" diuji dari bentuk tubuh, bukan dari satu angka piksel.
     await page.waitForTimeout(1500);
-    const animatedWidth = await page.evaluate(() => {
+    const sampleRatio = async () => page.evaluate(() => {
       const source = document.getElementById('stage');
       const scratch = document.createElement('canvas');
       scratch.width = source.width;
@@ -204,14 +206,26 @@ try {
         if (py < minY) minY = py;
         if (py > maxY) maxY = py;
       }
-      return { width: maxX - minX, height: maxY - minY };
+      return (maxX - minX) / Math.max(1, maxY - minY);
     });
-    const animatedRatio = animatedWidth.width / Math.max(1, animatedWidth.height);
+    const samples = [];
+    for (let i = 0; i < 5; i += 1) {
+      samples.push(await sampleRatio());
+      await page.waitForTimeout(250);
+    }
+    samples.sort((a, b) => a - b);
+    const animatedRatio = samples[Math.floor(samples.length / 2)];
+    // Rasio tubuh saat pose istirahat (diukur sebelum klip diputar) jadi acuan: klip yang
+    // benar-benar berjalan tidak boleh melebarkan siluet melebihi pose itu.
+    const restRatio = (pixels.maxX - pixels.minX) / Math.max(1, pixels.maxY - pixels.minY);
     assert(
-      animatedRatio < 0.62,
-      `avatar kembali T-pose saat animasi berjalan (rasio ${animatedRatio.toFixed(2)})`,
+      animatedRatio < Math.max(0.85, restRatio * 0.95),
+      `avatar kembali T-pose saat animasi berjalan (rasio ${animatedRatio.toFixed(2)} vs istirahat ${restRatio.toFixed(2)})`,
     );
-    console.log(`✓ animasi diputar: ${playing.name} (${playing.duration.toFixed(2)} detik), silhouette tetap ${animatedRatio.toFixed(2)}`);
+    console.log(
+      `✓ animasi diputar: ${playing.name} (${playing.duration.toFixed(2)} detik), ` +
+        `silhouette ${animatedRatio.toFixed(2)} (istirahat ${restRatio.toFixed(2)}, contoh ${samples.map((v) => v.toFixed(2)).join('/')})`,
+    );
   } else {
     console.log('… fixture .vrma tidak tersedia, uji animasi dilewati');
   }

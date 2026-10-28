@@ -230,6 +230,9 @@ class OverlayService : Service() {
         )
         container.onDragFinished = { x, y ->
             repository.updateOverlay { it.copy(offsetX = x, offsetY = y) }
+            // Dicatat supaya bisa dibuktikan dari logcat bahwa avatar benar-benar bisa
+            // diletakkan di mana saja (termasuk melewati tepi layar).
+            Log.i(TAG, "overlay digeser ke ($x, $y) ukuran ${width}x$height")
         }
         container.onScaleChanged = { percent ->
             repository.updateOverlay { it.copy(scalePercent = percent) }
