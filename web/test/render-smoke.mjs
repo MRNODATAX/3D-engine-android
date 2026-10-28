@@ -57,12 +57,17 @@ await new Promise((resolve) => server.listen(PORT, '127.0.0.1', resolve));
 
 let browser;
 let failures = 0;
+// Dideklarasikan di luar `try` supaya pesan galat di `catch` bisa menyertakan error konsol —
+// tanpa itu, kegagalan seperti "mata tidak mau terbuka" tidak memberi petunjuk apa pun.
+const consoleErrors = [];
+let pageRef = null;
+
 try {
   browser = await chromium.launch({
     args: ['--use-gl=swiftshader', '--enable-unsafe-swiftshader', '--disable-gpu-sandbox'],
   });
   const page = await browser.newPage({ viewport: { width: 420, height: 720 } });
-  const consoleErrors = [];
+  pageRef = page;
   page.on('console', (msg) => {
     if (msg.type() === 'error') consoleErrors.push(msg.text());
   });
@@ -432,6 +437,7 @@ try {
       () => window.MateEngine.expressionValue('blink') < 0.2,
       5000,
     );
+    const reactionAfterPat = window.MateEngine.reactionDebug();
     const blinkAfterWait = window.MateEngine.expressionValue('blink');
 
     return {
@@ -446,6 +452,7 @@ try {
       blinkAfterPat,
       blinkAfterWait,
       blinkClosedAgain,
+      reactionAfterPat,
     };
   });
 
@@ -476,7 +483,8 @@ try {
   assert(seated.blinkAfterPat > 0.5, `mata tidak menutup saat headpat (blink ${seated.blinkAfterPat})`);
   assert(
     seated.blinkClosedAgain && seated.blinkAfterWait < 0.2,
-    `mata tetap menutup setelah headpat (blink ${seated.blinkAfterWait})`,
+    `mata tetap menutup setelah headpat (blink ${seated.blinkAfterWait}, ` +
+      `reaksi ${JSON.stringify(seated.reactionAfterPat)})`,
   );
   console.log(
     `✓ headpat: mata menutup ${seated.blinkAfterPat.toFixed(2)} lalu kembali ${seated.blinkAfterWait.toFixed(2)}`,
@@ -486,9 +494,28 @@ try {
   console.log('✓ tanpa error konsol');
 } catch (error) {
   failures += 1;
-  console.error(`✗ ${error.message}`);
+  let detail = consoleErrors.slice(0, 4).join(" | ");
+  if (pageRef) {
+    detail += ` || ${await pageRef
+      .evaluate(() => {
+        try {
+          return JSON.stringify({
+            blink: window.MateEngine?.expressionValue?.('blink'),
+            reaction: window.MateEngine?.reactionDebug?.(),
+            motion: window.MateEngine?.motionDebug?.(),
+            events: (window.__MATE_EVENTS__ || []).slice(-6).map((e) => e.type),
+          });
+        } catch (inner) {
+          return `diagnosa gagal: ${inner}`;
+        }
+      })
+      .catch((inner) => `evaluate gagal: ${inner}`)}`;
+  }
+  console.error(`✗ ${error.message}${detail ? ` — ${detail}` : ""}`);
   // Anotasi agar penyebab kegagalan terbaca dari API checks tanpa unduh log.
-  console.log(`::error::${String(error.message).replace(/\r?\n/g, " ").slice(0, 900)}`);
+  console.log(
+    `::error::${`${error.message} — ${detail}`.replace(/\r?\n/g, " ").slice(0, 900)}`,
+  );
 } finally {
   await browser?.close();
   server.close();
