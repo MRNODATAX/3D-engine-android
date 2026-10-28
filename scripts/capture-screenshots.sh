@@ -113,6 +113,17 @@ shoot 04-diagnosa --es screen diagnostics
 shoot 05-pengaturan --es screen settings
 shoot 11-chat --es screen chat
 
+# Katalog klip: ambil sebelum overlay dijalankan (tanpa panel menu menutupi layar) dan gulir
+# sampai daftar kartu terlihat, supaya penanda "Diputar" ikut terbukti.
+adb shell am start -n "$ACTIVITY" --es screen animation >/dev/null
+sleep 4
+adb shell input swipe 540 1750 540 700 300
+sleep 1
+adb shell input swipe 540 1750 540 950 300
+sleep 2
+adb exec-out screencap -p > "$OUT/21-animasi-katalog.png"
+echo "== tersimpan $OUT/21-animasi-katalog.png (katalog klip)"
+
 echo "== menjalankan overlay lewat tombol aplikasi (bukti visual sebelum tap)"
 adb shell am force-stop "$PKG" || true
 adb shell am start -W -n "$ACTIVITY" --ez seed_sample true --es screen home >/dev/null
@@ -373,16 +384,6 @@ adb shell am start -n "$ACTIVITY" --es screen home >/dev/null
 sleep 5
 adb exec-out screencap -p > "$OUT/07-beranda-saat-overlay.png"
 echo "== tersimpan $OUT/07-beranda-saat-overlay.png"
-
-# Katalog klip: buka tab Animasi, gulir ke daftar kartu supaya penanda "Diputar" terbukti.
-adb shell am start -n "$ACTIVITY" --es screen animation >/dev/null
-sleep 4
-adb shell input swipe 540 1800 540 700 320
-sleep 1
-adb shell input swipe 540 1800 540 900 320
-sleep 2
-adb exec-out screencap -p > "$OUT/21-animasi-katalog.png"
-echo "== tersimpan $OUT/21-animasi-katalog.png (katalog klip)"
 
 adb shell am start -n "$ACTIVITY" --es screen diagnostics >/dev/null
 sleep 5
