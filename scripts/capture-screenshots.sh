@@ -317,6 +317,11 @@ adb shell input swipe $((DRAG_W / 2)) $((DRAG_H / 2)) 20 20 700
 sleep 3
 adb exec-out screencap -p > "$OUT/20-overlay-geser-pojok.png"
 echo "== tersimpan $OUT/20-overlay-geser-pojok.png (avatar digeser ke pojok)"
+{
+  echo "--- jendela tepat setelah digeser ke pojok ---"
+  adb shell dumpsys window windows | grep -A 3 "MateEngine avatar" | head -6
+  adb logcat -d -s MateEngineRender:I | grep -E "jendela siluet|kotak tubuh|digeser ke" | tail -6
+} >> "$DIAG" 2>&1 || true
 drag_line="$(adb logcat -d | grep -o 'overlay digeser ke ([0-9-]*, [0-9-]*)' | tail -1)"
 echo "--- hasil geser ---" >> "$DIAG"
 echo "${drag_line:-kosong}" >> "$DIAG" 2>&1 || true
