@@ -762,6 +762,9 @@ function updateIdle(delta) {
  */
 function updateAutoReactions() {
   if (!state.behaviorEnabled || !state.vrm || state.preview) return;
+  // Uji otomatis memanggil reaksi secara eksplisit; gaya otomatis (termasuk tidur yang menahan
+  // mata tertutup sampai 2 menit) akan mengacaukan pengukuran ekspresi di uji render.
+  if (window.__MATE_TEST__ === true) return;
   if (state.reactions.active) return;
   const idle = state.motion.state.idleSeconds;
   const mood = state.behavior.state?.mood;
