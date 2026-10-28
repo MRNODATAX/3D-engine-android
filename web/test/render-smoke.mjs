@@ -416,7 +416,13 @@ try {
     window.MateEngine.react('head');
     await wait(200);
     const blinkAfterPat = window.MateEngine.expressionValue('blink');
-    await wait(1800);
+    // Mata harus terbuka lagi setelah headpat. Ambang waktunya tidak dipatok 1,8 detik: di CI
+    // lambat (beberapa fps) peluruhan ekspresi bisa butuh lebih lama, dan yang diuji adalah
+    // "kembali terbuka", bukan kecepatannya. Tunggu sampai nilainya turun, maksimal 5 detik.
+    const blinkClosedAgain = await until(
+      () => window.MateEngine.expressionValue('blink') < 0.2,
+      5000,
+    );
     const blinkAfterWait = window.MateEngine.expressionValue('blink');
 
     return {
@@ -430,6 +436,7 @@ try {
       swayCold,
       blinkAfterPat,
       blinkAfterWait,
+      blinkClosedAgain,
     };
   });
 
@@ -458,7 +465,10 @@ try {
   console.log(`✓ ayunan geser: ${seated.swayHot.sway} → ${seated.swayCold.sway} setelah 1,5 detik`);
 
   assert(seated.blinkAfterPat > 0.5, `mata tidak menutup saat headpat (blink ${seated.blinkAfterPat})`);
-  assert(seated.blinkAfterWait < 0.2, `mata tetap menutup setelah headpat (blink ${seated.blinkAfterWait})`);
+  assert(
+    seated.blinkClosedAgain && seated.blinkAfterWait < 0.2,
+    `mata tetap menutup setelah headpat (blink ${seated.blinkAfterWait})`,
+  );
   console.log(
     `✓ headpat: mata menutup ${seated.blinkAfterPat.toFixed(2)} lalu kembali ${seated.blinkAfterWait.toFixed(2)}`,
   );
