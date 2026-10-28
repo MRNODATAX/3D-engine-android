@@ -473,10 +473,17 @@ async function loadAvatar(url) {
 
     // VRM 0.x menghadap -Z; diputar agar menghadap kamera seperti di desktop.
     VRMUtils.rotateVRM0(vrm);
+    state.drawCount = {};
     vrm.scene.traverse((object) => {
       object.frustumCulled = false;
       if (object.isMesh && object.material) {
         object.material.side = THREE.FrontSide;
+        // Hitung mesh yang benar-benar masuk pipeline gambar. `visible` bisa saja true
+        // sementara shader gagal atau mesh terpotong; angka ini memisahkan keduanya.
+        object.onBeforeRender = () => {
+          const key = object.name || 'mesh';
+          state.drawCount[key] = (state.drawCount[key] || 0) + 1;
+        };
       }
     });
 
@@ -1078,6 +1085,10 @@ function animate(now) {
         : null,
       frameHeight: state.frameHeight ? Number(state.frameHeight.toFixed(2)) : null,
       pose: state.vrm ? Object.keys(state.vrm.humanoid?.humanBones || {}).length : 0,
+      drawCalls: state.renderer.info.render.calls,
+      triangles: state.renderer.info.render.triangles,
+      glError: state.renderer.getContext().getError(),
+      drawn: state.drawCount ? Object.fromEntries(Object.entries(state.drawCount)) : null,
       boneBox: projectBox(skeletonBounds(state.vrm)),
       rawBoneBox: projectBox(rawBoneBounds(state.vrm)),
       meshBox: projectBox(meshBounds(state.vrm)),
