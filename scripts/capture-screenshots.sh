@@ -295,6 +295,11 @@ for i in $(seq 1 18); do
   if adb logcat -d | grep -q "MateEngineRender.*avatar-ready"; then break; fi
 done
 sleep 8
+{
+  echo "--- jendela saat mode duduk ---"
+  adb shell dumpsys window windows | grep -A 3 "MateEngine avatar" | head -6
+  adb logcat -d -s MateEngineRender:I | grep -E "debug-view|jendela siluet|kotak tubuh" | tail -8
+} >> "$DIAG" 2>&1 || true
 adb exec-out screencap -p > "$OUT/19-overlay-duduk.png"
 echo "== tersimpan $OUT/19-overlay-duduk.png (mode duduk)"
 seat_gap="$(adb logcat -d | grep -o 'motion {.*}' | python3 scripts/periksa-celah-tubuh.py --seated || true)"

@@ -928,6 +928,32 @@ function animate(now) {
     }
   }
 
+  // Diagnostik tampilan: kalau `bodyGap` melaporkan badan mengisi kanvas tetapi tangkapan
+  // layar hanya menampilkan kaki, penyebabnya ada di lapisan viewport (skala/geser WebView),
+  // bukan di kamera. Angka ini yang membedakan keduanya.
+  if (now - (state.viewReportAt || 0) >= 3000) {
+    state.viewReportAt = now;
+    const viewport = window.visualViewport;
+    post('debug-view', {
+      cssW: Math.round(window.innerWidth),
+      cssH: Math.round(window.innerHeight),
+      clientW: document.documentElement.clientWidth,
+      clientH: document.documentElement.clientHeight,
+      dpr: Number(window.devicePixelRatio.toFixed(2)),
+      scrollY: Math.round(window.scrollY || 0),
+      vvScale: viewport ? Number(viewport.scale.toFixed(2)) : null,
+      vvOffsetTop: viewport ? Math.round(viewport.offsetTop) : null,
+      vvHeight: viewport ? Math.round(viewport.height) : null,
+      canvasH: canvasSize().height,
+      modelScale: Number((state.vrm?.scene?.scale?.x ?? 0).toFixed(2)),
+      camDistance: state.camera
+        ? Number(state.camera.position.distanceTo(state.cameraLookAt || state.camera.position).toFixed(2))
+        : null,
+      frameHeight: state.frameHeight ? Number(state.frameHeight.toFixed(2)) : null,
+      pose: state.vrm ? Object.keys(state.vrm.humanoid?.humanBones || {}).length : 0,
+    });
+  }
+
   if (now - state.statsReportAt >= 2000) {
     state.statsReportAt = now;
     post('stats', {
