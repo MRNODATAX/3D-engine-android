@@ -238,18 +238,24 @@ function skeletonBounds(vrm) {
     'leftFoot', 'rightFoot',
   ];
   let headY = null;
+  let found = 0;
   names.forEach((name) => {
     const bone = vrm.humanoid?.getNormalizedBoneNode(name) || vrm.humanoid?.getRawBoneNode?.(name);
     if (!bone) return;
     bone.getWorldPosition(point);
+    found += 1;
     box.expandByPoint(point.clone());
     if (name === 'head' && headY === null) headY = point.y;
   });
-  if (box.isEmpty()) return null;
+  if (box.isEmpty() || found < 8) return null;
   // Ruang untuk rambut di atas tulang kepala dan telapak di bawah pergelangan. Rambut bisa
   // beberapa sentimeter di luar tulang kepala, jadi margin atas dibuat lebih besar.
   const size = new THREE.Vector3();
   box.getSize(size);
+  // Kotak setinggi beberapa sentimeter berarti tulang belum punya matriks dunia yang sah
+  // (model masih dimuat / ganti pose). Kotak seperti itu jangan dilaporkan: jendela siluet
+  // akan menyempit jadi garis tipis dan hanya separuh badan yang terlihat.
+  if (size.y < 0.4 || size.x < 0.05) return null;
   const topMargin = Math.max(size.y * 0.12, 0.05);
   const bottomMargin = Math.max(size.y * 0.08, 0.04);
   box.min.y -= bottomMargin;

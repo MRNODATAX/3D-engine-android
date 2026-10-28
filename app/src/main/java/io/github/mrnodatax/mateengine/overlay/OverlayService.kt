@@ -702,7 +702,17 @@ class OverlayService : Service() {
                             "-> px ($left, $top) - ($right, $bottom) dari desain ${designWidth}x$designHeight " +
                             "(css ${payload.optDouble("cssWidth")}x${payload.optDouble("cssHeight")})",
                     )
-                    if (right > left && bottom > top) {
+                    val fracWidth = fracRight - fracLeft
+                    val fracHeight = fracBottom - fracTop
+                    if (fracWidth < MIN_BODY_FRACTION || fracHeight < MIN_BODY_FRACTION) {
+                        // Frame pengukuran belum sah (tulang tanpa matriks dunia). Dulu kotak
+                        // setipis 0,3 % sempat dipakai: jendela menyempit jadi garis dan hanya
+                        // sepatu yang tampak di emulator. Lebih baik tetap memakai kotak lama.
+                        Log.w(
+                            TAG,
+                            "kotak tubuh terlalu kecil (${fracWidth}x${fracHeight} fraksi), diabaikan",
+                        )
+                    } else if (right > left && bottom > top) {
                         // Dihaluskan: pengukuran mentah berubah ratusan piksel tiap frame saat
                         // klip berganti atau kamera membingkai ulang.
                         val measured = OverlayGeometry.BodyBox(left, top, right, bottom)
@@ -1446,6 +1456,12 @@ class OverlayService : Service() {
         private const val MIN_TOUCH_DP = 96f
         /** Cadangan ruang di sekitar kotak tubuh (fraksi kanvas) — jaring pengaman pengukuran. */
         private const val SAFETY_MARGIN = 0.02
+        /**
+         * Kotak tubuh yang lebih sempit/pendek dari ini (fraksi kanvas) ditolak: nilainya
+         * berasal dari frame pengukuran yang belum sah (tulang belum punya matriks dunia) dan
+         * kalau dipakai, jendela siluet menyempit jadi garis sehingga badan terpotong.
+         */
+        private const val MIN_BODY_FRACTION = 0.06f
         /** Bobot penghalusan kotak tubuh; 0,25 ≈ 4 pembaruan untuk mendekati nilai baru. */
         private const val SMOOTH_ALPHA = 0.25f
         /** Perubahan tepi di bawah ini (8 dp) tidak memicu perubahan ukuran jendela. */
