@@ -230,3 +230,65 @@ class QuickMenuTest {
         assertTrue(y2 + 700 <= 2000)
     }
 }
+
+/**
+ * Katalog klip harus sama dengan yang benar-benar dibundel renderer, dan harus bisa dicari.
+ *
+ * Dulu `BuiltinClips.all` hanya 17 entri sementara `assets/animations` berisi 29 berkas, sehingga
+ * layar Animasi (dan header Beranda) menyebut angka yang salah.
+ */
+class BuiltinClipCatalogTest {
+
+    @Test
+    fun `katalog berisi 29 klip`() {
+        assertEquals(29, BuiltinClips.all.size)
+    }
+
+    @Test
+    fun `kunci klip unik dan tidak kosong`() {
+        val keys = BuiltinClips.all.map { it.key }
+        assertEquals("ada kunci ganda: $keys", keys.size, keys.toSet().size)
+        for (clip in BuiltinClips.all) {
+            assertTrue("${clip.key} tanpa label", clip.label.isNotBlank())
+            assertTrue("${clip.key} tanpa kunci", clip.key.isNotBlank())
+        }
+    }
+
+    @Test
+    fun `semua kategori terisi`() {
+        val counts = BuiltinClips.countByCategory()
+        for (category in ClipCategory.entries) {
+            assertTrue("kategori ${category.label} kosong", (counts[category] ?: 0) > 0)
+        }
+        assertEquals(BuiltinClips.all.size, counts.values.sum())
+    }
+
+    @Test
+    fun `pencarian mencocokkan label dan kunci klip`() {
+        assertEquals(listOf("Berenang"), BuiltinClips.filter("berenang").map { it.label })
+        // "swim" adalah nama berkas, bukan label Indonesia.
+        assertEquals(listOf("Berenang"), BuiltinClips.filter("swim_fwd").map { it.label })
+        assertTrue("pencarian kosong harus mengembalikan semua", BuiltinClips.filter("  ").size == BuiltinClips.all.size)
+        assertTrue("pencarian tak dikenal harus kosong", BuiltinClips.filter("zzz").isEmpty())
+    }
+
+    @Test
+    fun `filter kategori tidak mencampur kategori lain`() {
+        val pose = BuiltinClips.filter("", ClipCategory.POSE)
+        assertTrue("kategori Pose kosong", pose.isNotEmpty())
+        assertTrue("ada klip non-Pose di filter Pose", pose.all { it.category == ClipCategory.POSE })
+        assertTrue(
+            "filter kategori + pencarian harus bekerja bersama",
+            BuiltinClips.filter("duduk", ClipCategory.POSE).any { it.label == "Duduk" },
+        )
+    }
+
+    @Test
+    fun `menu cepat tetap enam klip`() {
+        assertEquals(6, BuiltinClips.quick.size)
+        assertTrue(
+            "klip menu cepat harus ada di katalog",
+            BuiltinClips.quick.all { quick -> BuiltinClips.all.any { it.key == quick.key } },
+        )
+    }
+}

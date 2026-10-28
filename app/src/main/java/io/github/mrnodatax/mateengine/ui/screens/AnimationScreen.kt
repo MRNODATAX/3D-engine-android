@@ -1,6 +1,14 @@
 package io.github.mrnodatax.mateengine.ui.screens
 
+import androidx.compose.animation.core.RepeatMode
+import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.rememberInfiniteTransition
+import androidx.compose.animation.core.tween
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
@@ -10,6 +18,8 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
@@ -25,16 +35,28 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import io.github.mrnodatax.mateengine.R
 import io.github.mrnodatax.mateengine.data.AnimationAsset
 import io.github.mrnodatax.mateengine.data.AppState
+import io.github.mrnodatax.mateengine.overlay.BuiltinClip
 import io.github.mrnodatax.mateengine.overlay.BuiltinClips
+import io.github.mrnodatax.mateengine.overlay.ClipCategory
 import io.github.mrnodatax.mateengine.overlay.OverlaySnapshot
 import io.github.mrnodatax.mateengine.ui.ChipTone
 import io.github.mrnodatax.mateengine.ui.IconTile
@@ -48,6 +70,8 @@ import io.github.mrnodatax.mateengine.ui.StatusChip
 import io.github.mrnodatax.mateengine.ui.T
 import io.github.mrnodatax.mateengine.ui.ToggleRow
 import io.github.mrnodatax.mateengine.ui.TwoPane
+import io.github.mrnodatax.mateengine.ui.theme.MateMotion
+import io.github.mrnodatax.mateengine.ui.theme.MateRadius
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
@@ -71,6 +95,9 @@ fun AnimationScreen(
     onStartAvatar: () -> Unit,
 ) {
     val activeClip = runtime.clipName?.let { clipLabelOf(it) }
+    // Pencarian & kategori katalog klip: state layar, bukan disimpan (pilihan sesaat).
+    var clipQuery by rememberSaveable { mutableStateOf("") }
+    var clipCategory by rememberSaveable { mutableStateOf<ClipCategory?>(null) }
     BoxWithConstraints(Modifier.fillMaxWidth()) {
         val wide = maxWidth >= 600.dp
         Column(
@@ -111,6 +138,9 @@ fun AnimationScreen(
                                 softWrap = false,
                             )
                         }
+                        // Button group (tiruan connected button group M3 Expressive tanpa naik versi
+                        // library): tiga aksi berlabel, tiap target >= 48 dp. Sebelumnya dua di
+                        // antaranya hanya ikon telanjang (× dan +) sehingga fungsinya harus ditebak.
                         Row(
                             modifier = Modifier.fillMaxWidth(),
                             horizontalArrangement = Arrangement.spacedBy(8.dp),
@@ -119,29 +149,61 @@ fun AnimationScreen(
                             FilledTonalButton(
                                 onClick = { state.selectedAnimation?.let(onPlay) },
                                 enabled = runtime.running && state.selectedAnimation != null,
-                                modifier = Modifier.weight(1f),
+                                shape = RoundedCornerShape(topStart = 20.dp, bottomStart = 20.dp, topEnd = 8.dp, bottomEnd = 8.dp),
+                                contentPadding = PaddingValues(horizontal = 10.dp),
+                                modifier = Modifier.weight(1.1f),
                             ) {
-                                Icon(Icons.Filled.PlayArrow, contentDescription = null)
+                                Icon(
+                                    painter = painterResource(R.drawable.ic_symbol_animation),
+                                    contentDescription = null,
+                                    modifier = Modifier.size(18.dp),
+                                )
                                 Text(
                                     T.play,
-                                    modifier = Modifier.padding(start = 8.dp),
+                                    modifier = Modifier.padding(start = 6.dp),
                                     maxLines = 1,
                                     softWrap = false,
                                 )
                             }
-                            IconButton(
+                            FilledTonalButton(
                                 onClick = onStop,
                                 enabled = runtime.running,
-                                modifier = Modifier.size(48.dp),
+                                shape = RoundedCornerShape(8.dp),
+                                contentPadding = PaddingValues(horizontal = 10.dp),
+                                modifier = Modifier.weight(1f),
                             ) {
-                                Icon(Icons.Filled.Clear, contentDescription = T.stopAnimation)
+                                Icon(
+                                    painter = painterResource(R.drawable.ic_symbol_stop_circle),
+                                    contentDescription = null,
+                                    modifier = Modifier.size(18.dp),
+                                )
+                                Text(
+                                    T.stopAnimation,
+                                    modifier = Modifier.padding(start = 6.dp),
+                                    maxLines = 1,
+                                    softWrap = false,
+                                    overflow = TextOverflow.Ellipsis,
+                                )
                             }
-                            IconButton(
+                            FilledTonalButton(
                                 onClick = onImport,
                                 enabled = !importing,
-                                modifier = Modifier.size(48.dp),
+                                shape = RoundedCornerShape(topStart = 8.dp, bottomStart = 8.dp, topEnd = 20.dp, bottomEnd = 20.dp),
+                                contentPadding = PaddingValues(horizontal = 10.dp),
+                                modifier = Modifier.weight(1f),
                             ) {
-                                Icon(Icons.Filled.Add, contentDescription = if (importing) "Mengimpor…" else T.importVrma)
+                                Icon(
+                                    painter = painterResource(R.drawable.ic_symbol_upload),
+                                    contentDescription = null,
+                                    modifier = Modifier.size(18.dp),
+                                )
+                                Text(
+                                    if (importing) "Mengimpor…" else T.importVrma,
+                                    modifier = Modifier.padding(start = 6.dp),
+                                    maxLines = 1,
+                                    softWrap = false,
+                                    overflow = TextOverflow.Ellipsis,
+                                )
                             }
                         }
                         InfoNote(T.animationNote)
@@ -153,46 +215,86 @@ fun AnimationScreen(
                             style = MaterialTheme.typography.titleSmall,
                             fontWeight = FontWeight.SemiBold,
                         )
+                        // Angka dihitung dari katalog, bukan ditulis tangan: sebelumnya layar
+                        // menyebut "Dua puluh satu klip" padahal aplikasi membundel 29.
                         Text(
-                            "Dua puluh satu klip animasi asli dari Universal Animation Library (lisensi CC0), " +
-                                "dikonversi ke .vrma oleh skrip di repo. Tidak perlu impor.",
+                            "${BuiltinClips.all.size} klip animasi dari Universal Animation Library " +
+                                "(lisensi CC0), dikonversi ke .vrma oleh skrip di repo. Tidak perlu impor.",
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
-                        // Satu sumber label: katalog di QuickMenuState (dipakai juga oleh menu 3× ketuk).
-                        val clips = BuiltinClips.all.map { it.key to it.label }
-                        clips.chunked(2).forEach { pair ->
-                            Row(
-                                modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                            ) {
-                                pair.forEach { (value, label) ->
-                                    FilterChip(
-                                        selected = activeClip == clipLabelOf(value),
-                                        onClick = { onPlayBuiltin(value) },
-                                        enabled = runtime.running,
-                                        label = {
-                                            Text(
-                                                label,
-                                                maxLines = 1,
-                                                softWrap = false,
-                                                overflow = TextOverflow.Ellipsis,
-                                            )
-                                        },
-                                        modifier = Modifier.weight(1f),
-                                        colors = FilterChipDefaults.filterChipColors(
-                                            selectedContainerColor = MaterialTheme.colorScheme.primaryContainer,
-                                            selectedLabelColor = MaterialTheme.colorScheme.onPrimaryContainer,
-                                        ),
-                                        border = FilterChipDefaults.filterChipBorder(
-                                            enabled = runtime.running,
-                                            selected = activeClip == clipLabelOf(value),
-                                            borderColor = MaterialTheme.colorScheme.outline,
-                                            selectedBorderColor = MaterialTheme.colorScheme.primaryContainer,
-                                        ),
-                                    )
+                        OutlinedTextField(
+                            value = clipQuery,
+                            onValueChange = { clipQuery = it },
+                            singleLine = true,
+                            placeholder = { Text("Cari klip: lari, duduk, sihir…") },
+                            leadingIcon = {
+                                Icon(
+                                    painter = painterResource(R.drawable.ic_symbol_search),
+                                    contentDescription = null,
+                                    modifier = Modifier.size(18.dp),
+                                )
+                            },
+                            trailingIcon = {
+                                if (clipQuery.isNotEmpty()) {
+                                    IconButton(onClick = { clipQuery = "" }) {
+                                        Icon(
+                                            Icons.Filled.Clear,
+                                            contentDescription = "Bersihkan pencarian",
+                                            modifier = Modifier.size(18.dp),
+                                        )
+                                    }
                                 }
-                                if (pair.size == 1) Box(Modifier.weight(1f))
+                            },
+                            shape = RoundedCornerShape(MateRadius.MEDIUM.dp),
+                            modifier = Modifier.fillMaxWidth(),
+                        )
+                        // Kategori: lima, bukan dua puluh sembilan tombol sekaligus.
+                        FlowRow(
+                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                            verticalArrangement = Arrangement.spacedBy(4.dp),
+                        ) {
+                            val counts = remember { BuiltinClips.countByCategory() }
+                            FilterChip(
+                                selected = clipCategory == null,
+                                onClick = { clipCategory = null },
+                                label = { Text("Semua (${BuiltinClips.all.size})") },
+                            )
+                            ClipCategory.entries.forEach { category ->
+                                FilterChip(
+                                    selected = clipCategory == category,
+                                    onClick = {
+                                        clipCategory = if (clipCategory == category) null else category
+                                    },
+                                    label = { Text("${category.label} (${counts[category] ?: 0})") },
+                                )
+                            }
+                        }
+                        val clips = BuiltinClips.filter(clipQuery, clipCategory)
+                        if (clips.isEmpty()) {
+                            InfoNote(
+                                "Tidak ada klip yang cocok dengan \"$clipQuery\". Coba kata lain atau pilih " +
+                                    "kategori Semua.",
+                            )
+                        } else {
+                            // Dua kolom kartu, sama seperti sebelumnya, tetapi tiap kartu menyebut
+                            // kategori dan klip yang sedang berjalan diberi penanda jelas.
+                            clips.chunked(2).forEach { pair ->
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                                ) {
+                                    pair.forEach { clip ->
+                                        ClipCard(
+                                            clip = clip,
+                                            active = activeClip == clipLabelOf(clip.key),
+                                            enabled = runtime.running,
+                                            onClick = { onPlayBuiltin(clip.key) },
+                                            modifier = Modifier.weight(1f),
+                                        )
+                                    }
+                                    if (pair.size == 1) Box(Modifier.weight(1f))
+                                }
                             }
                         }
                         Row(
@@ -320,6 +422,84 @@ fun AnimationScreen(
                     InfoNote(T.animationNote)
                 },
             )
+        }
+    }
+}
+
+/**
+ * Kartu satu klip bawaan: label, kategori, dan penanda bila klip itu sedang berjalan.
+ *
+ * Menggantikan FilterChip dua kolom yang dulu tidak menyebut kategori dan tidak punya penanda
+ * "sedang diputar" yang jelas (hanya warna chip).
+ */
+@Composable
+private fun ClipCard(
+    clip: BuiltinClip,
+    active: Boolean,
+    enabled: Boolean,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    val container = when {
+        active -> MaterialTheme.colorScheme.primaryContainer
+        else -> MaterialTheme.colorScheme.surface
+    }
+    val content = when {
+        active -> MaterialTheme.colorScheme.onPrimaryContainer
+        enabled -> MaterialTheme.colorScheme.onSurface
+        else -> MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
+    }
+    Surface(
+        onClick = onClick,
+        enabled = enabled,
+        shape = RoundedCornerShape(MateRadius.MEDIUM.dp),
+        color = container,
+        contentColor = content,
+        border = BorderStroke(
+            1.dp,
+            if (active) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outlineVariant,
+        ),
+        modifier = modifier,
+    ) {
+        Column(Modifier.padding(horizontal = 12.dp, vertical = 10.dp)) {
+            Text(
+                clip.label,
+                style = MaterialTheme.typography.bodyMedium,
+                fontWeight = if (active) FontWeight.SemiBold else FontWeight.Medium,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+            )
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(4.dp),
+                modifier = Modifier.padding(top = 2.dp),
+            ) {
+                if (active) {
+                    // Titik berdenyut halus: satu-satunya animasi di layar ini.
+                    val pulse by rememberInfiniteTransition(label = "clip-pulse").animateFloat(
+                        initialValue = 0.45f,
+                        targetValue = 1f,
+                        animationSpec = infiniteRepeatable(
+                            animation = tween(MateMotion.STANDARD_MILLIS * 3),
+                            repeatMode = RepeatMode.Reverse,
+                        ),
+                        label = "clip-pulse-alpha",
+                    )
+                    Box(
+                        Modifier
+                            .size(6.dp)
+                            .alpha(pulse)
+                            .background(MaterialTheme.colorScheme.primary, CircleShape),
+                    )
+                }
+                Text(
+                    if (active) "Diputar" else clip.category.label,
+                    style = MaterialTheme.typography.labelSmall,
+                    color = if (active) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                )
+            }
         }
     }
 }

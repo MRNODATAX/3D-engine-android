@@ -35,35 +35,70 @@ enum class QuickMenuAction(val id: String, val label: String) {
     }
 }
 
-/** Satu klip bawaan yang bisa diputar dari menu cepat. */
-data class BuiltinClip(val key: String, val label: String)
+/** Kategori katalog klip. Dasar/Sosial/Aksi/Pose/Lainnya — lima, bukan dua puluh sembilan. */
+enum class ClipCategory(val label: String) {
+    DASAR("Dasar"),
+    SOSIAL("Sosial"),
+    AKSI("Aksi"),
+    POSE("Pose"),
+    LAINNYA("Sihir & air"),
+}
+
+/** Satu klip bawaan yang bisa diputar dari menu cepat / layar Animasi. */
+data class BuiltinClip(
+    val key: String,
+    val label: String,
+    val category: ClipCategory = ClipCategory.DASAR,
+)
 
 /**
  * Katalog klip bawaan (CC0) dengan label bahasa Indonesia.
  *
- * Alias (`idle_loop`, `sitting_enter`, …) ikut dipetakan supaya tombol di menu bisa menyorot klip
- * yang sedang berjalan tanpa menebak-nebak nama berkas.
+ * `all` adalah **seluruh 29 klip** yang benar-benar dibundel di `assets/animations` dan dikenal
+ * `BUILTIN_CLIPS` di renderer; layar Animasi menampilkan daftar ini (dengan pencarian & kategori).
+ * Alias (`idle_loop`, `sitting_enter`, …) ikut dipetakan supaya tombol bisa menyorot klip yang
+ * sedang berjalan tanpa menebak-nebak nama berkas.
+ *
+ * Sebelumnya `all` hanya 17 entri sementara berkasnya 29 — angka di UI jadi tidak cocok dengan
+ * isi aplikasi.
  */
 object BuiltinClips {
 
     val all: List<BuiltinClip> = listOf(
+        // Dasar
         BuiltinClip("idle", "Diam"),
         BuiltinClip("talk", "Bicara"),
         BuiltinClip("walk", "Jalan"),
         BuiltinClip("dance", "Menari"),
-        BuiltinClip("interact", "Melambai"),
-        BuiltinClip("sitting_idle", "Duduk"),
-        BuiltinClip("walk_formal", "Jalan santai"),
-        BuiltinClip("jog_loop", "Lari kecil"),
-        BuiltinClip("jump_loop", "Lompat"),
-        BuiltinClip("push_loop", "Mendorong"),
-        BuiltinClip("crouch_walk", "Merangkak"),
-        BuiltinClip("kneel_fix", "Berjongkok"),
-        BuiltinClip("drive_idle", "Duduk santai"),
-        BuiltinClip("sprint_loop", "Lari cepat"),
-        BuiltinClip("swim_idle", "Mengambang"),
-        BuiltinClip("swim_fwd", "Berenang"),
-        BuiltinClip("roll", "Berguling"),
+        // Sosial
+        BuiltinClip("interact", "Melambai", ClipCategory.SOSIAL),
+        BuiltinClip("sitting_talk", "Ngobrol duduk", ClipCategory.SOSIAL),
+        // Aksi
+        BuiltinClip("walk_formal", "Jalan santai", ClipCategory.AKSI),
+        BuiltinClip("jog_loop", "Lari kecil", ClipCategory.AKSI),
+        BuiltinClip("sprint_loop", "Lari cepat", ClipCategory.AKSI),
+        BuiltinClip("jump_start", "Awal lompat", ClipCategory.AKSI),
+        BuiltinClip("jump_loop", "Lompat", ClipCategory.AKSI),
+        BuiltinClip("jump_land", "Mendarat", ClipCategory.AKSI),
+        BuiltinClip("push_loop", "Mendorong", ClipCategory.AKSI),
+        BuiltinClip("crouch_walk", "Merangkak", ClipCategory.AKSI),
+        BuiltinClip("pickup", "Memungut", ClipCategory.AKSI),
+        BuiltinClip("roll", "Berguling", ClipCategory.AKSI),
+        // Pose
+        BuiltinClip("sitting_enter", "Mulai duduk", ClipCategory.POSE),
+        BuiltinClip("sitting_idle", "Duduk", ClipCategory.POSE),
+        BuiltinClip("sitting_exit", "Berdiri", ClipCategory.POSE),
+        BuiltinClip("crouch_idle", "Jongkok", ClipCategory.POSE),
+        BuiltinClip("kneel_fix", "Berjongkok", ClipCategory.POSE),
+        BuiltinClip("drive_idle", "Duduk santai", ClipCategory.POSE),
+        BuiltinClip("idle_torch", "Membawa obor", ClipCategory.POSE),
+        // Sihir & air
+        BuiltinClip("spell_idle", "Siap mantra", ClipCategory.LAINNYA),
+        BuiltinClip("spell_enter", "Mulai mantra", ClipCategory.LAINNYA),
+        BuiltinClip("spell_shoot", "Sihir", ClipCategory.LAINNYA),
+        BuiltinClip("spell_exit", "Selesai mantra", ClipCategory.LAINNYA),
+        BuiltinClip("swim_idle", "Mengambang", ClipCategory.LAINNYA),
+        BuiltinClip("swim_fwd", "Berenang", ClipCategory.LAINNYA),
     )
 
     /** Klip yang dipakai menu cepat; dibatasi enam supaya panel tetap muat tanpa menggulir. */
@@ -114,6 +149,26 @@ object BuiltinClips {
 
     /** Label untuk nama klip apa pun yang dilaporkan renderer, atau null bila tidak dikenal. */
     fun labelOf(clip: String?): String? = clip?.let { aliases[it] }
+
+    /**
+     * Saring katalog untuk layar Animasi.
+     *
+     * @param query teks pencarian; dicocokkan ke label **dan** kunci klip (mis. "swim" menemukan
+     *   "Berenang" walau labelnya bahasa Indonesia), tanpa membedakan huruf besar/kecil.
+     * @param category null = semua kategori.
+     */
+    fun filter(query: String, category: ClipCategory? = null): List<BuiltinClip> {
+        val needle = query.trim().lowercase()
+        return all.filter { clip ->
+            (category == null || clip.category == category) &&
+                (needle.isEmpty() ||
+                    clip.label.lowercase().contains(needle) ||
+                    clip.key.lowercase().contains(needle))
+        }
+    }
+
+    /** Jumlah klip per kategori (dipakai chip filter agar angkanya jujur). */
+    fun countByCategory(): Map<ClipCategory, Int> = all.groupingBy { it.category }.eachCount()
 
     /** Apakah tombol untuk [key] harus tampak aktif ketika klip [running] sedang diputar? */
     fun isActive(key: String, running: String?): Boolean {

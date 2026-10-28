@@ -23,6 +23,9 @@ desktop yang disalin.
 | `animation` | tab Animasi (pengganti segitiga putar) |
 | `settings` | tab Setelan |
 | `troubleshoot` | halaman Diagnosa |
+| `search` | kolom pencarian katalog klip |
+| `stop_circle` | tombol Berhenti di layar Animasi |
+| `upload` | tombol Impor `.vrma` |
 
 Menambah ikon baru: jalankan `scripts/siapkan-ikon-simbol.sh <nama> [<nama>…]`, lalu catat di tabel
 ini.
