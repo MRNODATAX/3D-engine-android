@@ -871,6 +871,23 @@ function animate(now) {
     post('motion-state', trace);
   }
 
+  // Kotak tubuh untuk jendela siluet Android: ~6× per detik, hanya saat berubah > 6 px.
+  // Ini yang membuat area kosong yang menelan sentuhan mengecil tanpa avatar ikut mengecil.
+  if (state.vrm && now - (state.bodyBoxAt || 0) >= 166) {
+    state.bodyBoxAt = now;
+    const gaps = frameGaps(state.vrm);
+    if (gaps) {
+      const last = state.bodyBoxLast;
+      const changed = !last
+        || Math.abs(last.left - gaps.left) > 6 || Math.abs(last.top - gaps.top) > 6
+        || Math.abs(last.right - gaps.right) > 6 || Math.abs(last.bottom - gaps.bottom) > 6;
+      if (changed) {
+        state.bodyBoxLast = gaps;
+        post('body-box', gaps);
+      }
+    }
+  }
+
   if (now - state.statsReportAt >= 2000) {
     state.statsReportAt = now;
     post('stats', {
@@ -937,6 +954,11 @@ function captureSceneBaseYaw() {
 function updateReactionState(delta) {
   const frame = state.reactions.update(delta);
   state.reactionFrame = frame;
+  if (frame.sfx && frame.sfx.length > 0) {
+    // Suara diputar Android (SoundPool), bukan Web Audio: tetap berbunyi saat layar mati dan
+    // menghormati tombol bisu/paket suara pengguna.
+    for (const name of frame.sfx) post('reaction-sfx', { name, style: frame.styleId });
+  }
   if (frame.styleId) {
     state.reactionStyle = frame.styleId;
   } else if (state.reactionStyle) {
@@ -1058,6 +1080,9 @@ function pipeTouch(phase, x, y) {
     const zone = zoneAt(px, py);
     state.touch.down(zone?.zone || 'belly', px, py, now);
     state.touchZone = zone;
+    // Android perlu tahu apakah sentuhan mendarat di badan: menyentuh badan = elus/ketuk,
+    // bukan menyeret. Tanpa kabar ini, mengelus kepala akan menyeret avatar.
+    post('touch-zone', { zone: zone?.zone || null, inside: Boolean(zone?.inside) });
     return null;
   }
   if (phase === 'move') {

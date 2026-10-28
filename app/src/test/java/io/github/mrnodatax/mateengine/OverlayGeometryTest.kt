@@ -92,4 +92,124 @@ class OverlayGeometryTest {
         assertEquals(1080 - 400 - 24, placement.x)
         assertEquals(1920 - 700 - 24, placement.y)
     }
+    // ------------------------------------------------------------ bingkai & siluet (v0.1.10)
+
+    @Test
+    fun `bingkai menghormati inset sistem dan margin`() {
+        val frame = OverlayGeometry.frame(
+            screenWidth = 1080,
+            screenHeight = 2400,
+            insets = OverlayGeometry.Insets(left = 0, top = 96, right = 0, bottom = 132),
+            marginPx = 22,
+        )
+        assertEquals(22, frame.left)
+        assertEquals(118, frame.top)
+        assertEquals(1058, frame.right)
+        assertEquals(2246, frame.bottom)
+    }
+
+    @Test
+    fun `posisi avatar selalu di dalam bingkai untuk 12 kombinasi layar dan skala`() {
+        val layouts = listOf(
+            Triple(1080, 2400, 25), Triple(1080, 2400, 50), Triple(1080, 2400, 100),
+            Triple(720, 1280, 25), Triple(720, 1280, 60), Triple(720, 1280, 100),
+            Triple(1440, 3120, 25), Triple(1440, 3120, 70), Triple(1440, 3120, 100),
+            Triple(2400, 1080, 25), Triple(2400, 1080, 60), Triple(2400, 1080, 100),
+        )
+        var insideCount = 0
+        for ((screenW, screenH, scale) in layouts) {
+            val frame = OverlayGeometry.frame(
+                screenW, screenH,
+                OverlayGeometry.Insets(0, 80, 0, 120), marginPx = 20,
+            )
+            val (width, height) = OverlayGeometry.windowSize(screenW, screenH, scale, 2.75f)
+            // Coba keempat sudut + nilai ekstrem: semuanya harus berakhir di dalam bingkai.
+            val attempts = listOf(
+                -9999 to -9999, 9999 to -9999, -9999 to 9999, 9999 to 9999, 0 to 0,
+            )
+            for ((rawX, rawY) in attempts) {
+                val placement = OverlayGeometry.clampToFrame(rawX, rawY, width, height, frame)
+                val fitsX = width <= frame.width
+                val fitsY = height <= frame.height
+                if (fitsX) {
+                    assertTrue("x keluar bingkai: ${placement.x} (${frame.left}..${frame.right - width})", placement.x >= frame.left)
+                    assertTrue("x keluar bingkai kanan: ${placement.x}", placement.x + width <= frame.right)
+                } else {
+                    assertEquals("jendela lebih lebar dari bingkai harus rata kiri", frame.left, placement.x)
+                }
+                if (fitsY) {
+                    assertTrue("y keluar bingkai: ${placement.y}", placement.y >= frame.top)
+                    assertTrue("y keluar bingkai bawah: ${placement.y}", placement.y + height <= frame.bottom)
+                } else {
+                    assertEquals("jendela lebih tinggi dari bingkai harus rata atas", frame.top, placement.y)
+                }
+                insideCount += 1
+            }
+        }
+        assertEquals(60, insideCount)
+    }
+
+    @Test
+    fun `karet saat digeser melewati bingkai tetapi tidak kabur`() {
+        val frame = OverlayGeometry.frame(1080, 2400, OverlayGeometry.Insets(0, 100, 0, 100), marginPx = 20)
+        val width = 400
+        val height = 700
+        val maxX = frame.right - width
+        // Di dalam bingkai: posisi apa adanya.
+        assertEquals(500, OverlayGeometry.dragPlacement(500, 600, width, height, frame).x)
+        // Melewati kanan: hanya 28 % dari kelebihan yang diikuti, maksimal 56 px.
+        val pulled = OverlayGeometry.dragPlacement(maxX + 200, 600, width, height, frame).x
+        assertTrue("harus diredam, dapat $pulled", pulled in (maxX + 1)..(maxX + 56))
+        val hard = OverlayGeometry.dragPlacement(maxX + 2000, 600, width, height, frame).x
+        assertEquals(maxX + 56, hard)
+        // Melewati kiri.
+        val left = OverlayGeometry.dragPlacement(-500, 600, width, height, frame).x
+        assertTrue("kiri harus diredam, dapat $left", left in (frame.left - 56)..(frame.left - 1))
+    }
+
+    @Test
+    fun `jendela siluet mengecil tetapi tidak lebih kecil dari batas sentuh`() {
+        val frame = OverlayGeometry.frame(1080, 2400, OverlayGeometry.Insets(0, 0, 0, 0), marginPx = 0)
+        // Jendela desain 631x1200 di (100, 300); tubuh mengisi tengahnya.
+        val box = OverlayGeometry.BodyBox(left = 130, top = 40, right = 500, bottom = 1160)
+        val visible = OverlayGeometry.visibleRect(
+            designX = 100, designY = 300, designWidth = 631, designHeight = 1200,
+            box = box, edgePx = 16, minSizePx = 264, frame = frame,
+        )
+        // Kanan-kiri mengikuti kotak tubuh, bukan seluruh jendela.
+        assertEquals(100 + 130 - 16, visible.left)
+        assertEquals(100 + 500 + 16, visible.right)
+        assertEquals(300 + 40 - 16, visible.top)
+        assertEquals(300 + 1160 + 16, visible.bottom)
+        val blocked = OverlayGeometry.blockedFraction(631, 1200, visible)
+        assertTrue("area yang menelan sentuhan harus turun, dapat $blocked", blocked < 0.75f)
+
+        // Kotak sangat kecil: jendela berhenti di batas sentuh minimum 96 dp (264 px @2,75).
+        val tiny = OverlayGeometry.BodyBox(left = 300, top = 600, right = 320, bottom = 640)
+        val small = OverlayGeometry.visibleRect(100, 300, 631, 1200, tiny, 16, 264, frame)
+        assertTrue("lebar minimum dihormati, dapat ${small.width}", small.width >= 264)
+        assertTrue("tinggi minimum dihormati, dapat ${small.height}", small.height >= 264)
+    }
+
+    @Test
+    fun `tanpa pengukuran tubuh jendela tetap ukuran penuh`() {
+        val frame = OverlayGeometry.frame(1080, 2400, OverlayGeometry.Insets(0, 0, 0, 0), marginPx = 0)
+        val visible = OverlayGeometry.visibleRect(100, 300, 631, 1200, null, 16, 264, frame)
+        assertEquals(631, visible.width)
+        assertEquals(1200, visible.height)
+        assertEquals(1.0f, OverlayGeometry.blockedFraction(631, 1200, visible), 0.0001f)
+    }
+
+    @Test
+    fun `jendela siluet tidak pernah keluar dari jendela desain`() {
+        val frame = OverlayGeometry.frame(1080, 2400, OverlayGeometry.Insets(0, 0, 0, 0), marginPx = 0)
+        // Kotak tubuh melewati tepi kanvas (mis. saat `roll`): hasil tetap di dalam desain.
+        val box = OverlayGeometry.BodyBox(left = -80, top = -60, right = 720, bottom = 1300)
+        val visible = OverlayGeometry.visibleRect(200, 200, 631, 1200, box, 16, 264, frame)
+        assertTrue(visible.left >= 200)
+        assertTrue(visible.top >= 200)
+        assertTrue(visible.right <= 200 + 631)
+        assertTrue(visible.bottom <= 200 + 1200)
+    }
+
 }

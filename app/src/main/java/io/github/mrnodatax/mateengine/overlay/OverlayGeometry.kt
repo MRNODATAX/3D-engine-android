@@ -79,4 +79,149 @@ object OverlayGeometry {
         val margin = (12 * density).toInt()
         return clamp(screenWidth - width - margin, screenHeight - height - margin, width, height, screenWidth, screenHeight)
     }
+    // ---------------------------------------------------------------- bingkai (v0.1.10)
+    //
+    // Sebelum v0.1.10 posisi avatar dijepit dengan `clamp()` di atas, yang membolehkan 38 %
+    // jendela keluar layar. Itu membuat avatar bisa menempel — bahkan menembus — tepi layar.
+    // Sejak v0.1.10 avatar memakai bingkai: kotak aman di dalam inset sistem (status bar,
+    // navigasi, poni) + margin. Semua di bawah ini fungsi murni, diuji di OverlayGeometryTest.
+
+    /** Inset sistem dalam piksel (status bar, navigasi, poni). */
+    data class Insets(val left: Int, val top: Int, val right: Int, val bottom: Int) {
+        val isZero: Boolean get() = left == 0 && top == 0 && right == 0 && bottom == 0
+    }
+
+    /** Kotak tempat avatar boleh berada, dalam koordinat layar. */
+    data class Frame(val left: Int, val top: Int, val right: Int, val bottom: Int) {
+        val width: Int get() = (right - left).coerceAtLeast(1)
+        val height: Int get() = (bottom - top).coerceAtLeast(1)
+    }
+
+    /**
+     * Bingkai = layar dikurangi inset sistem dan margin.
+     * Hasilnya tidak pernah lebih kecil dari [minSize] supaya avatar tetap bisa ditaruh.
+     */
+    fun frame(screenWidth: Int, screenHeight: Int, insets: Insets, marginPx: Int, minSize: Int = 120): Frame {
+        val left = (insets.left + marginPx).coerceAtLeast(0)
+        val top = (insets.top + marginPx).coerceAtLeast(0)
+        val right = (screenWidth - insets.right - marginPx).coerceAtLeast(left + minSize)
+        val bottom = (screenHeight - insets.bottom - marginPx).coerceAtLeast(top + minSize)
+        return Frame(left, top, right, bottom)
+    }
+
+    /**
+     * Jepit jendela agar seluruhnya berada di dalam bingkai.
+     *
+     * Bila jendela lebih besar dari bingkai (mis. skala 100 % di layar pendek), jendela
+     * diratakan dengan tepi bingkai — bukan dibiarkan meluber keluar layar.
+     */
+    fun clampToFrame(x: Int, y: Int, width: Int, height: Int, frame: Frame): Placement {
+        val maxX = (frame.right - width).coerceAtLeast(frame.left)
+        val maxY = (frame.bottom - height).coerceAtLeast(frame.top)
+        return Placement(x.coerceIn(frame.left, maxX), y.coerceIn(frame.top, maxY))
+    }
+
+    /**
+     * Posisi saat jari sedang menggeser: di luar bingkai gerakan diredam (karet), tetapi tetap
+     * ada batas keras [maxOverPx] supaya jendela tidak "kabur" jauh dari jari.
+     */
+    fun dragPlacement(
+        rawX: Int,
+        rawY: Int,
+        width: Int,
+        height: Int,
+        frame: Frame,
+        resistance: Float = 0.28f,
+        maxOverPx: Int = 56,
+    ): Placement {
+        fun damp(raw: Int, limitMax: Int, limitMin: Int): Int {
+            if (raw > limitMax) {
+                val over = (raw - limitMax) * resistance
+                return limitMax + minOf(over, maxOverPx.toFloat()).toInt()
+            }
+            if (raw < limitMin) {
+                val over = (limitMin - raw) * resistance
+                return limitMin - minOf(over, maxOverPx.toFloat()).toInt()
+            }
+            return raw
+        }
+        val maxX = (frame.right - width).coerceAtLeast(frame.left)
+        val maxY = (frame.bottom - height).coerceAtLeast(frame.top)
+        return Placement(damp(rawX, maxX, frame.left), damp(rawY, maxY, frame.top))
+    }
+
+    /** Kotak tubuh hasil pembacaan tulang, dalam piksel kanvas. */
+    data class BodyBox(val left: Int, val top: Int, val right: Int, val bottom: Int) {
+        val width: Int get() = (right - left).coerceAtLeast(1)
+        val height: Int get() = (bottom - top).coerceAtLeast(1)
+    }
+
+    /** Persegi dalam koordinat layar. */
+    data class Rect(val left: Int, val top: Int, val right: Int, val bottom: Int) {
+        val width: Int get() = (right - left).coerceAtLeast(1)
+        val height: Int get() = (bottom - top).coerceAtLeast(1)
+        val area: Long get() = width.toLong() * height.toLong()
+    }
+
+    /**
+     * Jendela yang benar-benar terlihat: irisan antara jendela desain dan kotak tubuh + [edgePx].
+     *
+     * Inilah yang memperkecil area kosong yang menelan sentuhan. Penting: kanvas WebView **tidak**
+     * ikut mengecil — ia digambar pada ukuran desain lalu digeser dengan margin negatif, sehingga
+     * avatar tidak berubah ukuran di layar (lihat `OverlayService.applySilhouette`).
+     *
+     * @param box kotak tubuh; `null` berarti pengukuran belum tersedia → pakai jendela desain penuh
+     *            (perilaku lama, aman: tidak pernah ada jendela yang salah tempat).
+     */
+    fun visibleRect(
+        designX: Int,
+        designY: Int,
+        designWidth: Int,
+        designHeight: Int,
+        box: BodyBox?,
+        edgePx: Int,
+        minSizePx: Int,
+        frame: Frame,
+    ): Rect {
+        val design = Rect(designX, designY, designX + designWidth, designY + designHeight)
+        if (box == null) {
+            // Tanpa pengukuran tubuh: jendela desain dipotong bingkai saja.
+            return Rect(
+                design.left.coerceAtLeast(frame.left),
+                design.top.coerceAtLeast(frame.top),
+                design.right.coerceAtMost(frame.right),
+                design.bottom.coerceAtMost(frame.bottom),
+            )
+        }
+        var left = designX + box.left - edgePx
+        var top = designY + box.top - edgePx
+        var right = designX + box.right + edgePx
+        var bottom = designY + box.bottom + edgePx
+        // Jangan pernah lebih besar dari jendela desain, dan jangan sampai lebih kecil dari
+        // ukuran sentuh minimum (96 dp) — jendela mini yang tidak bisa disentuh lebih buruk
+        // daripada jendela besar yang menelan sentuhan.
+        left = left.coerceAtLeast(design.left)
+        top = top.coerceAtLeast(design.top)
+        right = right.coerceAtMost(design.right)
+        bottom = bottom.coerceAtMost(design.bottom)
+        val cx = (left + right) / 2
+        val cy = (top + bottom) / 2
+        if (right - left < minSizePx) {
+            left = (cx - minSizePx / 2).coerceAtLeast(design.left)
+            right = (left + minSizePx).coerceAtMost(design.right)
+        }
+        if (bottom - top < minSizePx) {
+            top = (cy - minSizePx / 2).coerceAtLeast(design.top)
+            bottom = (top + minSizePx).coerceAtMost(design.bottom)
+        }
+        return Rect(left, top, right, bottom)
+    }
+
+    /** Bagian jendela desain yang menelan sentuhan, 0..1. Dipakai untuk mengukur pengurangan. */
+    fun blockedFraction(designWidth: Int, designHeight: Int, visible: Rect): Float {
+        val total = designWidth.toLong() * designHeight
+        if (total <= 0) return 1f
+        return (visible.area.toFloat() / total).coerceIn(0f, 1f)
+    }
+
 }

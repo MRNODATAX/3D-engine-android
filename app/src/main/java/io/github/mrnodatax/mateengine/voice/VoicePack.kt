@@ -26,6 +26,31 @@ class VoicePack(context: Context) {
         BUBBLE_OFF("bubble_off", R.raw.me_bubble_off),
         CHAT_BLIP("chat_blip", R.raw.me_chat_blip),
         CHAT_STREAM("chat_stream", R.raw.me_chat_stream),
+
+        // 15 efek reaksi (v0.1.10). Semua non-verbal, disintesis sendiri oleh
+        // scripts/buat-sfx.py — tidak ada rekaman pihak ketiga. Nama kunci sama dengan nama
+        // berkas di renderer (`reactions.js` → `sfx`), jadi menambah gaya baru cukup menambah
+        // satu entri di sini tanpa memetakan ulang.
+        REACTION_SIGH("sigh", R.raw.me_sigh),
+        REACTION_SIGH_LOW("sigh_low", R.raw.me_sigh_low),
+        REACTION_YAWN("yawn", R.raw.me_yawn),
+        REACTION_TONGUE_CLICK("tongue_click", R.raw.me_tongue_click),
+        REACTION_HUFF_HARD("huff_hard", R.raw.me_huff_hard),
+        REACTION_HMPH("hmph", R.raw.me_hmph),
+        REACTION_HUM_SOFT("hum_soft", R.raw.me_hum_soft),
+        REACTION_MMM("mmm", R.raw.me_mmm),
+        REACTION_EEP("eep", R.raw.me_eep),
+        REACTION_GASP("gasp", R.raw.me_gasp),
+        REACTION_GIGGLE_3("giggle_3", R.raw.me_giggle_3),
+        REACTION_GIGGLE_SHORT("giggle_short", R.raw.me_giggle_short),
+        REACTION_CHIME_UP("chime_up", R.raw.me_chime_up),
+        REACTION_BOING("boing", R.raw.me_boing),
+        REACTION_BLIP_SOFT("blip_soft", R.raw.me_blip_soft);
+
+        companion object {
+            /** Cari event dari kunci, dipakai saat renderer mengirim nama efek reaksi. */
+            fun fromKey(key: String): Event? = entries.firstOrNull { it.key == key }
+        }
     }
 
     private val appContext = context.applicationContext
