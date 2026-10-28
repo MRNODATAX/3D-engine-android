@@ -166,6 +166,18 @@ fi
   adb logcat -d -s MateEnginePreview:I | tail -30
   echo "--- jendela siluet & bingkai (v0.1.10) ---"
   adb logcat -d -s MateEngineRender:I | grep -E "siluet|kotak tubuh|layar berubah|dipetakan|digeser|reaksi|sentuhan" | tail -25
+  echo "--- penghematan area yang menelan sentuhan ---"
+  adb logcat -d -s MateEngineRender:I | grep -o "= [0-9]*% dari desain" | grep -o "[0-9]*" \
+    | python3 -c '
+import sys
+values = sorted(int(line) for line in sys.stdin if line.strip().isdigit())
+if not values:
+    print("kosong")
+else:
+    mid = values[len(values) // 2]
+    print(f"n={len(values)} terkecil={values[0]}% median={mid}% terbesar={values[-1]}% "
+          f"-> pengurangan luas median {100 - mid}%")
+' 2>/dev/null || echo "kosong"
   echo "--- jendela overlay menurut WindowManager ---"
   adb shell dumpsys window windows | grep -A 6 "MateEngine avatar" | head -20
 } > "$DIAG" 2>&1 || true

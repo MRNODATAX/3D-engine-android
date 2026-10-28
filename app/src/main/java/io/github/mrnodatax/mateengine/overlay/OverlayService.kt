@@ -684,13 +684,18 @@ class OverlayService : Service() {
                 val fracRight = payload.optDouble("right", Double.NaN)
                 val fracBottom = payload.optDouble("bottom", Double.NaN)
                 if (listOf(fracLeft, fracTop, fracRight, fracBottom).all { it.isFinite() }) {
-                    // Cadangan 2 % per sisi: pengukuran selalu bisa sedikit meleset (mesh yang
-                    // menonjol, spring bone), dan memotong 2 % terlalu banyak jauh lebih buruk
-                    // daripada jendela 2 % lebih besar.
+                    // Potong **hanya mendatar**. Pengukuran tegak pernah membuat avatar tampak
+                    // sebatas kaki di emulator (satu frame pengukuran yang meleset langsung
+                    // memotong badan), sedangkan ruang kosong yang bisa dihemat memang di kiri
+                    // dan kanan — model mengisi ~90 % tinggi kanvas tetapi hanya ~60 % lebarnya.
+                    //
+                    // Cadangan 2 % di kiri/kanan: pengukuran bisa sedikit meleset (mesh menonjol,
+                    // spring bone), dan memotong lengan jauh lebih buruk daripada jendela 2 %
+                    // lebih lebar.
                     val left = ((fracLeft - SAFETY_MARGIN).coerceIn(0.0, 1.0) * designWidth).toInt()
-                    val top = ((fracTop - SAFETY_MARGIN).coerceIn(0.0, 1.0) * designHeight).toInt()
+                    val top = 0
                     val right = ((1.0 - fracRight + SAFETY_MARGIN).coerceIn(0.0, 1.0) * designWidth).toInt()
-                    val bottom = ((1.0 - fracBottom + SAFETY_MARGIN).coerceIn(0.0, 1.0) * designHeight).toInt()
+                    val bottom = designHeight
                     Log.i(
                         TAG,
                         "kotak tubuh: fraksi ${fracLeft}/${fracTop}/${fracRight}/${fracBottom} " +
