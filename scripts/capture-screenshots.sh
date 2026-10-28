@@ -151,6 +151,8 @@ fi
   adb shell dumpsys package "$PKG" | grep -iE "FOREGROUND_SERVICE|SYSTEM_ALERT_WINDOW" | head -20
   echo "--- crash log ---"
   adb logcat -d -s AndroidRuntime:E | tail -60
+  echo "--- pratinjau Beranda (MateEnginePreview) ---"
+  adb logcat -d -s MateEnginePreview:I | tail -30
 } > "$DIAG" 2>&1 || true
 head -40 "$DIAG"
 

@@ -1,6 +1,10 @@
 package io.github.mrnodatax.mateengine.ui
 
 import android.annotation.SuppressLint
+import android.util.Log
+import android.webkit.ConsoleMessage
+import android.webkit.JavascriptInterface
+import android.webkit.WebChromeClient
 import android.graphics.Color as AndroidColor
 import android.webkit.WebResourceError
 import android.webkit.WebResourceRequest
@@ -41,6 +45,7 @@ import java.util.concurrent.atomic.AtomicBoolean
  *   tidak pernah kotak kosong;
  * - tidak menulis state aplikasi: hanya membaca berkas avatar yang sudah dipilih.
  */
+private const val TAG = "MateEnginePreview"
 private const val PREVIEW_QUERY = "?mode=preview"
 private const val ASSET_HOST = "appassets.androidplatform.net"
 private const val PREVIEW_URL = "https://$ASSET_HOST/assets/renderer/index.html$PREVIEW_QUERY"
@@ -74,7 +79,23 @@ fun AvatarPreview(
             isVerticalScrollBarEnabled = false
             isHorizontalScrollBarEnabled = false
             overScrollMode = WebView.OVER_SCROLL_NEVER
+            addJavascriptInterface(PreviewBridge(), "MateBridge")
+            webChromeClient = object : WebChromeClient() {
+                override fun onConsoleMessage(message: ConsoleMessage): Boolean {
+                    Log.i(TAG, "console ${message.messageLevel()}: ${message.message()}")
+                    return true
+                }
+            }
             webViewClient = object : WebViewClient() {
+                override fun onRenderProcessGone(
+                    view: WebView,
+                    detail: android.webkit.RenderProcessGoneDetail,
+                ): Boolean {
+                    Log.w(TAG, "proses render pratinjau berhenti, memakai cadangan monogram")
+                    failed = true
+                    return true
+                }
+
                 private val loader = WebViewAssetLoader.Builder()
                     .setDomain(ASSET_HOST)
                     .addPathHandler("/assets/", WebViewAssetLoader.AssetsPathHandler(context))
@@ -103,6 +124,7 @@ fun AvatarPreview(
                 override fun onPageFinished(view: WebView, url: String) {
                     super.onPageFinished(view, url)
                     if (failed) return
+                    Log.i(TAG, "halaman pratinjau selesai dimuat")
                     view.evaluateJavascript(
                         "window.MateEngine && window.MateEngine.loadAvatar(" +
                             "\"https://$ASSET_HOST/avatars/${asset.fileName}\")",
@@ -148,7 +170,40 @@ fun AvatarPreview(
         }
     }
 
+    // Jaring pengaman: kalau renderer tidak melaporkan siap dalam 20 detik (GPU lemah, model
+    // rusak, atau WebGL tidak tersedia), kartu menampilkan monogram — bukan kotak kosong.
+    LaunchedEffect(webView, asset.id) {
+        kotlinx.coroutines.delay(20_000)
+        if (!notified.get()) {
+            Log.w(TAG, "pratinjau tidak melaporkan siap dalam 20 detik; memakai cadangan")
+            failed = true
+        }
+    }
+
     if (failed) {
         LaunchedEffect(failed) { onFallback() }
     }
+}
+
+/** Menyalurkan pesan renderer ke logcat supaya kegagalan pratinjau bisa ditelusuri dari CI. */
+private class PreviewBridge {
+    @JavascriptInterface
+    fun postMessage(message: String) {
+        val type = Regex("\"type\"\s*:\s*\"([^\"]+)\"").find(message)?.groupValues?.get(1)
+        when (type) {
+            "avatar-ready" -> {
+                Log.i(TAG, "avatar siap: $message")
+                PreviewState.ready = true
+            }
+            "error" -> Log.w(TAG, "renderer error: $message")
+            "preview-mode" -> Log.i(TAG, "mode pratinjau aktif: $message")
+            else -> Log.i(TAG, "pesan $message")
+        }
+    }
+}
+
+/** Status bersama: dipakai uji & log saja, bukan sumber kebenaran UI. */
+internal object PreviewState {
+    @Volatile
+    var ready: Boolean = false
 }
