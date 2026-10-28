@@ -15,13 +15,13 @@ import androidx.compose.animation.core.spring
  */
 object MateMotion {
     /** Untuk momen utama (mis. perpindahan tab, kartu status muncul). */
-    val expressive: FloatSpringSpec = spring(dampingRatio = 0.72f, stiffness = 380f)
+    val expressive: FloatSpringSpec = spring<Float>(dampingRatio = 0.72f, stiffness = 380f)
 
     /** Untuk perubahan sehari-hari yang tidak perlu berlebihan. */
-    val standard: FloatSpringSpec = spring(dampingRatio = 0.9f, stiffness = 700f)
+    val standard: FloatSpringSpec = spring<Float>(dampingRatio = 0.9f, stiffness = 700f)
 
     /** Untuk umpan balik tekan: cepat, hampir tanpa pantulan. */
-    val snappy: FloatSpringSpec = spring(dampingRatio = 1f, stiffness = 900f)
+    val snappy: FloatSpringSpec = spring<Float>(dampingRatio = 1f, stiffness = 900f)
 
     /** Durasi nominal pegas di atas (ms) untuk API yang hanya menerima durasi. */
     const val EXPRESSIVE_MILLIS = 420
