@@ -394,8 +394,17 @@ try {
     const standing = bottomGap();
     window.MateEngine.setSeated(true);
     const seatedClip = await until(() => window.MateEngine.poseMetrics()?.builtinClip === 'sitting_idle');
+    // Bingkai kamera dihitung ulang beberapa ratus ms setelah klip duduk berjalan. Mengukur tepat
+    // di tengah transisi bisa menangkap tubuh yang belum terbungkus penuh (di CI sempat 0 px),
+    // jadi tunggu sampai bingkai "diam" — maksimal 6 detik — lalu ukur di keadaan final.
     await wait(700);
-    const seatedGap = bottomGap();
+    let seatedGap = bottomGap();
+    const framedDeadline = performance.now() + 6000;
+    while (performance.now() < framedDeadline) {
+      if (seatedGap.top > 1 && seatedGap.gap > 1) break;
+      await wait(200);
+      seatedGap = bottomGap();
+    }
     const metricsSeated = window.MateEngine.poseMetrics();
     window.MateEngine.setSeated(false);
     const stoodUp = await until(() => window.MateEngine.poseMetrics()?.builtinClip === 'idle_loop');
