@@ -84,6 +84,7 @@ const state = {
   reactions: createReactions(),
   reactionFrame: null,
   reactionExprKeys: new Set(),
+  reactionEyesActive: false,
   reactionStyle: null,
   sceneYaw: 0,
   lastNudgeAt: 0,
@@ -682,6 +683,11 @@ function updateBlink(delta) {
 
   state.blinkTimer -= delta;
 
+  // Fase menunggu: tulis 0 secara eksplisit. Tanpa ini, nilai `blink` yang ditinggalkan reaksi
+  // bermata tertutup (`>_<`, sayang) akan tetap 1 sampai siklus kedip berikutnya selesai —
+  // mata terlihat menutup terus.
+  if (state.blinkPhase === 0) expression.setValue('blink', 0);
+
   if (state.blinkPhase === 0 && state.blinkTimer <= 0) {
     state.blinkPhase = 1;
     state.blinkTimer = state.blinkDuration;
@@ -1060,9 +1066,20 @@ function applyReactionFrame(frame) {
     expression.setValue(key, value);
   }
   state.reactionExprKeys = keys;
+  if (!frame.styleId && state.reactionEyesActive) {
+    // Reaksi bermata tertutup baru saja selesai: buka mata sekarang juga dan mulai ulang
+    // siklus kedip, jangan menunggu timer lama.
+    expression.setValue('blink', 0);
+    state.blinkPhase = 0;
+    state.blinkTimer = 1.2;
+    state.reactionEyesActive = false;
+  }
   if (frame.styleId) {
     const blink = { closed: 1, squint: 0.88, half: 0.35, slow: 0.5, wide: 0, angry: 0, normal: null }[frame.eyes];
-    if (blink !== null && blink !== undefined) expression.setValue('blink', blink);
+    if (blink !== null && blink !== undefined) {
+      expression.setValue('blink', blink);
+      state.reactionEyesActive = true;
+    }
   }
 }
 
