@@ -216,7 +216,14 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          if [ "$SIGNED" = "true" ]; then
+          # Idempoten: bila rilisnya sudah ada (mis. job ini diulang, atau unggahan sebelumnya
+          # berhasil tapi perintahnya keluar dengan kode ≠ 0 karena gangguan jaringan), cukup
+          # ganti aset dan catatannya — jangan gagal.
+          if gh release view "$TAG" >/dev/null 2>&1; then
+            echo "rilis $TAG sudah ada, memperbarui aset + catatan"
+            gh release upload "$TAG" "$APK_NAME" --clobber
+            gh release edit "$TAG" --notes-file notes.md
+          elif [ "$SIGNED" = "true" ]; then
             gh release create "$TAG" "$APK_NAME" --title "Mate Engine Android ${TAG}" --notes-file notes.md --verify-tag
           else
             gh release create "$TAG" "$APK_NAME" --title "Mate Engine Android ${TAG} (uji)" --notes-file notes.md --verify-tag --prerelease
