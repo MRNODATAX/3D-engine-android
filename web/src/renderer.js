@@ -641,7 +641,7 @@ function animate(now) {
       armLeftDeg: pose?.leftArmDeg ?? null,
       armRightDeg: pose?.rightArmDeg ?? null,
     };
-    console.info('motion ' + JSON.stringify(trace));
+    // Satu jalur saja: bridge. Menulis juga lewat console membuat tiap jejak tercatat dua kali.
     post('motion-state', trace);
   }
 

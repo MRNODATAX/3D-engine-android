@@ -204,6 +204,39 @@ else
   echo "::error::Sudut lengan ${worst} derajat: tangan terangkat saat diam"
 fi
 
+# ---- bukti direktur perilaku: avatar harus bergerak sendiri tanpa disentuh ----
+# Ambang waktu direktur 2,2-7 detik, jadi jendela 30 detik cukup untuk beberapa aksi.
+behavior_line=""
+for _ in 1 2 3 4 5 6; do
+  behavior_line="$(adb logcat -d | grep -o 'motion {.*}' | python3 -c '
+import sys, json, re
+seen = []
+for line in sys.stdin:
+    match = re.search(r"motion (\{.*\})", line)
+    if not match:
+        continue
+    try:
+        data = json.loads(match.group(1))
+    except json.JSONDecodeError:
+        continue
+    if data.get("behavior") and data["behavior"] not in seen:
+        seen.append(data["behavior"])
+if seen:
+    print(", ".join(seen))
+' 2>/dev/null || true)"
+  [ -n "$behavior_line" ] && break
+  sleep 5
+done
+{
+  echo "--- jejak direktur perilaku ---"
+  echo "${behavior_line:-kosong}"
+} >> "$DIAG" 2>&1 || true
+if [ -n "$behavior_line" ]; then
+  echo "== bukti perilaku: avatar bergerak sendiri (${behavior_line})"
+else
+  echo "::warning::Tidak ada perilaku otomatis dalam 30 detik; direktur perilaku belum terbukti"
+fi
+
 # ---- bukti skala: 100% vs 40% tinggi layar ----
 shoot_scale() {
   local percent="$1" name="$2"
