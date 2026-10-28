@@ -15,10 +15,28 @@ mkdir -p "$OUT"
 rm -f "$OUT"/*.png
 adb wait-for-device
 
+# Bila skrip gagal di tengah jalan (emulator mati, adb hilang), simpan log yang ada supaya
+# penyebabnya terbaca dari anotasi CI, bukan hanya "Log perangkat tidak tersedia".
+dump_log_on_error() {
+  local code=$?
+  if [ "$code" -ne 0 ]; then
+    adb logcat -d > /tmp/mate-logcat-gagal.txt 2>/dev/null || echo "logcat tidak tersedia" > /tmp/mate-logcat-gagal.txt
+    grep -E "mateengine|MateEngineRender|chromium|WebView|AndroidRuntime" /tmp/mate-logcat-gagal.txt \
+      | tail -200 > /tmp/mate-log-tail.txt 2>/dev/null || true
+    echo "== skrip gagal (kode $code); potongan log disimpan ke /tmp/mate-log-tail.txt"
+  fi
+  return $code
+}
+trap dump_log_on_error EXIT
+
 adb shell settings put global window_animation_scale 0
 adb shell settings put global transition_animation_scale 0
 adb shell settings put global animator_duration_scale 0
 adb shell svc power stayon true || true
+
+echo "== status perangkat"
+adb devices
+echo "sdk=$(adb shell getprop ro.build.version.sdk 2>/dev/null || echo '?')"
 
 echo "== memasang APK debug"
 adb install -r "$APK"
