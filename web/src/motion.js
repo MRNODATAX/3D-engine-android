@@ -60,6 +60,8 @@ export function createMotion(options = {}) {
     lastExpressionChange: 0,
     /** Kecepatan geser terakhir (piksel/detik) dan peluruhannya. */
     drag: { vx: 0, vy: 0, lean: 0 },
+    /** Gaya reaksi yang sedang berjalan (diisi renderer dari `reactions.js`). */
+    reactionStyle: null,
   };
 
   /** Quaternion acuan per sendi, diambil sesudah mixer.update(). */
@@ -275,14 +277,34 @@ export function createMotion(options = {}) {
     layers.spine.x += drag.spineX;
     layers.hips.z += drag.spineZ * 0.3;
 
+    // ---- lapisan reaksi (15 gaya, lihat reactions.js)
+    // Digabung secara aditif di sini, bukan diterapkan sesudah update, supaya quaternion acuan
+    // (`base`) tetap bersih: offset reaksi tidak ikut tersimpan sebagai acuan frame berikutnya.
+    const reaction = context.reaction;
+    if (reaction && reaction.layers) {
+      for (const [key, delta] of Object.entries(reaction.layers)) {
+        const layer = layers[key];
+        if (!layer || !delta) continue;
+        layer.x += clamp(delta.x || 0, -1, 1);
+        layer.y += clamp(delta.y || 0, -1, 1);
+        layer.z += clamp(delta.z || 0, -1, 1);
+      }
+      state.reactionStyle = reaction.styleId || null;
+    } else {
+      state.reactionStyle = null;
+    }
+
     // ---- pagar lengan: di luar mode tari, offset lengan tidak boleh mengangkat tangan.
     // Batas 0,35 rad (~20°) membuat "tangan stuck di atas" tidak mungkin terjadi karena
     // lapisan prosedural, apa pun kombinasi keadaan sebelumnya.
+    // Saat reaksi berjalan, pagar dilonggarkan: peluk dan malu memang mengangkat lengan
+    // (0,9–1,0 rad). Tanpa reaksi, batas 0,35 rad tetap berlaku supaya tangan tidak "stuck".
     if (state.locomotion !== 'dance') {
+      const limit = state.reactionStyle ? 1.1 : 0.35;
       for (const key of ['leftUpperArm', 'rightUpperArm', 'leftLowerArm', 'rightLowerArm']) {
-        layers[key].x = clamp(layers[key].x, -0.35, 0.35);
-        layers[key].y = clamp(layers[key].y, -0.35, 0.35);
-        layers[key].z = clamp(layers[key].z, -0.35, 0.35);
+        layers[key].x = clamp(layers[key].x, -limit, limit);
+        layers[key].y = clamp(layers[key].y, -limit, limit);
+        layers[key].z = clamp(layers[key].z, -limit, limit);
       }
     }
 
@@ -350,6 +372,7 @@ export function createMotion(options = {}) {
         lookYaw: Number(state.look.yaw.toFixed(3)),
         bones: bones.size,
         react: state.react.type,
+        reactionStyle: state.reactionStyle,
         sway: Number((Math.abs(state.drag.vx) + Math.abs(state.drag.vy)).toFixed(1)),
       };
     },

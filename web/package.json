@@ -8,11 +8,13 @@
     "build": "node build.mjs",
     "test:render": "node test/render-smoke.mjs",
     "test:perf": "node test/perf.test.mjs",
-    "test": "node test/perf.test.mjs && node test/motion.test.mjs && node test/behavior.test.mjs && node test/smoothness.test.mjs && node test/vrma.test.mjs",
+    "test": "node test/perf.test.mjs && node test/motion.test.mjs && node test/behavior.test.mjs && node test/smoothness.test.mjs && node test/vrma.test.mjs && node test/touch.test.mjs && node test/reactions.test.mjs",
     "test:motion": "node test/motion.test.mjs",
     "test:vrma": "node test/vrma.test.mjs",
     "test:behavior": "node test/behavior.test.mjs",
-    "test:smoothness": "node test/smoothness.test.mjs"
+    "test:smoothness": "node test/smoothness.test.mjs",
+    "test:touch": "node test/touch.test.mjs",
+    "test:reactions": "node test/reactions.test.mjs"
   },
   "dependencies": {
     "@pixiv/three-vrm": "3.5.5",

@@ -41,6 +41,12 @@ jobs:
       - name: Uji berkas klip .vrma
         working-directory: web
         run: npm run test:vrma
+      - name: Uji zona sentuh per tulang
+        working-directory: web
+        run: npm run test:touch
+      - name: Uji 15 gaya reaksi
+        working-directory: web
+        run: npm run test:reactions
       - name: Build bundle renderer
         working-directory: web
         run: npm run build

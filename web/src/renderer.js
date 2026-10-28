@@ -16,6 +16,8 @@ import { applyRelaxedPose, captureRestPose } from './pose.js';
 import { collectStats, createGovernor, downscaleTextures } from './perf.js';
 import { createMotion } from './motion.js';
 import { createBehaviorDirector } from './behavior.js';
+import { createTouchTracker, zoneForPoint, zoneForScreen } from './touch.js';
+import { createReactions, styleForTouch } from './reactions.js';
 
 const CONFIG = {
   maxPixelRatio: 2,
@@ -78,6 +80,13 @@ const state = {
   sittingEnabled: true,
   pendingChain: null,
   headpatUntil: 0,
+  touch: createTouchTracker(),
+  reactions: createReactions(),
+  reactionFrame: null,
+  reactionExprKeys: new Set(),
+  reactionStyle: null,
+  sceneYaw: 0,
+  lastNudgeAt: 0,
   speech: null,
   animationName: null,
   loop: true,
@@ -355,6 +364,7 @@ async function loadAvatar(url) {
 
     state.scene.add(vrm.scene);
     state.vrm = vrm;
+    captureSceneBaseYaw();
     state.avatarInfo = describeVrm(vrm);
     state.governor.reset();
     state.renderScale = 1;
@@ -740,6 +750,32 @@ function updateIdle(delta) {
   // Gerak tubuh (napas, goyangan, pandangan, lokomosi) ditangani motion.js,
   // bukan lagi dua sinus kecil di sini.
   state.idleTime += delta;
+  updateAutoReactions();
+}
+
+/**
+ * Gaya otomatis saat pengguna tidak menyentuh apa pun.
+ *
+ * Ambang waktunya sengaja berjenjang supaya avatar punya "kisah" sendiri: bengong dulu, lalu
+ * malas, mengantuk, akhirnya tidur. Semua lewat `reactions.trigger` sehingga jeda, prioritas,
+ * dan anti-ulang tetap dihormati — tidak ada jalur pintas.
+ */
+function updateAutoReactions() {
+  if (!state.behaviorEnabled || !state.vrm || state.preview) return;
+  if (state.reactions.active) return;
+  const idle = state.motion.state.idleSeconds;
+  const mood = state.behavior.state?.mood;
+  if (idle >= 240) {
+    runReaction('tidur', { source: 'auto', priority: 1 });
+  } else if (idle >= 150) {
+    runReaction('ngantuk', { source: 'auto', priority: 1 });
+  } else if (idle >= 95) {
+    runReaction('malas', { source: 'auto', priority: 1 });
+  } else if (idle >= 55) {
+    runReaction('boring', { source: 'auto', priority: 1 });
+  } else if (idle >= 18 && idle <= 22 && mood === 'ceria') {
+    runReaction('lompat', { source: 'auto', priority: 1 });
+  }
 }
 
 function animate(now) {
@@ -762,7 +798,15 @@ function animate(now) {
   state.motion.resetToBase();
   if (state.mixer) state.mixer.update(delta);
   if (state.vrm) {
-    state.motion.update(state.vrm, delta, { talking: state.talking > 0, interacted: state.interacted });
+    // Reaksi dihitung sebelum mesin gerak: lapisannya digabung secara aditif di dalam
+    // `motion.update` supaya quaternion acuan tidak tercemar offset.
+    const reactionFrame = updateReactionState(delta);
+    state.motion.update(state.vrm, delta, {
+      talking: state.talking > 0,
+      interacted: state.interacted,
+      reaction: reactionFrame,
+    });
+    applyReactionFrame(reactionFrame);
     state.interacted = false;
     clampRootMotion();
     // Spring bone (rambut, rok, tali) tidak stabil bila diberi langkah waktu besar: pada
@@ -865,6 +909,179 @@ function setQuality(quality) {
   resize();
 }
 
+/**
+ * Putar klip bawaan untuk sebuah reaksi tanpa menandainya sebagai "pilihan manual pengguna".
+ *
+ * Bedanya dengan `playBuiltin(name, { manual: true })`: pilihan manual menahan direktur
+ * perilaku sampai pengguna memilih lagi, sedangkan klip reaksi hanya menang sementara — begitu
+ * reaksinya selesai, direktur mengambil alih lagi. Lihat `updateReactionState()`.
+ */
+function applyClipTo(name, reason) {
+  if (!state.vrm || !state.mixer) return Promise.resolve(false);
+  const gesture = GESTURE_CLIPS.has(name);
+  state.clipOverride = name;
+  const options = { manual: false, reason, loop: !gesture };
+  if (gesture) options.chain = 'idle';
+  return playBuiltin(name, options).catch(() => false);
+}
+
+/** Ambil yaw dasar model sekali setelah dimuat (VRM 0.x diputar 180° oleh `rotateVRM0`). */
+function captureSceneBaseYaw() {
+  state.sceneBaseYaw = state.vrm ? state.vrm.scene.rotation.y : 0;
+}
+
+/**
+ * Kelola siklus hidup reaksi: maju satu langkah, terapkan ekspresi, putar/miringkan model,
+ * dan bersihkan keadaan saat reaksi selesai. Mengembalikan frame untuk mesin gerak.
+ */
+function updateReactionState(delta) {
+  const frame = state.reactions.update(delta);
+  state.reactionFrame = frame;
+  if (frame.styleId) {
+    state.reactionStyle = frame.styleId;
+  } else if (state.reactionStyle) {
+    // Reaksi berakhir: kembalikan ekspresi, lepas klip sementara, lapor ke Android.
+    post('reaction-end', { style: state.reactionStyle });
+    if (state.clipOverride) state.clipOverride = null;
+    state.reactionStyle = null;
+  }
+  // Memunggung (ngambek) diputar halus, di atas yaw dasar model.
+  const targetYaw = (state.sceneBaseYaw || 0) + (frame.yaw || 0);
+  state.sceneYaw += (targetYaw - state.sceneYaw) * Math.min(1, delta * 6);
+  if (state.vrm) state.vrm.scene.rotation.y = state.sceneYaw;
+  return frame;
+}
+
+/**
+ * Mengubah titik sentuh layar (piksel CSS) menjadi zona tubuh.
+ *
+ * Jalur utama: lempar sinar ke mesh avatar, lalu `zoneForPoint()` memilih tulang terdekat dari
+ * titik di permukaan tubuh. Jalur cadangan (`zoneForScreen`) dipakai bila sinar tidak mengenai
+ * apa pun — misalnya model transparan, rambut tipis, atau sudut kamera ekstrem.
+ */
+function zoneAt(x, y) {
+  if (!state.vrm || !state.camera) return null;
+  const { width, height } = canvasSize();
+  const ndc = new THREE.Vector2((x / width) * 2 - 1, -(y / height) * 2 + 1);
+  try {
+    if (!state.raycaster) state.raycaster = new THREE.Raycaster();
+    state.raycaster.setFromCamera(ndc, state.camera);
+    const hits = state.raycaster.intersectObject(state.vrm.scene, true)
+      .filter((hit) => hit.object && (hit.object.isMesh || hit.object.isSkinnedMesh));
+    if (hits.length > 0) {
+      const point = hits[0].point.clone();
+      const zone = zoneForPoint(state.vrm, point);
+      if (zone && zone.inside) return zone;
+    }
+  } catch (error) {
+    // Raycast pada mesh rusak tidak boleh mematikan overlay.
+  }
+  return zoneForScreen(state.vrm, state.camera, ndc, { width, height });
+}
+
+/** Apakah avatar masih "terkejut" oleh sentuhan? Dipakai untuk membangunkan tidur. */
+function wakeFromSleep() {
+  if (state.reactions.active === 'tidur') {
+    state.reactions.interrupt('wake');
+    post('reaction-end', { style: 'tidur', reason: 'wake' });
+    // Duduk lalu bangun: klip keluar diputar sekali supaya tidak "meloncat" berdiri.
+    applyClipTo('sitting_exit', 'wake').catch(() => {});
+    return true;
+  }
+  return false;
+}
+
+/** Jalankan satu gaya reaksi, termasuk klip (bila ada) dan pemberitahuan ke Android. */
+function runReaction(styleId, context = {}) {
+  const accepted = state.reactions.trigger(styleId, context);
+  if (!accepted) {
+    post('reaction-rejected', { style: styleId, active: state.reactions.active });
+    return false;
+  }
+  state.interacted = true;
+  state.interactedEver = true;
+  state.motion.state.idleSeconds = 0;
+  state.motion.state.sleepiness = 0;
+  const style = state.reactions.state.current.style;
+  state.reactionStyle = styleId;
+  // Geser jendela kecil (mundur saat malu, maju saat peluk): diproses Android dengan penjepitan
+  // bingkai, jadi tidak mungkin mendorong avatar keluar layar.
+  if (style.nudge && performance.now() - state.lastNudgeAt > 1200) {
+    state.lastNudgeAt = performance.now();
+    post('nudge', { dx: style.nudge[0], dy: style.nudge[1], style: styleId });
+  }
+  const clip = state.reactions.clipFor(styleId);
+  if (clip && !state.clipOverride) {
+    if (styleId === 'tidur') {
+      applyClipTo('sitting_enter', 'tidur').catch(() => {});
+    } else {
+      applyClipTo(clip, `reaksi:${styleId}`).catch(() => {});
+    }
+  }
+  post('reaction', { style: styleId, label: style.label, source: context.source || 'touch', zone: context.zone || null });
+  return true;
+}
+
+/** Terapkan ekspresi + mata dari reaksi yang sedang berjalan. */
+function applyReactionFrame(frame) {
+  const expression = state.vrm?.expressionManager;
+  if (!expression) return;
+  const keys = new Set(Object.keys(frame.expression || {}));
+  // Ekspresi gaya sebelumnya yang tidak dipakai lagi harus dikembalikan ke nol.
+  for (const key of state.reactionExprKeys) {
+    if (!keys.has(key)) expression.setValue(key, 0);
+  }
+  for (const [key, value] of Object.entries(frame.expression || {})) {
+    expression.setValue(key, value);
+  }
+  state.reactionExprKeys = keys;
+  if (frame.styleId) {
+    const blink = { closed: 1, squint: 0.88, half: 0.35, slow: 0.5, wide: 0, angry: 0, normal: null }[frame.eyes];
+    if (blink !== null && blink !== undefined) expression.setValue('blink', blink);
+  }
+}
+
+/**
+ * Terima satu kejadian sentuh dari Android.
+ *
+ * `phase`: down | move | up. Koordinat dalam piksel CSS kanvas overlay.
+ * Mengembalikan nama gaya yang dipicu (atau null) supaya uji bisa memeriksanya.
+ */
+function pipeTouch(phase, x, y) {
+  if (!state.vrm || state.paused) return null;
+  const now = performance.now();
+  state.touch.tick(now);
+  const px = Number(x) || 0;
+  const py = Number(y) || 0;
+  if (phase === 'down') {
+    wakeFromSleep();
+    const zone = zoneAt(px, py);
+    state.touch.down(zone?.zone || 'belly', px, py, now);
+    state.touchZone = zone;
+    return null;
+  }
+  if (phase === 'move') {
+    const event = state.touch.move(px, py, now);
+    if (event?.type === 'stroke') {
+      const style = styleForTouch({ zone: 'head', gesture: 'stroke' });
+      runReaction(style, { source: 'touch', zone: 'head' });
+      return style;
+    }
+    return null;
+  }
+  if (phase === 'up') {
+    const event = state.touch.up(now);
+    if (!event) return null;
+    const zone = event.zone || state.touchZone?.zone || 'belly';
+    if (event.type === 'hold') wakeFromSleep();
+    const style = styleForTouch({ zone, gesture: event.type });
+    if (!style) return null;
+    runReaction(style, { source: 'touch', zone });
+    return style;
+  }
+  return null;
+}
+
 /** API yang dipanggil lapisan Android. Semua argumen primitif/string. */
 window.MateEngine = {
   loadAvatar,
@@ -940,46 +1157,36 @@ window.MateEngine = {
     return state.behaviorEnabled;
   },
   behaviorEnabled: () => state.behaviorEnabled,
+  /**
+   * Ketuk dari Android (jalur lama, tanpa koordinat).
+   *
+   * Dipertahankan karena menu cepat dan uji lama masih memanggilnya. Pemetaan zona lama
+   * (head/shoulder/body) diterjemahkan ke gaya baru; jalur utama kini `pointer()`.
+   */
   react: (type) => {
-    markInteraction();
-    state.motion.react(type);
+    state.interacted = true;
+    state.interactedEver = true;
     if (type === 'head') {
-      // Headpat: mata menutup dan senyum muncul, lalu kembali normal.
+      // Headpat: mata menutup dan senyum muncul (perilaku lama dipertahankan).
       state.headpatUntil = performance.now() + 1600;
-      const expression = state.vrm?.expressionManager;
-      if (expression) {
-        expression.setValue('blink', 1);
-        expression.setValue('happy', 0.85);
-        setTimeout(() => {
-          expression.setValue('blink', 0);
-          expression.setValue('happy', 0);
-        }, 1600);
-      }
     }
-    const expression = state.vrm?.expressionManager;
-    if (expression) {
-      // Ekspresi dipilih dari yang benar-benar ada di model ini.
-      const pick = (names) => names.find((name) => expression.expressionMap?.[name]);
-      if (type === 'head') {
-        const happy = pick(['happy', 'joy', 'fun']);
-        const surprised = pick(['surprised', 'surprise']);
-        if (surprised) {
-          expression.setValue(surprised, 0.8);
-          setTimeout(() => expression.setValue(surprised, 0), 900);
-        } else if (happy) {
-          expression.setValue(happy, 0.7);
-          setTimeout(() => expression.setValue(happy, 0), 900);
-        }
-      } else {
-        const happy = pick(['happy', 'joy', 'fun']);
-        if (happy) {
-          expression.setValue(happy, 0.55);
-          setTimeout(() => expression.setValue(happy, 0), 1200);
-        }
-      }
-    }
-    post('reaction', { type });
+    const style = styleForTouch({
+      zone: type === 'head' ? 'head' : type === 'shoulder' ? 'shoulder' : 'belly',
+      gesture: 'tap',
+    });
+    const ok = runReaction(style, { source: 'touch', zone: type });
+    return ok ? style : null;
   },
+  /** Sentuhan berkoordinat dari overlay: phase = down | move | up. */
+  pointer: (phase, x, y) => pipeTouch(phase, x, y),
+  /** Tombol "coba gaya" di Pengaturan memakai jalur eksplisit (menembus jeda). */
+  tryReaction: (style) => runReaction(style, { source: 'explicit', force: true }),
+  reactionDebug: () => ({
+    ...state.reactions.debug(),
+    style: state.reactionStyle,
+    sceneYaw: Number(state.sceneYaw.toFixed(3)),
+    expressions: [...state.reactionExprKeys],
+  }),
   motionDebug: () => state.motion.debug(),
   /**
    * Sudut lengan terukur dari geometri, bukan dari tanda rotasi: dipakai uji regresi untuk
