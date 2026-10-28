@@ -498,6 +498,13 @@ function stopAnimation() {
 function updateBlink(delta) {
   const expression = state.vrm?.expressionManager;
   if (!expression) return;
+
+  // Headpat menahan mata menutup lebih lama dari kedipan biasa; jangan ditimpa timer kedip.
+  if (performance.now() < state.headpatUntil) {
+    expression.setValue('blink', 1);
+    return;
+  }
+
   state.blinkTimer -= delta;
 
   if (state.blinkPhase === 0 && state.blinkTimer <= 0) {
