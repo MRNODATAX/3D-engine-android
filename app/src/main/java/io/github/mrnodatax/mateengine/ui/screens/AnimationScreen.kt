@@ -271,6 +271,13 @@ fun AnimationScreen(
                                 )
                             }
                         }
+                        if (!runtime.running) {
+                            // Keadaan nonaktif dijelaskan, bukan hanya diperlihatkan lewat teks pudar.
+                            InfoNote(
+                                "Jalankan avatar dulu agar klip bisa diputar dari sini.",
+                                ChipTone.Warning,
+                            )
+                        }
                         val clips = BuiltinClips.filter(clipQuery, clipCategory)
                         if (clips.isEmpty()) {
                             InfoNote(
@@ -448,7 +455,8 @@ private fun ClipCard(
     val content = when {
         active -> MaterialTheme.colorScheme.onPrimaryContainer
         enabled -> MaterialTheme.colorScheme.onSurface
-        else -> MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
+        // Nonaktif tetap terbaca (bukan 0,6 seperti sebelumnya yang terlihat seperti bug render).
+        else -> MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.85f)
     }
     Surface(
         onClick = onClick,

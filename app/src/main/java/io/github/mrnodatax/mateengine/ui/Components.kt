@@ -1,7 +1,9 @@
 package io.github.mrnodatax.mateengine.ui
 
 import androidx.annotation.DrawableRes
+import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -23,15 +25,18 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import io.github.mrnodatax.mateengine.ui.theme.MateMotion
 import io.github.mrnodatax.mateengine.ui.theme.MateRadius
 import io.github.mrnodatax.mateengine.ui.theme.SuccessColor
 import io.github.mrnodatax.mateengine.ui.theme.SuccessContainer
@@ -212,6 +217,29 @@ fun ToggleRow(
             }
         }
         Switch(checked = checked, onCheckedChange = onCheckedChange, enabled = enabled)
+    }
+}
+
+/**
+ * Umpan balik tekan: tombol mengecil 3% dengan pegas [MateMotion.snappy] selama ditekan.
+ *
+ * Ini satu-satunya animasi tambahan di layar (batas 1–2 elemen bergerak), dan memberi respons
+ * yang terasa "hidup" tanpa menggeser tata letak.
+ */
+@Composable
+fun Modifier.pressScale(
+    interactionSource: androidx.compose.foundation.interaction.MutableInteractionSource,
+    pressedScale: Float = MateMotion.PRESS_SCALE,
+): Modifier {
+    val pressed by interactionSource.collectIsPressedAsState()
+    val scale by androidx.compose.animation.core.animateFloatAsState(
+        targetValue = if (pressed) pressedScale else 1f,
+        animationSpec = MateMotion.snappy,
+        label = "press-scale",
+    )
+    return this.graphicsLayer {
+        scaleX = scale
+        scaleY = scale
     }
 }
 

@@ -385,6 +385,25 @@ sleep 5
 adb exec-out screencap -p > "$OUT/07-beranda-saat-overlay.png"
 echo "== tersimpan $OUT/07-beranda-saat-overlay.png"
 
+# Katalog saat overlay berjalan: kartu klip yang sedang diputar harus bertanda "Diputar".
+adb shell am start -n "$ACTIVITY" --es screen animation >/dev/null
+sleep 4
+adb shell input swipe 540 1750 540 700 300
+sleep 1
+adb shell input swipe 540 1750 540 950 300
+sleep 2
+adb exec-out screencap -p > "$OUT/22-animasi-diputar.png"
+echo "== tersimpan $OUT/22-animasi-diputar.png (klip aktif ditandai)"
+
+# Ukuran teks besar (aksesibilitas): tidak boleh ada teks terpotong di header/kartu.
+adb shell settings put system font_scale 1.3
+sleep 2
+adb shell am start -n "$ACTIVITY" --es screen home >/dev/null
+sleep 4
+adb exec-out screencap -p > "$OUT/23-teks-besar.png"
+echo "== tersimpan $OUT/23-teks-besar.png (font_scale 1,3)"
+adb shell settings put system font_scale 1.0
+
 adb shell am start -n "$ACTIVITY" --es screen diagnostics >/dev/null
 sleep 5
 adb exec-out screencap -p > "$OUT/08-diagnosa-berjalan.png"

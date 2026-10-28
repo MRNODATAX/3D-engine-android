@@ -1,6 +1,7 @@
 package io.github.mrnodatax.mateengine.ui.screens
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
@@ -52,6 +53,7 @@ import io.github.mrnodatax.mateengine.ui.SectionCard
 import io.github.mrnodatax.mateengine.ui.SectionLabel
 import io.github.mrnodatax.mateengine.ui.SliderField
 import io.github.mrnodatax.mateengine.ui.StatusChip
+import io.github.mrnodatax.mateengine.ui.pressScale
 import io.github.mrnodatax.mateengine.ui.T
 import io.github.mrnodatax.mateengine.ui.ToggleRow
 import io.github.mrnodatax.mateengine.ui.theme.MateRadius
@@ -315,9 +317,17 @@ private fun StatusCard(
                     Icon(Icons.Filled.Clear, contentDescription = null)
                     Text(T.stopAvatar, modifier = Modifier.padding(start = 8.dp))
                 }
-                else -> Button(onClick = onStart) {
-                    Icon(Icons.Filled.PlayArrow, contentDescription = null)
-                    Text(T.startAvatar, modifier = Modifier.padding(start = 8.dp))
+                else -> {
+                    // Tombol utama: umpan balik tekan halus (satu-satunya animasi di kartu ini).
+                    val interaction = remember { MutableInteractionSource() }
+                    Button(
+                        onClick = onStart,
+                        interactionSource = interaction,
+                        modifier = Modifier.pressScale(interaction),
+                    ) {
+                        Icon(Icons.Filled.PlayArrow, contentDescription = null)
+                        Text(T.startAvatar, modifier = Modifier.padding(start = 8.dp))
+                    }
                 }
             }
             if (runtime.running && hasModel) {
