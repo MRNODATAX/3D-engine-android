@@ -161,9 +161,11 @@ jobs:
           - Sudah ada: impor VRM, overlay transparan + drag/skala 25-100%/cubit dua jari,
             opasitas, batas FPS, kunci posisi, render VRM 1.0/0.x, pemutar .vrma,
             diagnosa perangkat, chat Gemini dengan persona, Gemini TTS + lip-sync,
+            14 klip animasi CC0, direktur perilaku (avatar bergerak sendiri sesuai suasana),
+            duduk di tepi layar, ayunan badan saat avatar digeser, headpat (mata menutup),
             gerak prosedural (napas, goyangan, pandangan, tidur, jalan, tari, reaksi sentuh).
-          - Belum ada: duduk di jendela/taskbar, screenshot transparan, timer, Workshop,
-            food system, head tracking kamera.
+          - Belum ada: duduk di jendela aplikasi lain/taskbar desktop, screenshot transparan,
+            timer, Workshop, food system, head tracking kamera.
 
           Batasan: overlay Android berbentuk persegi (tidak ada click-through per piksel);
           service dapat dihentikan sistem bila optimasi baterai tidak dikecualikan.
