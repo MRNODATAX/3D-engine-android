@@ -1,14 +1,14 @@
 --- services ---
 ACTIVITY MANAGER SERVICES (dumpsys activity services)
   User 0 active services:
-  * ServiceRecord{1415318 u0 io.github.mrnodatax.mateengine.debug/org.chromium.content.app.SandboxedProcessService0:0}
+  * ServiceRecord{c219125 u0 io.github.mrnodatax.mateengine.debug/org.chromium.content.app.SandboxedProcessService0:0}
     intent={cmp=io.github.mrnodatax.mateengine.debug/org.chromium.content.app.SandboxedProcessService0:0}
     packageName=io.github.mrnodatax.mateengine.debug
     processName=com.google.android.webview:sandboxed_process0:org.chromium.content.app.SandboxedProcessService0:0
-    baseDir=/data/app/~~hX27J9RTmUlvFQmWpOljuQ==/com.google.android.webview-0iTJ8rMz-qbQMtw17CZLog==/WebViewGoogle.apk
+    baseDir=/data/app/~~hj7_6XWjocMKL0yxk3qmEg==/com.google.android.webview-q2VMAmxbCY_s07IlZHCdLg==/WebViewGoogle.apk
     dataDir=/data/user/0/com.google.android.webview
-    app=ProcessRecord{ded730c 6202:com.google.android.webview:sandboxed_process0:org.chromium.content.app.SandboxedProcessService0:0/u0a192i0}
-    isolationHostProc=ProcessRecord{ded730c 6202:com.google.android.webview:sandboxed_process0:org.chromium.content.app.SandboxedProcessService0:0/u0a192i0}
+    app=ProcessRecord{7a83c56 6376:com.google.android.webview:sandboxed_process0:org.chromium.content.app.SandboxedProcessService0:0/u0a192i0}
+    isolationHostProc=ProcessRecord{7a83c56 6376:com.google.android.webview:sandboxed_process0:org.chromium.content.app.SandboxedProcessService0:0/u0a192i0}
     mAllowWhileInUsePermissionInFgsReason=PROC_STATE_TOP
     allowUiJobScheduling=false
     recentCallingPackage=io.github.mrnodatax.mateengine.debug
@@ -16,31 +16,31 @@ ACTIVITY MANAGER SERVICES (dumpsys activity services)
     allowStartForeground=PROC_STATE_TOP
     startForegroundCount=0
     infoAllowStartForeground=[callingPackage: io.github.mrnodatax.mateengine.debug; callingUid: 10192; uidState: TOP ; uidBFSL: [BFSL]; intent: Intent { cmp=io.github.mrnodatax.mateengine.debug/org.chromium.content.app.SandboxedProcessService0:0 (has extras) }; code:PROC_STATE_TOP; tempAllowListReason:<null>; targetSdkVersion:34; callerTargetSdkVersion:34; startForegroundCount:0; bindFromPackage:null: isBindService:true]
-    createTime=-8s422ms startingBgTimeout=--
-    lastActivity=-8s158ms restartTime=-8s369ms createdFromFg=true
+    createTime=-7s890ms startingBgTimeout=--
+    lastActivity=-7s167ms restartTime=-7s534ms createdFromFg=true
     Bindings:
-    * IntentBindRecord{7573c53 CREATE}:
+    * IntentBindRecord{66c3f83 CREATE}:
       intent={cmp=io.github.mrnodatax.mateengine.debug/org.chromium.content.app.SandboxedProcessService0:0}
-      binder=android.os.BinderProxy@fb82990
+      binder=android.os.BinderProxy@9c32500
       requested=true received=true hasBound=true doRebind=false
-      * Client AppBindRecord{373c289 ProcessRecord{5bfbf04 6058:io.github.mrnodatax.mateengine.debug/u0a192}}
+      * Client AppBindRecord{b5cf139 ProcessRecord{f8e891 6137:io.github.mrnodatax.mateengine.debug/u0a192}}
         Per-process Connections:
-          ConnectionRecord{31e75a2 u0 CR IMP io.github.mrnodatax.mateengine.debug/org.chromium.content.app.SandboxedProcessService0:0:@b89c56d flags=0x80000041}
-          ConnectionRecord{70d7e6a u0 CR WPRI io.github.mrnodatax.mateengine.debug/org.chromium.content.app.SandboxedProcessService0:0:@e6fd455 flags=0x80000021}
+          ConnectionRecord{1df2884 u0 CR IMP io.github.mrnodatax.mateengine.debug/org.chromium.content.app.SandboxedProcessService0:0:@317ce97 flags=0x80000041}
+          ConnectionRecord{9aabe1c u0 CR WPRI io.github.mrnodatax.mateengine.debug/org.chromium.content.app.SandboxedProcessService0:0:@3945b8f flags=0x80000021}
     All Connections:
-      ConnectionRecord{31e75a2 u0 CR IMP io.github.mrnodatax.mateengine.debug/org.chromium.content.app.SandboxedProcessService0:0:@b89c56d flags=0x80000041}
-      ConnectionRecord{70d7e6a u0 CR WPRI io.github.mrnodatax.mateengine.debug/org.chromium.content.app.SandboxedProcessService0:0:@e6fd455 flags=0x80000021}
+      ConnectionRecord{1df2884 u0 CR IMP io.github.mrnodatax.mateengine.debug/org.chromium.content.app.SandboxedProcessService0:0:@317ce97 flags=0x80000041}
+      ConnectionRecord{9aabe1c u0 CR WPRI io.github.mrnodatax.mateengine.debug/org.chromium.content.app.SandboxedProcessService0:0:@3945b8f flags=0x80000021}
 
-  * ServiceRecord{7ccf60b u0 io.github.mrnodatax.mateengine.debug/io.github.mrnodatax.mateengine.overlay.OverlayService}
+  * ServiceRecord{ac35da4 u0 io.github.mrnodatax.mateengine.debug/io.github.mrnodatax.mateengine.overlay.OverlayService}
     intent={act=io.github.mrnodatax.mateengine.action.START_OVERLAY cmp=io.github.mrnodatax.mateengine.debug/io.github.mrnodatax.mateengine.overlay.OverlayService}
     packageName=io.github.mrnodatax.mateengine.debug
     processName=io.github.mrnodatax.mateengine.debug
-    baseDir=/data/app/~~lby5b5v_k0GhwhJ-6rueGQ==/io.github.mrnodatax.mateengine.debug-chYfvvfeRd03uLclT692Ow==/base.apk
+    baseDir=/data/app/~~M8a5dOkCPM6oQro0xiZscw==/io.github.mrnodatax.mateengine.debug-g3Fg83FD1pxF41lcQJT1yg==/base.apk
     dataDir=/data/user/0/io.github.mrnodatax.mateengine.debug
-    app=ProcessRecord{5bfbf04 6058:io.github.mrnodatax.mateengine.debug/u0a192}
+    app=ProcessRecord{f8e891 6137:io.github.mrnodatax.mateengine.debug/u0a192}
     mAllowWhileInUsePermissionInFgsReason=PROC_STATE_TOP
 --- appops ---
-SYSTEM_ALERT_WINDOW: allow; time=+8s294ms ago (running)
+SYSTEM_ALERT_WINDOW: allow; time=+7s761ms ago (running)
 --- package perms ---
       android.permission.SYSTEM_ALERT_WINDOW
       android.permission.FOREGROUND_SERVICE
@@ -50,12 +50,16 @@ SYSTEM_ALERT_WINDOW: allow; time=+8s294ms ago (running)
       android.permission.FOREGROUND_SERVICE_SPECIAL_USE: granted=true
 --- crash log ---
 --- jejak gerak renderer (5 detik terakhir) ---
-motion {"type":"motion-state","time":1.15,"locomotion":"idle","sleepiness":0,"lookYaw":0,"bones":15,"react":null,"sway":0,"clip":"idle_loop","behavior":null,"mood":"ceria","armLeftDeg":127,"armRightDeg":133.5}
-motion {"type":"motion-state","time":2.43,"locomotion":"idle","sleepiness":0,"lookYaw":0,"bones":15,"react":null,"sway":0,"clip":"idle_loop","behavior":null,"mood":"ceria","armLeftDeg":135.6,"armRightDeg":126.4}
-motion {"type":"motion-state","time":3.7,"locomotion":"idle","sleepiness":0,"lookYaw":0.07,"bones":15,"react":null,"sway":0,"clip":"crouch_idle","behavior":"random_clip","mood":"ceria","armLeftDeg":46.2,"armRightDeg":44.2}
+motion {"type":"motion-state","time":0.05,"locomotion":"idle","sleepiness":0,"lookYaw":0,"bones":15,"react":null,"sway":0,"clip":"idle_loop","behavior":null,"mood":"ceria","armLeftDeg":21.3,"armRightDeg":21.4,"seated":false,"bodyGap":{"top":105,"bottom":-121,"left":44,"right":42}}
+motion {"type":"motion-state","time":0.1,"locomotion":"idle","sleepiness":0,"lookYaw":0,"bones":15,"react":null,"sway":0,"clip":"push_loop","behavior":"random_clip","mood":"ceria","armLeftDeg":20.9,"armRightDeg":22.1,"seated":false,"bodyGap":{"top":105,"bottom":-121,"left":43,"right":42}}
+motion {"type":"motion-state","time":1.05,"locomotion":"idle","sleepiness":0,"lookYaw":0,"bones":15,"react":null,"sway":0,"clip":"idle_loop","behavior":null,"mood":"ceria","armLeftDeg":24.1,"armRightDeg":38,"seated":false,"bodyGap":{"top":33,"bottom":59,"left":81,"right":66}}
 --- jejak sudut lengan ---
-motion {"type":"motion-state","time":1.15,"locomotion":"idle","sleepiness":0,"lookYaw":0,"bones":15,"react":null,"sway":0,"clip":"idle_loop","behavior":null,"mood":"ceria","armLeftDeg":127,"armRightDeg":133.5}
-motion {"type":"motion-state","time":2.43,"locomotion":"idle","sleepiness":0,"lookYaw":0,"bones":15,"react":null,"sway":0,"clip":"idle_loop","behavior":null,"mood":"ceria","armLeftDeg":135.6,"armRightDeg":126.4}
-motion {"type":"motion-state","time":3.7,"locomotion":"idle","sleepiness":0,"lookYaw":0.07,"bones":15,"react":null,"sway":0,"clip":"crouch_idle","behavior":"random_clip","mood":"ceria","armLeftDeg":46.2,"armRightDeg":44.2}
+motion {"type":"motion-state","time":0.05,"locomotion":"idle","sleepiness":0,"lookYaw":0,"bones":15,"react":null,"sway":0,"clip":"idle_loop","behavior":null,"mood":"ceria","armLeftDeg":21.3,"armRightDeg":21.4,"seated":false,"bodyGap":{"top":105,"bottom":-121,"left":44,"right":42}}
+motion {"type":"motion-state","time":0.1,"locomotion":"idle","sleepiness":0,"lookYaw":0,"bones":15,"react":null,"sway":0,"clip":"push_loop","behavior":"random_clip","mood":"ceria","armLeftDeg":20.9,"armRightDeg":22.1,"seated":false,"bodyGap":{"top":105,"bottom":-121,"left":43,"right":42}}
+motion {"type":"motion-state","time":1.05,"locomotion":"idle","sleepiness":0,"lookYaw":0,"bones":15,"react":null,"sway":0,"clip":"idle_loop","behavior":null,"mood":"ceria","armLeftDeg":24.1,"armRightDeg":38,"seated":false,"bodyGap":{"top":33,"bottom":59,"left":81,"right":66}}
 --- jejak direktur perilaku ---
 random_clip
+--- celah tubuh saat duduk (piksel) ---
+{"top":99,"bottom":93,"left":108,"right":108}
+--- hasil geser ---
+overlay digeser ke (-332, -613)
