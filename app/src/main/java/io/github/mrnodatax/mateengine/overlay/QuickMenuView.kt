@@ -402,14 +402,17 @@ class QuickMenuView(
             typeface = outfit(weight)
         }
 
-    /** Outfit adalah font variabel: berat harus dipatok lewat `fontVariationSettings`. */
+    /**
+     * Outfit dimuat dari `res/font`.
+     *
+     * Catatan: sumbu `wght` font variabel hanya bisa dipatok lewat Compose (`FontVariation`) atau
+     * `android.graphics.fonts.Font.Builder` (API 29+); `Typeface` tidak punya setter publik untuk
+     * itu. Di panel overlay ini berat ditebalkan secara sintetis — cukup untuk label 11–14sp dan
+     * tidak menambah ketergantungan API level.
+     */
     private fun outfit(weight: Int): Typeface {
         val base = ResourcesCompat.getFont(context, R.font.outfit) ?: Typeface.DEFAULT
-        // `fontVariationSettings` hanya punya setter (tanpa getter), jadi sintaks properti tidak
-        // tersedia — panggil metodenya langsung. minSdk 26 = API tempat metode ini ada.
-        return Typeface.create(base, Typeface.NORMAL).apply {
-            setFontVariationSettings("'wght' $weight")
-        }
+        return Typeface.create(base, if (weight >= 500) Typeface.BOLD else Typeface.NORMAL)
     }
 
     private fun rounded(fill: Int, radiusPx: Int, stroke: Int? = null, strokePx: Int = 0): GradientDrawable =
