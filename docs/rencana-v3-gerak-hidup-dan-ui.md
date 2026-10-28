@@ -346,6 +346,15 @@ uji otomatis.
 
 ---
 
+## Perbaikan v0.1.8: bingkai kamera & gerak acak
+
+| Masalah | Penyebab | Perbaikan |
+| --- | --- | --- |
+| Model seperti "terhalang kotak" dan terpotong di tepi | Kamera membingkai `Box3.setFromObject` (bbox geometri statis) dengan padding 1,06, dan tidak dihitung ulang saat pose berubah | `skeletonBounds()` membaca posisi tulang sungguhan tiap kali bingkai dihitung; padding 1,12; kamera dihitung ulang 320 ms setelah klip berganti dan di-`lerp` agar tidak melompat |
+| Kaki hilang saat duduk | Ada geseran bidikan tetap `0,34 × tinggi` yang membuang tubuh bawah di luar kanvas | Geseran tetap dihapus; bingkai mengikuti tulang kaki/`leftFoot`/`rightFoot` |
+| Klip berjalan meluncur keluar jendela | Root motion klip (pinggul bergerak ke depan) | Konversi `--in-place` (X/Z dipaku) + `clampRootMotion()` tiap frame |
+| Gerak monoton | Klip idle diulang terus | Perilaku `random_clip`: satu klip diundi dari 12 klip tiap kali muncul, bobot tertinggi (6), cooldown 3,5 s, tidak mengulang klip yang sama dua kali |
+
 ## Bukti di emulator (2026-10-28)
 
 | Bukti | Hasil |

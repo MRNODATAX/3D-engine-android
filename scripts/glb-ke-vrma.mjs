@@ -257,7 +257,7 @@ class Builder {
   }
 }
 
-function convert({ gltf, bin, clipName, outputName, fps = 24 }) {
+function convert({ gltf, bin, clipName, outputName, fps = 24, inPlace = false }) {
   const clip = gltf.animations?.find((animation) => animation.name === clipName);
   if (!clip) throw new Error(`klip "${clipName}" tidak ditemukan`);
 
@@ -361,6 +361,21 @@ function convert({ gltf, bin, clipName, outputName, fps = 24 }) {
     hipsPositions.push(worldPositions(info, animTranslations, locals)[hipsIndex].position);
   });
 
+  // `--in-place`: buang gerak maju/mundur klip (root motion).
+  //
+  // Klip seperti Jog_Fwd/Roll memang memindahkan pinggul ke depan. Di overlay Android jendela
+  // avatar berbentuk kotak tetap, jadi model yang berjalan akan menabrak tepi jendela lalu
+  // terpotong. Dengan memaku X/Z pada posisi frame pertama, avatar bergerak di tempat: kakinya
+  // tetap melangkah, tetapi ia tidak meluncur keluar bingkai. Sumbu Y dibiarkan agar lompatan
+  // tetap terlihat.
+  if (inPlace && hipsPositions.length > 0) {
+    const [x0, , z0] = hipsPositions[0];
+    for (const position of hipsPositions) {
+      position[0] = x0;
+      position[2] = z0;
+    }
+  }
+
 
 
   const builder = new Builder();
@@ -445,13 +460,14 @@ function convert({ gltf, bin, clipName, outputName, fps = 24 }) {
 // ---------------------------------------------------------------------------- CLI
 
 function parseArgs(argv) {
-  const args = { clips: [], fps: 24 };
+  const args = { clips: [], fps: 24, inPlace: false };
   for (let i = 0; i < argv.length; i += 1) {
     const key = argv[i];
     if (key === '--input') args.input = argv[++i];
     else if (key === '--bin') args.bin = argv[++i];
     else if (key === '--out') args.out = argv[++i];
     else if (key === '--fps') args.fps = Number(argv[++i]);
+    else if (key === '--in-place') args.inPlace = true;
     else if (key === '--clip') {
       const [source, target] = argv[++i].split(':');
       args.clips.push({ source, target: target || source });
@@ -474,7 +490,14 @@ function main() {
   mkdirSync(args.out, { recursive: true });
 
   args.clips.forEach(({ source, target }) => {
-    const result = convert({ gltf, bin, clipName: source, outputName: target, fps: args.fps });
+    const result = convert({
+      gltf,
+      bin,
+      clipName: source,
+      outputName: target,
+      fps: args.fps,
+      inPlace: args.inPlace,
+    });
     writeFileSync(join(args.out, `${target}.vrma`), result.bytes);
     console.log(
       `${target}.vrma  ${(result.bytes.length / 1024).toFixed(1)} KB  ` +

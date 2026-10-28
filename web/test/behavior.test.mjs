@@ -186,6 +186,31 @@ try {
   console.error(`✗ mode gerak dikurangi: ${error.message}`);
 }
 
+// ---------------------------------------------------------------- 6b. gerak acak berganti
+try {
+  const director = createBehaviorDirector({ seed: 11 });
+  const clips = [];
+  let now = 0;
+  for (let i = 0; i < 6000; i += 1) {
+    now += 1000 / 30;
+    const behavior = director.update(now, { talking: false, locomotion: 'idle', idleMs: now });
+    if (behavior && behavior.id === 'random_clip') {
+      const clip = behavior.clip;
+      if (clips[clips.length - 1] !== clip) clips.push(clip);
+    }
+  }
+  const unique = new Set(clips);
+  assert(clips.length >= 8, `hanya ${clips.length} pergantian gerak acak dalam 200 s`);
+  assert(unique.size >= 6, `hanya ${unique.size} klip berbeda: ${[...unique].join(', ')}`);
+  let same = 0;
+  for (let i = 1; i < clips.length; i += 1) if (clips[i] === clips[i - 1]) same += 1;
+  assert(same === 0, `klip acak sama dua kali berurutan (${same}×)`);
+  console.log(`✓ gerak acak: ${clips.length} pergantian, ${unique.size} klip berbeda`);
+} catch (error) {
+  failures += 1;
+  console.error(`✗ gerak acak: ${error.message}`);
+}
+
 // ---------------------------------------------------------------- 7. determinisme
 try {
   const first = run(45, { director: createBehaviorDirector({ seed: 42 }) });

@@ -16,6 +16,28 @@
 export const MOODS = ['ceria', 'kalem', 'pemalu'];
 
 /**
+ * Kumpulan klip untuk perilaku "gerak acak".
+ *
+ * Setiap kali perilaku ini terpilih, satu klip diundi dari daftar ini — jadi avatar berganti-ganti
+ * gerakan alih-alih mengulang pose yang sama. Klip duduk sengaja tidak dimasukkan: duduk punya
+ * jalur sendiri (`sit_down`) supaya tidak bertabrakan dengan mode duduk di tepi layar.
+ */
+export const RANDOM_CLIPS = [
+  'idle_torch',
+  'spell_idle',
+  'crouch_idle',
+  'interact',
+  'dance_loop',
+  'walk_formal',
+  'jog_loop',
+  'jump_loop',
+  'push_loop',
+  'kneel_fix',
+  'crouch_walk',
+  'drive_idle',
+];
+
+/**
  * Katalog perilaku.
  *
  * - `clip`   : nama klip bawaan yang diputar (lihat BUILTIN_CLIPS di renderer.js)
@@ -28,6 +50,19 @@ export const MOODS = ['ceria', 'kalem', 'pemalu'];
  * - `requires`: syarat tambahan atas konteks
  */
 export const BEHAVIORS = [
+  {
+    id: 'random_clip',
+    // `clips` (bukan `clip`): diundi saat perilaku dimulai, lihat start().
+    clips: RANDOM_CLIPS,
+    minMs: 2200,
+    maxMs: 4200,
+    gapMin: 1200,
+    gapMax: 3200,
+    // Bobot tertinggi: pengguna minta avatar berganti-ganti gerakan, bukan mengulang idle.
+    weight: 6,
+    cooldownMs: 3500,
+    moods: { ceria: 1.3, kalem: 1, pemalu: 0.9 },
+  },
   {
     id: 'look_around',
     clip: 'idle_loop',
@@ -144,6 +179,7 @@ export function createBehaviorDirector(options = {}) {
     active: null,
     activeUntil: 0,
     nextAt: 0,
+    lastClip: null,
     lastSeen: new Map(),
     history: [],
     moodChangedAt: 0,
@@ -206,6 +242,17 @@ export function createBehaviorDirector(options = {}) {
   }
 
   function start(behavior, now) {
+    // Perilaku yang membawa daftar `clips` memilih satu klip acak setiap kali muncul, dan tidak
+    // memilih klip yang barusan tampil supaya pergantiannya terlihat.
+    let chosen = behavior;
+    if (Array.isArray(behavior.clips) && behavior.clips.length > 0) {
+      const alternatives = behavior.clips.filter((clip) => clip !== state.lastClip);
+      const pool = alternatives.length > 0 ? alternatives : behavior.clips;
+      const clip = pool[Math.floor(random() * pool.length)];
+      state.lastClip = clip;
+      chosen = { ...behavior, clip };
+    }
+    behavior = chosen;
     const span = behavior.maxMs - behavior.minMs;
     const duration = behavior.minMs + Math.round(random() * Math.max(0, span));
     state.active = behavior;

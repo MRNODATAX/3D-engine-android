@@ -2,7 +2,7 @@
 
 ## Ringkasan
 
-Aplikasi membundel **14 klip animasi** yang bukan buatan saya dan bukan milik Mate Engine:
+Aplikasi membundel **21 klip animasi** yang bukan buatan saya dan bukan milik Mate Engine:
 
 | Berkas | Klip asal | Durasi | Ukuran | SHA-256 |
 | --- | --- | --- | --- | --- |
@@ -20,8 +20,15 @@ Aplikasi membundel **14 klip animasi** yang bukan buatan saya dan bukan milik Ma
 | `crouch_idle.vrma` | `Crouch_Idle_Loop` | 2,92 s | 47.098 B | `bfb7f8bc80ff4e2ce63d964d6a5dbfb9ef316aa0bc0980fa655c3c449f8ee80d` |
 | `jump_start.vrma` | `Jump_Start` | 1,33 s | 28.416 B | `9a0bb3bbd8d4a1b2ccd5b4a0dc319fb785471f9c87e153e2d77e70fe5fbb26b4` |
 | `jump_land.vrma` | `Jump_Land` | 1,25 s | 27.420 B | `c228386f2d2e42a42bc1a8adcfabc218831058e5942a0ccbebf7e87d8fd140e5` |
+| `jump_loop.vrma` | `Jump_Loop` | 2,50 s | 42.150 B | `20c5eeaa8eeddc2a3f63614046d1d42061e81254b7125d3024a5c77a2fb98314` |
+| `push_loop.vrma` | `Push_Loop` | 2,67 s | 44.151 B | `6baf21fb4948cf39e16f1bc9ca95a7d8085b5aa8b5b53be431d39a0804f93dee` |
+| `walk_formal.vrma` | `Walk_Formal_Loop` | 1,33 s | 28.417 B | `74722801be03b7d9928080912c5dee3d23a91113e37c7f2ceb25b03450efcefe` |
+| `jog_loop.vrma` | `Jog_Fwd_Loop` | 0,92 s | 23.502 B | `816bba0a81c86e11e6db884784aa19b422d689f883d43d09c0b4fe2020a7103e` |
+| `kneel_fix.vrma` | `Fixing_Kneeling` | 5,17 s | 73.620 B | `265cf61aa613f938e2c95491f4edd18979bd10174adc68bfe1906677388b3e49` |
+| `crouch_walk.vrma` | `Crouch_Fwd_Loop` | 2,00 s | 36.258 B | `091ba07e494492e9ac78c35fd17125a78ba4441e218c891eacf7ff75d08a61cf` |
+| `drive_idle.vrma` | `Driving_Loop` | 1,67 s | 32.348 B | `924f040914854e6061bd46f6dbe6b5f7818f42f5122b37a3cd1d29aa98612fbc` |
 
-Total **477.845 byte (± 466,6 KB)** untuk 14 klip, di bawah anggaran 900 KB
+Total **758.291 byte (± 740,5 KB)** untuk 21 klip, di bawah anggaran 900 KB
 (`web/test/vrma.test.mjs` gagal bila melewati). Karena kecil, klip ikut di APK sehingga avatar langsung
 bergerak tanpa impor manual.
 
@@ -36,6 +43,14 @@ bergerak tanpa impor manual.
   produk (termasuk yang didistribusikan); yang dilarang adalah menjual/mendistribusikan ulang aset
   sebagai paket aset berdiri sendiri. Aplikasi ini menyertakan klip sebagai bagian dari produk, bukan
   sebagai paket animasi yang dijual — jadi pemakaian ini sesuai ketentuan.
+- **Root motion dibuang**: tujuh klip tambahan (jog, push, crouch walk, jump loop, walk formal,
+  kneel, driving) dikonversi dengan `--in-place`. Script memaku sumbu X/Z pinggul pada posisi frame
+  pertama, sehingga klip berjalan tidak meluncur keluar jendela overlay (jendela Android berbentuk
+  kotak tetap). Sumbu Y dibiarkan agar lompatan tetap terlihat. Renderer juga mengunci X/Z pinggul
+  saat runtime sebagai jaring pengaman (`clampRootMotion`).
+- **Klip yang ditolak**: `Roll` (ayunan pinggul 0,64 m walau sudah in-place, melewati batas uji
+  0,6 m), `PickUp_Table` (0,83 s), `Spell_Simple_Enter`/`Shoot` (0,50 s) — terlalu pendek untuk uji
+  durasi minimum 0,9 s, jadi tidak dibundel.
 - **Yang berubah**: berkas asli berformat glTF (rig `DEF-*`), saya retarget menjadi `.vrma`
   (VRM Animation) dengan `scripts/glb-ke-vrma.mjs`. Retargeting ini karya sendiri, bukan bagian dari
   paket asli.

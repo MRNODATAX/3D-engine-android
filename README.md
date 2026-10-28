@@ -23,10 +23,14 @@ Sudah berjalan di kode dan diuji otomatis:
   (navigation bar di ponsel, navigation rail di jendela lebar);
 - **chat waifu** memakai Gemini API key milikmu sendiri (kunci dienkripsi di Android Keystore),
   persona siap pakai yang bisa diedit, riwayat lokal, reaksi mulut avatar, TTS opsional;
-- **gerak hidup**: 14 klip CC0 (idle, bicara, jalan, tari, melambai, duduk, tidur) + direktur
+- **gerak hidup**: 21 klip CC0 (idle, bicara, jalan, tari, melambai, duduk, tidur, lari kecil, mendorong, berjongkok,
+  duduk santai) + direktur
   perilaku yang memilih sendiri kapan melambai, melihat sekitar, menggeser berat badan, duduk di
   tepi layar, atau tertidur — dengan suasana yang berubah (ceria setelah disentuh, kalem saat lama
-  diam). Ayunan badan saat avatar digeser, mata menutup saat kepala ditepuk;
+  diam). Sebagian besar kemunculan memakai **gerak acak** (klip diundi, tidak mengulang yang barusan)
+  sehingga avatar berganti-ganti gerakan. Bingkai kamera mengikuti kerangka, jadi tubuh (termasuk kaki
+  saat duduk) tidak lagi terpotong kotak overlay. Ayunan badan saat avatar digeser, mata menutup saat
+  kepala ditepuk;
 - **menu cepat 3× ketuk**: ketuk avatar tiga kali untuk membuka panel berisi Gerak (klip bawaan),
   balon **Chat AI** langsung di atas aplikasi lain, tombol Duduk/Berdiri, dan pintasan Setelan;
 - **ukuran avatar** 25–100% tinggi layar, bisa dicubit dua jari langsung di overlay;
@@ -57,8 +61,8 @@ menu cepat yang dibuka dengan tiga ketukan sungguhan.
 Hanya build uji terbaru yang disimpan; rilis versi lama sudah dihapus agar tidak ada yang
 mengunduh APK dengan bug gerak.
 
-Build uji terbaru: [Release `v0.1.7-test`](https://github.com/MRNODATAX/3D-engine-android/releases/tag/v0.1.7-test)
-(`MateEngine-v0.1.7-test-debug.apk`, ditandatangani kunci debug). Rilis ini membawa **gerak hidup**:
+Build uji terbaru: [Release `v0.1.8-test`](https://github.com/MRNODATAX/3D-engine-android/releases/tag/v0.1.8-test)
+(`MateEngine-v0.1.8-test-debug.apk`, ditandatangani kunci debug). Rilis ini membawa **gerak hidup**:
 direktur perilaku (avatar bergerak sendiri, suasana ceria/kalem), 14 klip CC0, duduk di tepi layar,
 ayunan saat digeser, headpat, serta wajah baru — 5 tab, kontras batas kartu diperbaiki, logo dan
 splash, font Outfit, serta **menu cepat 3× ketuk** untuk gerak, chat AI, dan duduk.

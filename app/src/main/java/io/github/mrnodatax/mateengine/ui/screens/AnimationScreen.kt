@@ -34,6 +34,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import io.github.mrnodatax.mateengine.data.AnimationAsset
 import io.github.mrnodatax.mateengine.data.AppState
+import io.github.mrnodatax.mateengine.overlay.BuiltinClips
 import io.github.mrnodatax.mateengine.overlay.OverlaySnapshot
 import io.github.mrnodatax.mateengine.ui.ChipTone
 import io.github.mrnodatax.mateengine.ui.IconTile
@@ -153,19 +154,13 @@ fun AnimationScreen(
                             fontWeight = FontWeight.SemiBold,
                         )
                         Text(
-                            "Empat belas klip animasi asli dari Universal Animation Library (lisensi CC0), " +
+                            "Dua puluh satu klip animasi asli dari Universal Animation Library (lisensi CC0), " +
                                 "dikonversi ke .vrma oleh skrip di repo. Tidak perlu impor.",
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
-                        val clips = listOf(
-                            "idle" to "Diam",
-                            "talk" to "Bicara",
-                            "walk" to "Jalan",
-                            "dance" to "Menari",
-                            "interact" to "Melambai",
-                            "sitting_idle" to "Duduk",
-                        )
+                        // Satu sumber label: katalog di QuickMenuState (dipakai juga oleh menu 3× ketuk).
+                        val clips = BuiltinClips.all.map { it.key to it.label }
                         clips.chunked(2).forEach { pair ->
                             Row(
                                 modifier = Modifier.fillMaxWidth(),
@@ -329,13 +324,5 @@ fun AnimationScreen(
     }
 }
 
-/** Nama klip teknis → label yang dipakai tombol, supaya status bisa disorot tanpa menebak. */
-private fun clipLabelOf(clip: String): String = when (clip) {
-    "idle", "idle_loop" -> "Diam"
-    "talk", "idle_talk" -> "Bicara"
-    "walk", "walk_loop" -> "Jalan"
-    "dance", "dance_loop" -> "Menari"
-    "interact" -> "Melambai"
-    "sitting_idle", "sitting_enter" -> "Duduk"
-    else -> ""
-}
+/** Nama klip teknis → label yang dipakai tombol, memakai katalog yang sama dengan menu cepat. */
+private fun clipLabelOf(clip: String): String = BuiltinClips.labelOf(clip).orEmpty()

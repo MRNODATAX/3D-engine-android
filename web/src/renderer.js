@@ -165,15 +165,55 @@ function loader() {
   return gltfLoader;
 }
 
+/**
+ * Kotak pembatas dari posisi tulang (bukan dari geometri).
+ *
+ * `Box3.setFromObject` memakai bounding box geometri yang tidak ikut berubah saat animasi
+ * berjalan, sehingga model yang sedang duduk/berguling bisa terpotong di tepi jendela — inilah
+ * yang membuat kaki "hilang" saat duduk. Dengan membaca posisi tulang sungguhan, bingkai kamera
+ * selalu memuat seluruh tubuh pada pose apa pun.
+ */
+function skeletonBounds(vrm) {
+  const box = new THREE.Box3();
+  const point = new THREE.Vector3();
+  const names = [
+    'head', 'neck', 'chest', 'spine', 'hips',
+    'leftShoulder', 'rightShoulder', 'leftHand', 'rightHand',
+    'leftUpperLeg', 'rightUpperLeg', 'leftLowerLeg', 'rightLowerLeg',
+    'leftFoot', 'rightFoot',
+  ];
+  let headY = null;
+  names.forEach((name) => {
+    const bone = vrm.humanoid?.getNormalizedBoneNode(name) || vrm.humanoid?.getRawBoneNode?.(name);
+    if (!bone) return;
+    bone.getWorldPosition(point);
+    box.expandByPoint(point.clone());
+    if (name === 'head' && headY === null) headY = point.y;
+  });
+  if (box.isEmpty()) return null;
+  // Ubun-ubun sedikit di atas tulang kepala; kaki sedikit di bawah pergelangan.
+  const size = new THREE.Vector3();
+  box.getSize(size);
+  const margin = Math.max(size.y * 0.06, 0.03);
+  box.min.y -= margin;
+  box.max.y += margin;
+  return box;
+}
+
 function frameModel(vrm) {
-  const box = new THREE.Box3().setFromObject(vrm.scene);
-  if (box.isEmpty()) return;
+  const skeleton = skeletonBounds(vrm);
+  const box = skeleton || new THREE.Box3().setFromObject(vrm.scene);
+  if (!box || box.isEmpty()) return;
   const size = new THREE.Vector3();
   const center = new THREE.Vector3();
   box.getSize(size);
   box.getCenter(center);
 
-  const height = Math.max(size.y, 0.1);
+  const rawHeight = Math.max(size.y, 0.1);
+  // Tinggi acuan = pose berdiri saat model dimuat. Pose jongkok/berguling tidak boleh membuat
+  // kamera zoom mendekat terus; paling banyak memperbesar 10% dari acuan.
+  if (!state.baseHeight && !state.seated) state.baseHeight = rawHeight;
+  const height = Math.max(rawHeight, (state.baseHeight || rawHeight) * 0.9);
   // Jarak kamera dihitung dari FOV dan aspek: tinggi yang terlihat pada jarak d adalah
   // 2·d·tan(fov/2). Tanpa ini, avatar terpotong saat jendela tinggi (skala 100%).
   state.frameHeight = height;
@@ -183,14 +223,19 @@ function frameModel(vrm) {
     targetWidth / (2 * Math.tan(fovRad / 2) * Math.max(0.1, state.camera.aspect));
   // Tinggi selalu menang: batas lebar hanya boleh memperkecil sampai 1,25x, sehingga pada
   // skala 100% avatar benar-benar mengisi tinggi layar (lengan boleh mendekati tepi).
-  const distanceHeight = distanceForHeight(height * 1.06);
-  const distanceWidth = distanceForWidth(Math.max(size.x, 0.1) * 1.06);
+  // Ruang gerak: seluruh tubuh (termasuk kaki saat duduk) harus muat dengan sisa ±8%, supaya
+  // model tidak "menabrak" tepi jendela saat mengayun atau melambai.
+  const padding = 1.12;
+  const distanceHeight = distanceForHeight(height * padding);
+  const distanceWidth = distanceForWidth(Math.max(size.x, 0.1) * padding);
   const distance = Math.max(distanceHeight, Math.min(distanceWidth, distanceHeight * 1.25));
-  // Mode duduk: avatar duduk di tepi bawah layar, jadi kaki sengaja melewati tepi.
-  // Bidikan digeser ke bawah supaya pinggul berada dekat tepi bawah kanvas.
-  const seatedOffset = state.seated ? height * 0.34 : 0;
-  state.camera.position.set(center.x, center.y + seatedOffset, center.z + distance);
-  state.camera.lookAt(center.x, center.y + seatedOffset, center.z);
+  // Bidikan ke tengah tubuh hasil pembacaan tulang. Tidak ada lagi geseran tetap saat duduk:
+  // geseran itulah yang memotong kaki di luar kanvas.
+  state.cameraTarget = state.cameraTarget || new THREE.Vector3();
+  state.cameraTarget.set(center.x, center.y, center.z + distance);
+  state.cameraLookAt = center.clone();
+  state.camera.position.copy(state.cameraTarget);
+  state.camera.lookAt(center.x, center.y, center.z);
   state.camera.updateProjectionMatrix();
   // Skala model TIDAK lagi diterapkan di sini: ukuran avatar ditentukan oleh ukuran window
   // overlay di sisi Android, dan kamera selalu membingkai model agar mengisi window itu.
@@ -267,7 +312,11 @@ async function loadAvatar(url) {
     frameModel(vrm);
     state.ready = true;
     state.idleTime = 0;
+    state.baseHeight = null;
     state.restPose = captureRestPose(vrm);
+    // Posisi istirahat pinggul: dipakai mengunci gerak maju klip (lihat clampRootMotion).
+    const hips = vrm.humanoid?.getNormalizedBoneNode('hips');
+    state.hipsRest = hips ? { x: hips.position.x, z: hips.position.z } : null;
     state.motion.clearBase();
     state.behavior.reset(performance.now());
     state.interactedEver = false;
@@ -344,6 +393,15 @@ const BUILTIN_CLIPS = {
   crouch_idle: 'crouch_idle',
   jump_start: 'jump_start',
   jump_land: 'jump_land',
+  // Tambahan 10 klip CC0 (paket yang sama, dikonversi dengan --in-place agar tidak meluncur
+  // keluar jendela overlay). Lihat docs/aset-gerak.md.
+  jump_loop: 'jump_loop',
+  push_loop: 'push_loop',
+  walk_formal: 'walk_formal',
+  jog_loop: 'jog_loop',
+  kneel_fix: 'kneel_fix',
+  crouch_walk: 'crouch_walk',
+  drive_idle: 'drive_idle',
 };
 
 function builtinUrl(name) {
@@ -446,6 +504,30 @@ async function playBuiltin(name, options = {}) {
   return true;
 }
 
+/**
+ * Menahan avatar di tempatnya.
+ *
+ * Klip seperti jog/roll memindahkan pinggul ke depan (root motion). Jendela overlay berbentuk
+ * kotak tetap, jadi model yang melangkah akan menabrak tepinya lalu terpotong — terasa seperti
+ * "terhalang kotak". Sumbu X/Z pinggul dipaku ke posisi istirahat; langkah kaki tetap terlihat,
+ * lompatan (sumbu Y) tidak diubah.
+ */
+function clampRootMotion() {
+  const hips = state.vrm?.humanoid?.getNormalizedBoneNode('hips');
+  if (!hips || !state.hipsRest) return;
+  hips.position.x = state.hipsRest.x;
+  hips.position.z = state.hipsRest.z;
+}
+
+/** Kamera mengikuti bingkai baru dengan halus supaya perpindahan pose tidak membuat gambar melompat. */
+function easeCamera(delta) {
+  const target = state.cameraTarget;
+  if (!target || !state.camera) return;
+  const t = Math.min(1, delta * 6);
+  state.camera.position.lerp(target, t);
+  if (state.cameraLookAt) state.camera.lookAt(state.cameraLookAt);
+}
+
 /** Dipanggil tiap frame; hanya berpindah klip bila keadaan berubah dan crossfade sudah lewat. */
 function syncClipState() {
   if (!state.ready || !state.vrm || !state.mixer) return;
@@ -459,6 +541,9 @@ function syncClipState() {
   if (desired === state.clipName) return;
   if (performance.now() - state.clipAppliedAt < CROSSFADE_MS) return;
   playBuiltin(desired, { manual: false, reason: 'state' }).catch(() => {});
+  // Pose klip baru bisa lebih tinggi/rendah (duduk, berguling): bingkai kamera dihitung ulang
+  // setelah animasi sempat berjalan, bukan hanya saat model dimuat.
+  state.reframeAt = performance.now() + 320;
 }
 
 /** Dipanggil mixer saat klip sekali-jalan selesai: lanjutkan ke klip rantai bila ada. */
@@ -599,7 +684,13 @@ function animate(now) {
   if (state.vrm) {
     state.motion.update(state.vrm, delta, { talking: state.talking > 0, interacted: state.interacted });
     state.interacted = false;
+    clampRootMotion();
     state.vrm.update(delta);
+    if (state.reframeAt && performance.now() >= state.reframeAt) {
+      state.reframeAt = 0;
+      frameModel(state.vrm);
+    }
+    easeCamera(delta);
   }
 
   state.renderer.render(state.scene, state.camera);

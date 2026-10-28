@@ -35,6 +35,14 @@ const CLIPS = [
   'crouch_idle',
   'jump_start',
   'jump_land',
+  // Tujuh klip tambahan (dikonversi dengan --in-place: tanpa root motion).
+  'jump_loop',
+  'push_loop',
+  'walk_formal',
+  'jog_loop',
+  'kneel_fix',
+  'crouch_walk',
+  'drive_idle',
 ];
 
 /** Anggaran ukuran seluruh klip yang dibundel (lihat docs/rencana-v3 §4). */

@@ -79,6 +79,36 @@ class QuickMenuTest {
     }
 
     @Test
+    fun `semua klip yang diputar direktur punya label`() {
+        // Nama klip acak di web/src/behavior.js harus dikenali katalog label Android,
+        // supaya tombol "Gerak" bisa menyorot klip yang sedang berjalan.
+        val playedByDirector = listOf(
+            "idle_loop", "idle_talk", "walk_loop", "dance_loop", "interact", "idle_torch",
+            "spell_idle", "crouch_idle", "sitting_enter", "sitting_idle", "sitting_exit",
+            "sitting_talk", "walk_formal", "jog_loop", "jump_loop", "push_loop",
+            "kneel_fix", "crouch_walk", "drive_idle",
+        )
+        val missing = playedByDirector.filter { BuiltinClips.labelOf(it) == null }
+        assertTrue("klip tanpa label: $missing", missing.isEmpty())
+    }
+
+    @Test
+    fun `katalog klip memuat tambahan v0_1_8`() {
+        listOf(
+            "walk_formal" to "Jalan santai",
+            "jog_loop" to "Lari kecil",
+            "jump_loop" to "Lompat",
+            "push_loop" to "Mendorong",
+            "crouch_walk" to "Merangkak",
+            "kneel_fix" to "Berjongkok",
+            "drive_idle" to "Duduk santai",
+        ).forEach { (key, label) ->
+            assertEquals(label, BuiltinClips.labelOf(key))
+            assertTrue(BuiltinClips.all.any { it.key == key })
+        }
+    }
+
+    @Test
     fun `menu cepat tidak lebih dari enam klip`() {
         // Batas dibuat supaya panel tetap muat di layar kecil tanpa menggulir.
         assertTrue(BuiltinClips.quick.size <= 6)

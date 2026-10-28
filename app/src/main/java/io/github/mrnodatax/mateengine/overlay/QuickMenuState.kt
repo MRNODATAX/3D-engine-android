@@ -53,14 +53,23 @@ object BuiltinClips {
         BuiltinClip("dance", "Menari"),
         BuiltinClip("interact", "Melambai"),
         BuiltinClip("sitting_idle", "Duduk"),
+        BuiltinClip("walk_formal", "Jalan santai"),
+        BuiltinClip("jog_loop", "Lari kecil"),
+        BuiltinClip("jump_loop", "Lompat"),
+        BuiltinClip("push_loop", "Mendorong"),
+        BuiltinClip("crouch_walk", "Merangkak"),
+        BuiltinClip("kneel_fix", "Berjongkok"),
+        BuiltinClip("drive_idle", "Duduk santai"),
     )
 
-    /** Empat klip yang paling sering dipakai; menu cepat sengaja dibatasi agar tidak padat. */
+    /** Klip yang dipakai menu cepat; dibatasi enam supaya panel tetap muat tanpa menggulir. */
     val quick: List<BuiltinClip> = listOf(
         BuiltinClip("idle", "Diam"),
         BuiltinClip("talk", "Bicara"),
         BuiltinClip("dance", "Menari"),
         BuiltinClip("interact", "Melambai"),
+        BuiltinClip("jog_loop", "Lari kecil"),
+        BuiltinClip("kneel_fix", "Berjongkok"),
     )
 
     private val aliases: Map<String, String> = mapOf(
@@ -77,6 +86,13 @@ object BuiltinClips {
         "dance" to "Menari",
         "dance_loop" to "Menari",
         "interact" to "Melambai",
+        "walk_formal" to "Jalan santai",
+        "jog_loop" to "Lari kecil",
+        "jump_loop" to "Lompat",
+        "push_loop" to "Mendorong",
+        "crouch_walk" to "Merangkak",
+        "kneel_fix" to "Berjongkok",
+        "drive_idle" to "Duduk santai",
         "sitting_idle" to "Duduk",
         "sitting_enter" to "Duduk",
         "sitting_exit" to "Berdiri",

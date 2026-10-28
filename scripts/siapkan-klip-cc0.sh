@@ -30,9 +30,10 @@ fetch_blob "glTF/AnimationLibrary_Godot_Standard.gltf" "$TMP/ual.gltf"
 fetch_blob "glTF/AnimationLibrary_Godot_Standard.bin" "$TMP/ual.bin"
 
 echo "== mengonversi klip ke .vrma"
+# `--in-place` memaku sumbu X/Z pinggul: klip berjalan tidak lagi meluncur keluar jendela overlay.
 node scripts/glb-ke-vrma.mjs \
   --input "$TMP/ual.gltf" --bin "$TMP/ual.bin" \
-  --out "$OUT_DIR" --fps 24 \
+  --out "$OUT_DIR" --fps 24 --in-place \
   --clip Idle_Loop:idle_loop \
   --clip Idle_Talking_Loop:idle_talk \
   --clip Walk_Loop:walk_loop \
@@ -46,7 +47,14 @@ node scripts/glb-ke-vrma.mjs \
   --clip Sitting_Talking_Loop:sitting_talk \
   --clip Crouch_Idle_Loop:crouch_idle \
   --clip Jump_Start:jump_start \
-  --clip Jump_Land:jump_land
+  --clip Jump_Land:jump_land \
+  --clip Jump_Loop:jump_loop \
+  --clip Push_Loop:push_loop \
+  --clip Walk_Formal_Loop:walk_formal \
+  --clip Jog_Fwd_Loop:jog_loop \
+  --clip Fixing_Kneeling:kneel_fix \
+  --clip Crouch_Fwd_Loop:crouch_walk \
+  --clip Driving_Loop:drive_idle
 
 echo "== selesai. Berkas di $OUT_DIR:"
 ls -l "$OUT_DIR"
