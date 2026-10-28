@@ -197,12 +197,13 @@ fun AnimationScreen(
                                     contentDescription = null,
                                     modifier = Modifier.size(18.dp),
                                 )
+                                // Label pendek: tiga tombol berbagi satu baris, jadi "Impor .vrma"
+                                // akan terpotong. Ikon unggah sudah menjelaskan arahnya.
                                 Text(
-                                    if (importing) "Mengimpor…" else T.importVrma,
+                                    if (importing) "Mengimpor…" else "Impor",
                                     modifier = Modifier.padding(start = 6.dp),
                                     maxLines = 1,
                                     softWrap = false,
-                                    overflow = TextOverflow.Ellipsis,
                                 )
                             }
                         }
