@@ -238,9 +238,12 @@ try {
     await until(() => window.MateEngine.poseMetrics()?.builtinClip === 'idle_loop');
     await wait(800);
 
-    // 1) idle otomatis tanpa perintah apa pun
-    const autoIdle = window.MateEngine.poseMetrics();
+    // 1) idle otomatis tanpa perintah apa pun.
+    //    Diukur SETELAH klip idle benar-benar aktif + crossfade selesai; kalau dibaca lebih awal,
+    //    yang terukur masih pose klip sebelumnya (dulu dance, sekarang bisa klip acak).
     const autoIdleSettled = await until(() => window.MateEngine.poseMetrics()?.builtinClip === 'idle_loop');
+    await wait(900);
+    const autoIdle = window.MateEngine.poseMetrics();
 
     // 2) bicara -> klip talk, lalu jalan -> klip walk, lalu tari -> klip dance
     window.MateEngine.startTalking(1500);
