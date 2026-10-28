@@ -52,9 +52,37 @@ object MateTokens {
     const val Error = 0xFFA5352B
     const val ErrorContainer = 0xFFFBEAE8
 
+    /** Permukaan tambahan (M3 Expressive): dipakai kartu & lembar agar hierarki terlihat. */
+    const val SurfaceContainerLow = 0xFFEFF7F6
+    const val SurfaceContainerHigh = 0xFFE4F0EE
+    const val SurfaceContainerLowDark = 0xFF141A1D
+    const val SurfaceContainerHighDark = 0xFF222A2E
+
     /** Ambang WCAG: 4,5:1 untuk teks normal, 3:1 untuk batas komponen antarmuka. */
     const val MIN_TEXT_CONTRAST = 4.5
     const val MIN_BORDER_CONTRAST = 3.0
+}
+
+/**
+ * Skala radius "Expressive Cyan 2.0" (dp).
+ *
+ * Mengikuti skala Material 3 Expressive yang menambah dua langkah di atas `large`, tetapi
+ * dipersempit menjadi lima langkah supaya tidak ada sudut yang "hampir sama":
+ * kontrol di dalam kartu 12, kartu 20, panel 28, lembar 36, dan pil penuh memakai [FULL].
+ * Diuji `DesignTokenTest` agar tetap naik monoton dan tetap di rentang 8–36 dp (ACC desain).
+ */
+object MateRadius {
+    const val SMALL = 8
+    const val MEDIUM = 12
+    const val LARGE = 20
+    const val EXTRA_LARGE = 28
+    const val EXTRA_EXTRA_LARGE = 36
+
+    /** Nilai untuk pil/lingkaran: `RoundedCornerShape(50)` (persen), bukan dp. */
+    const val FULL_PERCENT = 50
+
+    /** Selisih radius anak di dalam induk = padding induk (aturan M3 Expressive). */
+    fun innerRadius(outer: Int, padding: Int): Int = (outer - padding).coerceAtLeast(SMALL)
 }
 
 /** Ekstrak kanal RGB 0..1 dari nilai ARGB. */

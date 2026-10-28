@@ -15,6 +15,7 @@ import androidx.compose.ui.text.font.FontVariation
 import androidx.compose.ui.text.font.FontWeight
 import io.github.mrnodatax.mateengine.R
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.SideEffect
 import androidx.compose.ui.graphics.Color
@@ -43,7 +44,7 @@ private val LightColors = lightColorScheme(
     onBackground = Color(MateTokens.OnSurface),
     surface = Color(MateTokens.Surface),
     onSurface = Color(MateTokens.OnSurface),
-    surfaceVariant = Color(0xFFE7F2F0),
+    surfaceVariant = Color(MateTokens.SurfaceContainerHigh),
     onSurfaceVariant = Color(MateTokens.OnSurfaceVariant),
     // Batas kartu harus terlihat: 2,18:1 → 3,25:1 (lihat MateTokens & DesignTokenTest).
     outline = Color(MateTokens.Outline),
@@ -65,7 +66,7 @@ private val DarkColors = darkColorScheme(
     onBackground = Color(MateTokens.OnSurfaceDark),
     surface = Color(MateTokens.SurfaceDark),
     onSurface = Color(MateTokens.OnSurfaceDark),
-    surfaceVariant = Color(0xFF1F262A),
+    surfaceVariant = Color(MateTokens.SurfaceContainerHighDark),
     onSurfaceVariant = Color(MateTokens.OnSurfaceVariantDark),
     outline = Color(MateTokens.OutlineDark),
     outlineVariant = Color(MateTokens.OutlineVariantDark),
@@ -132,13 +133,19 @@ private val BaseTypography = Typography()
 
 private val MateTypography = Typography(
     displayLarge = BaseTypography.displayLarge.copy(fontFamily = Outfit),
+    // Judul layar dipertegas + dirapatkan sedikit: Outfit SemiBold 28 sp dengan tracking −0,4
+    // terbaca sebagai judul, bukan subjudul. Ukuran lain mengikuti skala M3.
+    headlineMedium = BaseTypography.headlineMedium.copy(
+        fontFamily = Outfit,
+        fontWeight = FontWeight.SemiBold,
+        letterSpacing = (-0.4).sp,
+    ),
     displayMedium = BaseTypography.displayMedium.copy(fontFamily = Outfit),
     displaySmall = BaseTypography.displaySmall.copy(fontFamily = Outfit),
     headlineLarge = BaseTypography.headlineLarge.copy(fontFamily = Outfit),
-    headlineMedium = BaseTypography.headlineMedium.copy(fontFamily = Outfit),
     headlineSmall = BaseTypography.headlineSmall.copy(fontFamily = Outfit),
-    titleLarge = BaseTypography.titleLarge.copy(fontFamily = Outfit),
-    titleMedium = BaseTypography.titleMedium.copy(fontFamily = Outfit),
+    titleLarge = BaseTypography.titleLarge.copy(fontFamily = Outfit, fontWeight = FontWeight.SemiBold),
+    titleMedium = BaseTypography.titleMedium.copy(fontFamily = Outfit, fontWeight = FontWeight.SemiBold),
     titleSmall = BaseTypography.titleSmall.copy(fontFamily = Outfit),
     bodyLarge = BaseTypography.bodyLarge.copy(fontFamily = Outfit),
     bodyMedium = BaseTypography.bodyMedium.copy(fontFamily = Outfit),
@@ -153,11 +160,14 @@ private val MateTypography = Typography(
 val BrandName = "Mate Engine"
 
 
-/** Skala bentuk Expressive: kontrol kecil 12dp, kartu 20dp, panel 28dp. */
+/**
+ * Skala bentuk dari satu sumber ([MateRadius]): kontrol kecil 12 dp, kartu 20 dp, panel 28 dp,
+ * lembar 36 dp. Sebelumnya `large` 24 dp tidak pernah dipakai sehingga skalanya terasa acak.
+ */
 private val MateShapes = Shapes(
-    extraSmall = RoundedCornerShape(8.dp),
-    small = RoundedCornerShape(12.dp),
-    medium = RoundedCornerShape(20.dp),
-    large = RoundedCornerShape(24.dp),
-    extraLarge = RoundedCornerShape(28.dp),
+    extraSmall = RoundedCornerShape(MateRadius.SMALL.dp),
+    small = RoundedCornerShape(MateRadius.MEDIUM.dp),
+    medium = RoundedCornerShape(MateRadius.LARGE.dp),
+    large = RoundedCornerShape(MateRadius.EXTRA_LARGE.dp),
+    extraLarge = RoundedCornerShape(MateRadius.EXTRA_EXTRA_LARGE.dp),
 )

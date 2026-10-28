@@ -165,14 +165,32 @@ tidak ada teks jumlah yang basi.
 | Pratinjau avatar | WebView renderer kedua = +30–60 MB RAM saat Beranda terbuka; wajib dihentikan saat layar tidak terlihat. |
 | Larangan tetap | Tanpa dynamic color, tanpa font baru selain Outfit, tanpa menyalin aset/angka kurva Mate Engine, tanpa menambah tab ke-6. |
 
-## 7. Keputusan yang saya butuhkan sebelum eksekusi
+## 7. Keputusan user (28 Okt 2026)
 
-1. **Pratinjau avatar di Beranda**: cukup versi murah (potongan render terakhir/monogram) atau
-   penuh (WebView renderer hidup, ±15 fps, hanya saat Beranda terlihat)?
-2. **Naik versi Compose**: boleh (mendapat komponen Expressive asli) atau tetap versi sekarang
-   lalu tiru bentuknya secara manual (lebih aman, hasil 80–90% mirip)?
-3. **Urutan**: mulai dari Beranda (dampak terbesar) atau fondasi dulu (token + chrome, semua layar
-   ikut berubah sekaligus)?
+| Pertanyaan | Jawaban |
+| --- | --- |
+| Pratinjau avatar di Beranda | **Pratinjau hidup** — WebView renderer sungguhan di Beranda |
+| Naik versi Compose | **Tidak** — tetap BOM 2024.06 / M3 1.2, bentuk & gerak Expressive ditiru manual |
+| Urutan | **Fondasi dulu** (token + chrome) → Beranda → Animasi → layar lain → polesan → rilis |
 
-Jawaban "Gas" tanpa memilih = saya pakai default: pratinjau murah, **tanpa** naik versi, urutan
-Tahap 1 → 2 → 3 → 4 → 5 → 6.
+### 7a. Rancangan pratinjau hidup (Tahap 2)
+
+Batasan yang harus dipatuhi: renderer yang sama sudah berjalan di overlay; dua instance berarti dua
+konteks WebGL dan dua salinan model (±30–60 MB). Karena itu pratinjau dibuat **hemat dan dijaga**:
+
+1. `WebView` di dalam `AvatarHeroCard`, ukuran ±200×260 dp (bukan layar penuh), memuat
+  `file:///android_asset/renderer/index.html?mode=preview`.
+2. Mode `preview` di `renderer.js`: `targetFps = 15`, direktur perilaku **mati**, kamera dekat
+   (pinggang ke atas), tanpa audio, tanpa chat, `quality = 'low'`, `renderScale = 0,75`.
+3. Hanya hidup saat Beranda terlihat **dan** aplikasi di latar depan: `DisposableEffect` +
+   `LifecycleEventObserver` (ON_START/ON_STOP) + `onPause/onResume` WebView. Saat overlay berjalan,
+   pratinjau tetap boleh hidup tetapi FPS diturunkan ke 10.
+4. Tidak menulis state: pemanggilan `MateEngine.*` dari pratinjau tidak boleh menyentuh
+   `AppRepository` (hanya baca avatar terpilih).
+5. Bila WebGL gagal (`onRenderProcessGone`/error fatal), kartu jatuh ke tampilan cadangan: monogram
+   besar + nama avatar + jumlah klip. Tidak ada layar kosong.
+6. Uji: `render-smoke.mjs` menambah satu kasus `?mode=preview` (fps target 15, direktur mati);
+   tangkapan emulator `21-beranda-2.png` harus memperlihatkan avatar, bukan kotak kosong.
+
+Batalkan pratinjau bila ternyata membuat APK/CI tidak stabil — alternatifnya sudah disiapkan
+(monogram + nama avatar), dan itu akan dicatat apa adanya.

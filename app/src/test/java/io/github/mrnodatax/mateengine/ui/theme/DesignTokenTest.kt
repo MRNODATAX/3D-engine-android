@@ -27,6 +27,11 @@ class DesignTokenTest {
         "dark onSurface / dark surface" to (MateTokens.OnSurfaceDark to MateTokens.SurfaceDark),
         "dark onSurfaceVariant / dark surface" to (MateTokens.OnSurfaceVariantDark to MateTokens.SurfaceDark),
         "dark primary / dark background" to (MateTokens.BrandPrimaryLight to MateTokens.BackgroundDark),
+        // Permukaan baru v0.1.9: kartu di atas permukaan lebih tinggi harus tetap terbaca.
+        "onSurfaceVariant / surfaceContainerLow" to (MateTokens.OnSurfaceVariant to MateTokens.SurfaceContainerLow),
+        "onSurfaceVariant / surfaceContainerHigh" to (MateTokens.OnSurfaceVariant to MateTokens.SurfaceContainerHigh),
+        "dark onSurfaceVariant / dark containerLow" to (MateTokens.OnSurfaceVariantDark to MateTokens.SurfaceContainerLowDark),
+        "dark onSurfaceVariant / dark containerHigh" to (MateTokens.OnSurfaceVariantDark to MateTokens.SurfaceContainerHighDark),
     )
 
     private val borderPairs = listOf(
@@ -66,5 +71,47 @@ class DesignTokenTest {
         assertTrue("nilai lama seharusnya di bawah ambang", oldBorder < MateTokens.MIN_BORDER_CONTRAST)
         val improved = contrastRatio(MateTokens.Outline, MateTokens.Surface)
         assertTrue("nilai baru harus lebih baik dari nilai lama", improved > oldBorder)
+    }
+}
+
+/**
+ * Skala bentuk "Expressive Cyan 2.0": radius harus naik monoton, tetap di rentang 8–36 dp
+ * (ACC desain), dan radius anak di dalam induk tidak boleh lebih besar dari induknya.
+ */
+class RadiusTokenTest {
+
+    private val scale = listOf(
+        MateRadius.SMALL,
+        MateRadius.MEDIUM,
+        MateRadius.LARGE,
+        MateRadius.EXTRA_LARGE,
+        MateRadius.EXTRA_EXTRA_LARGE,
+    )
+
+    @Test
+    fun `skala radius naik monoton`() {
+        for (i in 1 until scale.size) {
+            assertTrue(
+                "radius ke-$i (${scale[i]}) harus lebih besar dari ${scale[i - 1]}",
+                scale[i] > scale[i - 1],
+            )
+        }
+    }
+
+    @Test
+    fun `radius tetap di rentang 8 sampai 36 dp`() {
+        assertTrue("radius terkecil ${scale.first()}", scale.first() == 8)
+        assertTrue("radius terbesar ${scale.last()}", scale.last() == 36)
+        for (value in scale) {
+            assertTrue("radius $value di luar 8..36 dp", value in 8..36)
+        }
+    }
+
+    @Test
+    fun `radius anak tidak melebihi induk`() {
+        // Kartu 20 dp dengan padding 8 dp -> kontrol dalam 12 dp.
+        assertTrue(MateRadius.innerRadius(MateRadius.LARGE, 8) == MateRadius.MEDIUM)
+        // Padding lebih besar dari radius tidak boleh membuat radius negatif.
+        assertTrue(MateRadius.innerRadius(MateRadius.LARGE, 40) == MateRadius.SMALL)
     }
 }

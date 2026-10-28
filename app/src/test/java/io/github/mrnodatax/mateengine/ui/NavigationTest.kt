@@ -28,6 +28,18 @@ class NavigationTest {
     }
 
     @Test
+    fun `setiap tujuan punya ikon Material Symbols sendiri`() {
+        val icons = mutableSetOf<Int>()
+        for (screen in Screen.entries) {
+            assertTrue("${screen.name} tidak punya ikon", screen.icon != 0)
+            assertTrue(
+                "${screen.name} memakai ikon yang sama dengan tujuan lain",
+                icons.add(screen.icon),
+            )
+        }
+    }
+
+    @Test
     fun `label navigasi tidak kosong dan tidak terlalu panjang`() {
         for (screen in Screen.bottomBar) {
             assertTrue("${screen.name} tidak punya label", screen.navLabel.isNotBlank())

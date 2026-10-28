@@ -1,5 +1,6 @@
 package io.github.mrnodatax.mateengine.ui
 
+import androidx.annotation.DrawableRes
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -26,10 +27,12 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import io.github.mrnodatax.mateengine.ui.theme.MateRadius
 import io.github.mrnodatax.mateengine.ui.theme.SuccessColor
 import io.github.mrnodatax.mateengine.ui.theme.SuccessContainer
 import io.github.mrnodatax.mateengine.ui.theme.WarningColor
@@ -37,20 +40,54 @@ import io.github.mrnodatax.mateengine.ui.theme.WarningContainer
 
 enum class ChipTone { Neutral, Accent, Success, Warning, Danger }
 
+/**
+ * Kartu bagian.
+ *
+ * @param title judul kartu (opsional). Bila diisi, judul tampil sebagai `titleSmall` SemiBold
+ *   bersama [icon] di kiri — hierarki yang sama di semua layar, bukan teks bebas di dalam isi.
+ * @param icon ikon Material Symbols kecil di kiri judul (opsional, dekoratif).
+ */
 @Composable
 fun SectionCard(
     modifier: Modifier = Modifier,
+    title: String? = null,
+    @DrawableRes icon: Int? = null,
     content: @Composable ColumnScope.() -> Unit,
 ) {
     Card(
         modifier = modifier.fillMaxWidth(),
-        // Skala 4/8: kartu 20dp agar sejalan dengan MateShapes.medium.
-        shape = RoundedCornerShape(20.dp),
+        // Satu sumber skala: kartu = MateRadius.LARGE (20 dp), sama dengan MateShapes.medium.
+        shape = RoundedCornerShape(MateRadius.LARGE.dp),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
         border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
         elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
     ) {
-        Column(Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(12.dp), content = content)
+        Column(
+            Modifier.padding(20.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp),
+        ) {
+            if (title != null) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                ) {
+                    if (icon != null) {
+                        androidx.compose.material3.Icon(
+                            painter = painterResource(icon),
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier.size(18.dp),
+                        )
+                    }
+                    Text(
+                        title,
+                        style = MaterialTheme.typography.titleSmall,
+                        fontWeight = FontWeight.SemiBold,
+                    )
+                }
+            }
+            content()
+        }
     }
 }
 
@@ -119,12 +156,23 @@ fun SliderField(
     onValueChange: (Float) -> Unit,
 ) {
     Column(Modifier.fillMaxWidth()) {
-        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-            Text(label, style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Medium)
+        Row(
+            Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Text(
+                label,
+                style = MaterialTheme.typography.bodyMedium,
+                fontWeight = FontWeight.Medium,
+                modifier = Modifier.weight(1f),
+            )
+            // Nilai dibesarkan dan diberi warna merek: inilah angka yang dicari pengguna saat
+            // menggeser, jadi tidak lagi abu-abu kecil yang menyatu dengan label.
             Text(
                 valueLabel,
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                style = MaterialTheme.typography.titleMedium,
+                color = MaterialTheme.colorScheme.primary,
             )
         }
         Slider(

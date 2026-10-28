@@ -69,6 +69,7 @@ import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import io.github.mrnodatax.mateengine.data.AppRepository
 import io.github.mrnodatax.mateengine.data.AvatarAsset
+import io.github.mrnodatax.mateengine.overlay.BuiltinClips
 import io.github.mrnodatax.mateengine.overlay.OverlayRuntime
 import io.github.mrnodatax.mateengine.overlay.OverlayService
 import io.github.mrnodatax.mateengine.ui.T
@@ -275,6 +276,20 @@ private fun MateEngineApp() {
             // agar semua item navigasi tetap terlihat tanpa menggulir.
             val showRailTitle = maxHeight >= 560.dp
             val diagnostics = remember(diagnosticsVersion) { Diagnostics.snapshot(context) }
+            // Subjudul kontekstual: sebelumnya kelima layar menampilkan kalimat yang sama
+            // ("Avatar VRM di atas aplikasi lain") sehingga ruang judul tidak memberi informasi.
+            val screenSubtitle = when (screen) {
+                Screen.Home -> buildString {
+                    append("${state.avatars.size} avatar")
+                    append(" · ${BuiltinClips.all.size} klip")
+                    append(if (runtime.running) " · overlay aktif" else " · overlay berhenti")
+                }
+                Screen.Avatar -> "Model .vrm milikmu, tersimpan di perangkat"
+                Screen.Chat -> "Gemini · persona ${chatUi.persona.name}"
+                Screen.Animation -> "${BuiltinClips.all.size} klip CC0 · impor .vrma sendiri"
+                Screen.Diagnostics -> "Status perangkat, overlay, dan renderer"
+                Screen.Settings -> "Versi ${BuildConfig.VERSION_NAME} · tema ikut sistem"
+            }
 
             Scaffold(
                 snackbarHost = { SnackbarHost(snackbar) },
@@ -299,7 +314,13 @@ private fun MateEngineApp() {
                                     NavigationRailItem(
                                         selected = screen == entry,
                                         onClick = { screen = entry },
-                                        icon = { Icon(entry.icon, contentDescription = null) },
+                                        icon = {
+                                            Icon(
+                                                painterResource(entry.icon),
+                                                contentDescription = null,
+                                                modifier = Modifier.size(24.dp),
+                                            )
+                                        },
                                         label = {
                                             Text(
                                                 entry.navLabel,
@@ -323,7 +344,7 @@ private fun MateEngineApp() {
                         VerticalDivider(color = MaterialTheme.colorScheme.outlineVariant)
                     }
                     Column(Modifier.weight(1f)) {
-                        if (!wide) AppHeader(screen)
+                        if (!wide) AppHeader(screen, subtitle = screenSubtitle)
                         Box(Modifier.weight(1f)) {
                             when (screen) {
                                 Screen.Home -> HomeScreen(
@@ -454,7 +475,13 @@ private fun MateEngineApp() {
                                     NavigationBarItem(
                                         selected = screen == entry,
                                         onClick = { screen = entry },
-                                        icon = { Icon(entry.icon, contentDescription = null) },
+                                        icon = {
+                                            Icon(
+                                                painterResource(entry.icon),
+                                                contentDescription = null,
+                                                modifier = Modifier.size(24.dp),
+                                            )
+                                        },
                                         label = {
                                             Text(
                                                 entry.navLabel,
@@ -495,20 +522,27 @@ private fun useAvatar(
     scope.launch { snackbar.showSnackbar("Avatar aktif: ${asset.displayName}") }
 }
 
+/**
+ * Header layar: tanda merek kecil di atas, judul besar, lalu **subjudul kontekstual**.
+ *
+ * Dulu kelima layar memakai subjudul yang sama dan judul selebar `headlineSmall`, sehingga tidak
+ * ada hierarki. Sekarang judul memakai `headlineMedium` (28 sp SemiBold, tracking −0,4) dan
+ * subjudul menyebut isi layar (jumlah avatar/klip, status overlay, versi).
+ */
 @Composable
-private fun AppHeader(screen: Screen) {
-    Column(Modifier.padding(start = 20.dp, end = 20.dp, top = 16.dp, bottom = 8.dp)) {
+private fun AppHeader(screen: Screen, subtitle: String) {
+    Column(Modifier.padding(start = 20.dp, end = 20.dp, top = 18.dp, bottom = 6.dp)) {
         Row(verticalAlignment = Alignment.CenterVertically) {
-            // Tanda merek 24dp: satu warna, tanpa gradien/bayangan (lihat docs/brand-guidelines.md).
+            // Tanda merek 22dp: satu warna, tanpa gradien/bayangan (lihat docs/brand-guidelines.md).
             Icon(
                 painter = painterResource(R.drawable.ic_brand_mark),
                 contentDescription = null,
                 tint = MaterialTheme.colorScheme.primary,
-                modifier = Modifier.size(24.dp),
+                modifier = Modifier.size(22.dp),
             )
             Text(
                 BrandName,
-                style = MaterialTheme.typography.labelLarge,
+                style = MaterialTheme.typography.labelMedium,
                 color = MaterialTheme.colorScheme.primary,
                 fontWeight = FontWeight.SemiBold,
                 modifier = Modifier.padding(start = 8.dp),
@@ -516,14 +550,16 @@ private fun AppHeader(screen: Screen) {
         }
         Text(
             screen.label,
-            style = MaterialTheme.typography.headlineSmall,
-            fontWeight = FontWeight.SemiBold,
-            modifier = Modifier.padding(top = 2.dp),
+            style = MaterialTheme.typography.headlineMedium,
+            modifier = Modifier.padding(top = 6.dp),
         )
         Text(
-            T.tagline,
-            style = MaterialTheme.typography.bodySmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            subtitle,
+            style = MaterialTheme.typography.labelLarge,
+            color = MaterialTheme.colorScheme.primary,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+            modifier = Modifier.padding(top = 2.dp),
         )
     }
 }
