@@ -22,6 +22,15 @@ import android.view.MotionEvent
 import android.view.View
 import android.view.WindowManager
 import android.webkit.WebResourceRequest
+import io.github.mrnodatax.mateengine.chat.ChatController
+import io.github.mrnodatax.mateengine.ui.theme.MateEngineTheme
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.cancel
+import kotlinx.coroutines.flow.collect
+import kotlinx.coroutines.launch
 import android.webkit.ConsoleMessage
 import android.webkit.WebChromeClient
 import android.webkit.WebResourceError
@@ -66,6 +75,16 @@ class OverlayService : Service() {
     private var lastFpsReportAt = 0L
     private var lastTrimAt = 0L
     private val voicePack by lazy { VoicePack(this) }
+
+    // ---- menu cepat (avatar diketuk 3×) ----
+    private var menuView: QuickMenuHost? = null
+    private var menuParams: WindowManager.LayoutParams? = null
+    private var menuController: QuickMenuController? = null
+    private var menuChatJob: Job? = null
+    private val serviceScope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
+
+    /** Chat AI di balon obrolan memakai ChatController yang sama dengan tab Chat. */
+    private val chatController by lazy { ChatController(this) }
 
     /**
      * Pemangkasan memori berkala, setara peran `MemoryTrim.cs` di Mate Engine tetapi
@@ -123,6 +142,13 @@ class OverlayService : Service() {
                 evaluate("window.MateEngine.setSeated($seated)")
                 Log.i(TAG, "mode duduk: $seated")
             }
+            ACTION_QUICK_MENU -> showQuickMenu(
+                when (intent?.getStringExtra(EXTRA_QUICK_SCREEN)) {
+                    "clips" -> QuickMenuScreen.CLIPS
+                    "chat" -> QuickMenuScreen.CHAT
+                    else -> QuickMenuScreen.ROOT
+                },
+            )
             ACTION_RESET_POSE -> {
                 evaluate("window.MateEngine.resetPose()")
                 Log.i(TAG, "pose avatar direset ke pose rileks")
@@ -146,6 +172,10 @@ class OverlayService : Service() {
             (view.parent as? FrameLayout)?.removeView(view)
             view.destroy()
         }
+        hideQuickMenu()
+        menuChatJob?.cancel()
+        runCatching { chatController.shutdown() }
+        runCatching { serviceScope.cancel() }
         rootView?.let { view -> runCatching { windowManager.removeView(view) } }
         webView = null
         rootView = null
@@ -205,6 +235,7 @@ class OverlayService : Service() {
             applyLayout(recenter = false)
         }
         container.onTap = { zone -> reactToTouch(zone) }
+        container.onTripleTap = { showQuickMenu() }
         container.onDragVelocity = { vx, vy ->
             evaluate("window.MateEngine.setDragVelocity($vx, $vy)")
         }
@@ -318,6 +349,8 @@ class OverlayService : Service() {
         evaluate("window.MateEngine.setLocomotion(${JSONObject.quote(prefs.motion)})")
         memorySaver = prefs.memorySaver
         voicePack.setEnabled(ChatRepository.get(this).state.value.settings.voicePackEnabled)
+        // Avatar bisa berubah ukuran/posisi: menu yang sedang terbuka ikut menyesuaikan.
+        menuView?.post { updateMenuPosition() }
         notifyState(notificationText())
     }
 
@@ -503,6 +536,202 @@ class OverlayService : Service() {
         }
     }
 
+    // ---------------------------------------------------------------- menu cepat (3x ketuk)
+
+    /**
+     * Menu yang muncul setelah avatar diketuk tiga kali.
+     *
+     * Jendelanya terpisah dari jendela avatar karena isinya lebih lebar daripada avatar; dengan
+     * begitu overlay avatar tetap transparan penuh dan menu bisa diletakkan di sisi yang lapang.
+     * Jendela hanya menjadi fokus saat balon Chat dibuka, supaya aplikasi di bawah tidak kehilangan
+     * fokus saat menu sekadar tampil.
+     */
+    private fun showQuickMenu(screen: QuickMenuScreen = QuickMenuScreen.ROOT) {
+        if (OverlayRuntime.state.value.running.not()) return
+        val controller = menuController ?: QuickMenuController().also { menuController = it }
+        controller.seated = OverlayRuntime.state.value.seated
+        controller.activeClip = OverlayRuntime.state.value.clipName
+        controller.hasApiKey = chatController.ui.value.hasApiKey
+        controller.screen = screen
+
+        if (menuView == null) buildMenuWindow(controller) else updateMenuPosition()
+        setMenuFocusable(screen == QuickMenuScreen.CHAT)
+        if (screen == QuickMenuScreen.CHAT) observeChat(controller)
+        Log.i(TAG, "menu cepat dibuka: ${screen.name.lowercase()}")
+    }
+
+    private fun buildMenuWindow(controller: QuickMenuController) {
+        val callbacks = QuickMenuCallbacks(
+            onAction = { action -> performMenuAction(controller, action) },
+            onClip = { key ->
+                evaluate("window.MateEngine.playBuiltin(${JSONObject.quote(key)})")
+                controller.activeClip = key
+                hideQuickMenu()
+            },
+            onSend = { text -> sendChatFromMenu(text) },
+            onClose = { hideQuickMenu() },
+            onOpenChatApp = {
+                hideQuickMenu()
+                openAppScreen("chat")
+            },
+        )
+
+        val host = QuickMenuHost(this) { hideQuickMenu() }
+        host.setContent {
+            MateEngineTheme {
+                QuickMenuPanel(controller, callbacks)
+            }
+        }
+
+        val layoutParams = WindowManager.LayoutParams(
+            WindowManager.LayoutParams.WRAP_CONTENT,
+            WindowManager.LayoutParams.WRAP_CONTENT,
+            WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY,
+            // Bisa menerima sentuhan di dalam batasnya, meneruskan sisanya ke aplikasi di bawah.
+            WindowManager.LayoutParams.FLAG_NOT_TOUCH_MODAL or
+                WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN or
+                WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE,
+            PixelFormat.TRANSLUCENT,
+        ).apply {
+            gravity = Gravity.TOP or Gravity.START
+            softInputMode = WindowManager.LayoutParams.SOFT_INPUT_ADJUST_RESIZE
+            title = "MateEngine menu"
+        }
+
+        runCatching { windowManager.addView(host, layoutParams) }
+            .onFailure { error ->
+                // Tanpa menu, avatar tetap jalan; jangan sampai service ikut mati.
+                Log.e(TAG, "gagal menampilkan menu cepat", error)
+                OverlayRuntime.reportError("Menu cepat tidak bisa tampil: ${error.message ?: error::class.simpleName}")
+                return
+            }
+
+        menuView = host
+        menuParams = layoutParams
+        host.post { updateMenuPosition() }
+        // Tinggi kartu baru diketahui setelah layout; posisikan ulang sekali lagi.
+        host.postDelayed({ updateMenuPosition() }, 120)
+    }
+
+    private fun updateMenuPosition() {
+        val host = menuView ?: return
+        val layoutParams = menuParams ?: return
+        val metrics = resources.displayMetrics
+        val margin = (12 * metrics.density).toInt()
+        val menuWidth = if (host.width > 0) host.width else (300 * metrics.density).toInt()
+        val menuHeight = if (host.height > 0) host.height else (300 * metrics.density).toInt()
+        val avatar = params
+        val (x, y) = if (avatar == null) {
+            margin to (metrics.heightPixels / 3)
+        } else {
+            QuickMenuPlacement.forAvatar(
+                avatarX = avatar.x,
+                avatarY = avatar.y,
+                avatarWidth = avatar.width,
+                avatarHeight = avatar.height,
+                menuWidth = menuWidth,
+                menuHeight = menuHeight,
+                screenWidth = metrics.widthPixels,
+                screenHeight = metrics.heightPixels,
+                marginPx = margin,
+            )
+        }
+        if (layoutParams.x == x && layoutParams.y == y) return
+        layoutParams.x = x
+        layoutParams.y = y
+        runCatching { windowManager.updateViewLayout(host, layoutParams) }
+    }
+
+    private fun setMenuFocusable(focusable: Boolean) {
+        val host = menuView ?: return
+        val layoutParams = menuParams ?: return
+        val updated = if (focusable) {
+            layoutParams.flags and WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE.inv()
+        } else {
+            layoutParams.flags or WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE
+        }
+        if (updated == layoutParams.flags) return
+        layoutParams.flags = updated
+        runCatching { windowManager.updateViewLayout(host, layoutParams) }
+        if (focusable) host.requestFocus()
+    }
+
+    private fun hideQuickMenu() {
+        menuChatJob?.cancel()
+        menuChatJob = null
+        val host = menuView ?: return
+        menuView = null
+        menuParams = null
+        runCatching { windowManager.removeView(host) }
+        host.destroy()
+    }
+
+    private fun performMenuAction(controller: QuickMenuController, action: QuickMenuAction) {
+        when (action) {
+            QuickMenuAction.ANIMATIONS -> {
+                controller.activeClip = OverlayRuntime.state.value.clipName
+                controller.screen = QuickMenuScreen.CLIPS
+                setMenuFocusable(false)
+                menuView?.post { updateMenuPosition() }
+            }
+            QuickMenuAction.CHAT -> {
+                controller.screen = QuickMenuScreen.CHAT
+                setMenuFocusable(true)
+                observeChat(controller)
+                menuView?.post { updateMenuPosition() }
+                chatController.refresh()
+            }
+            QuickMenuAction.SEAT -> {
+                val seated = !OverlayRuntime.state.value.seated
+                evaluate("window.MateEngine.setSeated($seated)")
+                controller.seated = seated
+                OverlayRuntime.update { it.copy(seated = seated) }
+                Log.i(TAG, "menu cepat: duduk=$seated")
+            }
+            QuickMenuAction.SETTINGS -> {
+                hideQuickMenu()
+                openAppScreen("settings")
+            }
+        }
+    }
+
+    private fun sendChatFromMenu(text: String) {
+        val controller = menuController ?: return
+        chatController.refresh()
+        if (!chatController.ui.value.hasApiKey) {
+            controller.hasApiKey = false
+            return
+        }
+        controller.error = null
+        chatController.send(text, serviceScope)
+        Log.i(TAG, "menu cepat: pesan chat dikirim (${text.length} karakter)")
+    }
+
+    /** Menyalin status chat terbaru ke panel; balasan juga otomatis dibacakan ChatController. */
+    private fun observeChat(controller: QuickMenuController) {
+        menuChatJob?.cancel()
+        menuChatJob = serviceScope.launch {
+            chatController.ui.collect { ui ->
+                controller.hasApiKey = ui.hasApiKey
+                controller.sending = ui.sending
+                controller.error = ui.error
+                controller.showMessages(ui.messages)
+            }
+        }
+    }
+
+    private fun openAppScreen(screen: String) {
+        runCatching {
+            startActivity(
+                Intent(this, MainActivity::class.java)
+                    .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP)
+                    .putExtra("screen", screen),
+            )
+        }
+    }
+
+    // ---------------------------------------------------------------- sentuhan
+
     private fun reactToTouch(zone: String) {
         val script = "window.MateEngine.react(${JSONObject.quote(zone)})"
         evaluate(script)
@@ -642,7 +871,9 @@ class OverlayService : Service() {
         var onDragFinished: ((Int, Int) -> Unit)? = null
         var onScaleChanged: ((Int) -> Unit)? = null
         var onTap: ((String) -> Unit)? = null
+        var onTripleTap: (() -> Unit)? = null
         var onDragVelocity: ((Float, Float) -> Unit)? = null
+        private val taps = TapCounter()
 
         private var downRawX = 0f
         private var downRawY = 0f
@@ -767,6 +998,11 @@ class OverlayService : Service() {
                             else -> "body"
                         }
                         onTap?.invoke(zone)
+                        // Ketukan beruntun di area yang sama: 3× membuka menu cepat.
+                        if (taps.register(event.rawX, event.rawY, System.currentTimeMillis()) >= 3) {
+                            taps.reset()
+                            onTripleTap?.invoke()
+                        }
                     }
                     dragging = false
                     pinching = false
@@ -791,6 +1027,8 @@ class OverlayService : Service() {
         const val ACTION_PLAY_BUILTIN = "io.github.mrnodatax.mateengine.action.PLAY_BUILTIN"
         const val EXTRA_BUILTIN = "builtin_clip"
         const val ACTION_RESET_POSE = "io.github.mrnodatax.mateengine.action.RESET_POSE"
+        const val ACTION_QUICK_MENU = "io.github.mrnodatax.mateengine.action.QUICK_MENU"
+        const val EXTRA_QUICK_SCREEN = "quick_screen"
         const val ACTION_SET_SEATED = "io.github.mrnodatax.mateengine.action.SET_SEATED"
         const val EXTRA_SEATED = "seated"
         const val EXTRA_LOCOMOTION = "locomotion"
@@ -877,6 +1115,23 @@ class OverlayService : Service() {
                 Intent(context, OverlayService::class.java)
                     .setAction(ACTION_SET_SEATED)
                     .putExtra(EXTRA_SEATED, seated),
+            )
+        }
+
+        /** Membuka menu cepat dari luar service (dipakai tangkapan layar CI & pintasan). */
+        fun showQuickMenu(context: Context, screen: QuickMenuScreen = QuickMenuScreen.ROOT) {
+            if (!OverlayRuntime.state.value.running) return
+            context.startService(
+                Intent(context, OverlayService::class.java)
+                    .setAction(ACTION_QUICK_MENU)
+                    .putExtra(
+                        EXTRA_QUICK_SCREEN,
+                        when (screen) {
+                            QuickMenuScreen.CLIPS -> "clips"
+                            QuickMenuScreen.CHAT -> "chat"
+                            QuickMenuScreen.ROOT -> "root"
+                        },
+                    ),
             )
         }
 

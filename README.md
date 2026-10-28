@@ -27,14 +27,16 @@ Sudah berjalan di kode dan diuji otomatis:
   perilaku yang memilih sendiri kapan melambai, melihat sekitar, menggeser berat badan, duduk di
   tepi layar, atau tertidur — dengan suasana yang berubah (ceria setelah disentuh, kalem saat lama
   diam). Ayunan badan saat avatar digeser, mata menutup saat kepala ditepuk;
+- **menu cepat 3× ketuk**: ketuk avatar tiga kali untuk membuka panel berisi Gerak (klip bawaan),
+  balon **Chat AI** langsung di atas aplikasi lain, tombol Duduk/Berdiri, dan pintasan Setelan;
 - **ukuran avatar** 25–100% tinggi layar, bisa dicubit dua jari langsung di overlay;
 - **suara waifu** lewat Gemini TTS (suara natural, mulut bergerak mengikuti amplitudo audio asli),
   dengan cadangan TTS perangkat;
 - **optimasi performa**: batas FPS, resolusi render adaptif, downscale tekstur, statistik nyata
   (triangles/draw call/tulang), dan pemangkasan memori berkala.
 
-Belum ada: duduk di jendela/taskbar, screenshot transparan, timer/alarm, Workshop,
-food system, touch region/headpat, head tracking, chibi, bloom/AO.
+Belum ada: duduk di jendela/taskbar (duduk baru di tepi layar), screenshot transparan, timer/alarm,
+Workshop, food system, partikel headpat, head tracking, chibi, bloom/AO.
 
 > Chat butuh koneksi internet dan kunci Gemini milikmu. Kunci tidak pernah dibundel di APK dan
 > tidak dikirim ke server mana pun selain `generativelanguage.googleapis.com`.
@@ -125,7 +127,7 @@ bash scripts/fetch-test-vrm.sh app/src/main/assets/testmodels
 ## Pengujian
 
 ```bash
-gradle :app:testDebugUnitTest          # metaloader VRM + geometri overlay
+gradle :app:testDebugUnitTest          # metaloader VRM, geometri overlay, tap 3× & kontras token
 cd web && npm run test:render          # render headless: VRM asli, transparansi, animasi
 ```
 

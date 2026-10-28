@@ -31,6 +31,7 @@ Arti label:
 | Steam Workshop / mod | **Tidak berlaku** | Tidak ada Steam di Android; impor berkas manual sebagai gantinya |
 | Food system (alpha) | **Belum ada** | — |
 | Screen saver | **Belum ada** | — |
+| Menu klik kanan (desktop) | **Diport sebagian** | Di Android ketuk avatar **3×** → panel: Gerak, Chat AI, Duduk/Berdiri, Setelan |
 | Head/eye/spine tracking | **Belum ada** | — |
 | Chibi mode, bloom/AO, MSAA | **Belum ada** | Kualitas render baru sebatas pixel ratio |
 | System tray | **Diport sebagian** | Notifikasi foreground dengan aksi Hentikan dan Putar animasi |

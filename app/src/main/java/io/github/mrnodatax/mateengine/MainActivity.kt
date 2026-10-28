@@ -131,6 +131,17 @@ private fun MateEngineApp() {
             (context as? android.app.Activity)?.intent?.getBooleanExtra("start_overlay", false) == true
         ) {
             OverlayService.start(context)
+            // Tangkapan layar CI: buka menu cepat tanpa perlu mengetuk avatar tiga kali.
+            val quick = (context as? android.app.Activity)?.intent?.getStringExtra("open_menu")
+            if (quick != null) {
+                kotlinx.coroutines.delay(5000)
+                val target = when (quick) {
+                    "clips" -> io.github.mrnodatax.mateengine.overlay.QuickMenuScreen.CLIPS
+                    "chat" -> io.github.mrnodatax.mateengine.overlay.QuickMenuScreen.CHAT
+                    else -> io.github.mrnodatax.mateengine.overlay.QuickMenuScreen.ROOT
+                }
+                OverlayService.showQuickMenu(context, target)
+            }
         }
     }
 

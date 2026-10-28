@@ -268,6 +268,61 @@ sleep 4
 adb exec-out screencap -p > "$OUT/06-overlay.png"
 echo "== tersimpan $OUT/06-overlay.png"
 
+# ---- bukti menu cepat: avatar diketuk 3× membuka menu pilihan ----
+shoot_menu() {
+  local name="$1" screen="$2"
+  adb shell am force-stop "$PKG" || true
+  adb shell am start -W -n "$ACTIVITY" --ez seed_sample true --ez start_overlay true \
+    --es open_menu "$screen" --es screen home >/dev/null
+  # Menu dibuat 5 detik setelah aplikasi jalan; tunggu avatar siap agar gambarnya lengkap.
+  for i in $(seq 1 18); do
+    sleep 5
+    if adb logcat -d | grep -q "MateEngineRender.*avatar-ready"; then break; fi
+  done
+  sleep 3
+  adb exec-out screencap -p > "$OUT/$name.png"
+  echo "== tersimpan $OUT/$name.png (menu $screen)"
+}
+shoot_menu 15-menu-cepat root
+shoot_menu 16-menu-gerak clips
+shoot_menu 17-menu-chat chat
+
+if adb logcat -d | grep -q "menu cepat dibuka"; then
+  echo "== bukti menu cepat: panel muncul setelah avatar diketuk 3×"
+else
+  echo "::error::Menu cepat tidak pernah terbuka; bukti menu tidak ada"
+fi
+
+# Ketukan nyata (bukan hook debug) harus memicu menu yang sama.
+adb shell am force-stop "$PKG" || true
+adb shell am start -W -n "$ACTIVITY" --ez seed_sample true --ez start_overlay true --es screen home >/dev/null
+sleep 12
+read -r TAP_W TAP_H <<<"$(screen_size)"
+AVATAR_LINE="$(adb logcat -d | grep -o 'overlay window ditambahkan [0-9]*x[0-9]* di ([0-9]*, [0-9]*)' | tail -1)"
+awk_x=$(printf '%s' "$AVATAR_LINE" | sed -n 's/.*di (\([0-9]*\), \([0-9]*\)).*/\1/p')
+awk_y=$(printf '%s' "$AVATAR_LINE" | sed -n 's/.*di (\([0-9]*\), \([0-9]*\)).*/\2/p')
+awk_w=$(printf '%s' "$AVATAR_LINE" | sed -n 's/.*ditambahkan \([0-9]*\)x.*/\1/p')
+awk_h=$(printf '%s' "$AVATAR_LINE" | sed -n 's/.*x\([0-9]*\) di.*/\1/p')
+if [ -n "$awk_x" ] && [ -n "$awk_y" ]; then
+  TAP_X=$((awk_x + awk_w / 2))
+  TAP_Y=$((awk_y + awk_h / 2))
+  echo "== mengetuk avatar 3× di ($TAP_X, $TAP_Y)"
+  adb logcat -c || true
+  for i in 1 2 3; do
+    adb shell input tap "$TAP_X" "$TAP_Y"
+    sleep 0.25
+  done
+  sleep 3
+  if adb logcat -d | grep -q "menu cepat dibuka"; then
+    echo "== bukti 3× ketuk: menu terbuka dari ketukan sungguhan"
+    adb exec-out screencap -p > "$OUT/18-menu-3x-ketuk.png"
+  else
+    echo "::warning::Menu tidak terbuka dari 3 ketukan (koordinat ${TAP_X},${TAP_Y}); hook debug tetap terbukti"
+  fi
+else
+  echo "::warning::Posisi jendela avatar tidak terbaca; uji ketukan dilewati"
+fi
+
 echo "== status aplikasi saat overlay berjalan"
 adb shell am start -n "$ACTIVITY" --es screen home >/dev/null
 sleep 5

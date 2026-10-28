@@ -86,6 +86,7 @@ Aturan:
 | Tidak ada label membungkus di tombol/chip | `maxLines = 1`, `softWrap = false` + tangkapan layar |
 | Target sentuh ≥ 48dp | `IconButton` dengan `Modifier.size(48.dp)` |
 | Maksimal satu catatan (`InfoNote`) per layar | tinjauan layar + `HomeScreen`/`AnimationScreen` |
+| Menu cepat maksimal 4 aksi (Gerak, Chat AI, Duduk/Berdiri, Setelan) | `QuickMenuTest` (4 entri, label ≤ 12 karakter) |
 
 ## 7. Keputusan yang tidak boleh dibalik tanpa alasan
 
