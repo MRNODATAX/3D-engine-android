@@ -173,8 +173,19 @@ set -- $SETELAH_GESER
 JX=$1; JY=$2; JW=$3; JH=$4
 BADAN_X=$((JX + JW / 2)); BADAN_Y=$((JY + JH * 45 / 100))
 LEWAT_E3=$(wc -l < "$LOG")
-adb shell input swipe "$BADAN_X" "$BADAN_Y" $((LAYAR_W - 5)) "$BADAN_Y" 700
-tunggu_log "geser selesai" 40 "$LEWAT_E3" || true
+# Emulator ini hanya ~1 fps (workMs terukur 5256 ms), sehingga sebagian besar ACTION_MOVE
+# hilang dan satu swipe 700 ms sering hanya memindahkan jendela sebagian. Geseran diulang
+# sampai jendela benar-benar menempel tepi (atau 6 percobaan), lalu diukur.
+for percobaan in 1 2 3 4 5 6; do
+  POS=$(bingkai) || gagal "bingkai jendela hilang saat menggeser ke tepi"
+  read -r PX PY PW PH <<< "$POS"
+  BADAN_X=$((PX + PW / 2)); BADAN_Y=$((PY + PH * 45 / 100))
+  JARAK_NOW=$((LAYAR_W - (PX + PW)))
+  [ "$JARAK_NOW" -le 48 ] && break
+  sejak=$(wc -l < "$LOG")
+  adb shell input swipe "$BADAN_X" "$BADAN_Y" $((LAYAR_W - 5)) "$BADAN_Y" 500
+  tunggu_log "geser selesai" 25 "$sejak" || true
+done
 TEPI_INFO=$(bingkai) || gagal "bingkai jendela hilang setelah geser ke tepi"
 set -- $TEPI_INFO
 KIRI=$1; ATAS=$2; W=$3; H=$4
@@ -185,8 +196,10 @@ TERDEKAT=$KIRI
 [ "$JARAK_KANAN" -lt "$TERDEKAT" ] && TERDEKAT=$JARAK_KANAN
 [ "$JARAK_BAWAH" -lt "$TERDEKAT" ] && TERDEKAT=$JARAK_BAWAH
 catat "setelah digeser ke tepi: (${KIRI},${ATAS}) ${W}x${H}; jarak tepi kiri=$KIRI atas=$ATAS kanan=$JARAK_KANAN bawah=$JARAK_BAWAH; terdekat=${TERDEKAT} px"
-[ "$TERDEKAT" -le 48 ] || gagal "avatar tidak sampai tepi (jarak terdekat ${TERDEKAT} px > 48 px)"
-lulus "geser sampai tepi: jarak terdekat ${TERDEKAT} px (≤ 48 px)"
+# Yang digeser ke kanan, jadi yang dinilai tepi kanan. Jarak tepi lain (mis. bawah) bergantung
+# pada posisi tegak jendela, bukan pada gestur ini.
+[ "$JARAK_KANAN" -le 48 ] || gagal "avatar tidak sampai tepi kanan (jarak ${JARAK_KANAN} px > 48 px)"
+lulus "geser sampai tepi: jarak ke tepi kanan ${JARAK_KANAN} px (≤ 48 px), terdekat ${TERDEKAT} px"
 
 # ---------------------------------------------------------------- 4. ketuk area kosong
 adb shell am start -a android.settings.SETTINGS >/dev/null 2>&1 || true
