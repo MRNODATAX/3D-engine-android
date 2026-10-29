@@ -23,7 +23,13 @@ catat() { echo "$*" | tee -a "$DIAG"; }
 # Blok crash pertama dari logcat: bagian ATAS tumpukan (jenis galat + frame aplikasi)
 # yang menentukan penyebab, bukan bagian bawahnya yang hanya ViewRootImpl/Choreographer.
 crash() {
-  awk '/FATAL EXCEPTION/{t=1} t{print} t&&/^$/{exit}' "$1" 2>/dev/null | head -25
+  awk '/FATAL EXCEPTION/{t=1} t{print} t&&/^$/&&NR>1{exit}' "$1" 2>/dev/null | head -25
+}
+# Hanya crash MILIK aplikasi ini. Log perangkat memuat crash aplikasi lain (WebView,
+# Google Play services) dan itu bukan kegagalan kita.
+crash_kita() {
+  adb logcat -d -b crash 2>/dev/null \
+    | awk 'BEGIN{RS="\n\n"} /FATAL EXCEPTION/ && /io\.github\.mrnodatax\.mateengine/ {print; exit}'
 }
 # Setiap panggilan adb dibatasi waktunya. Tanpa ini, satu perintah yang menggantung membuat
 # seluruh job dibatalkan pada batas waktu dan tidak ada diagnostik yang tersisa.
@@ -79,7 +85,7 @@ case "$fokus" in
     catat "keluaran am start: $(echo "$keluaran_buka" | tr '\n' '|' | cut -c1-400)"
     catat "fokus jendela: $(echo "$fokus" | tr -s ' ' | cut -c1-200)"
     adb logcat -d > "$LOG" 2>/dev/null || true
-    crash "$LOG" | sed 's/^/  /' | tee -a "$DIAG" || true
+    crash_kita | head -18 | sed 's/^/  /' | tee -a "$DIAG" || true
     gagal "aktivitas tidak bisa dibuka"
     ;;
 esac
@@ -87,13 +93,15 @@ esac
 catat "menunggu avatar-ready (maks ${BATAS_SIAP} dtk)..."
 siap=0
 galat=""
-for _ in $(seq 1 "$BATAS_SIAP"); do
+for detik in $(seq 1 "$BATAS_SIAP"); do
   sleep 1
   adb logcat -d > "$LOG" 2>/dev/null || true
   if grep -q "avatar-ready" "$LOG"; then siap=1; break; fi
   galat=$(grep -m1 -E "renderer belum siap|renderer gagal|Galat renderer|Uncaught|SyntaxError" "$LOG" || true)
-  if grep -q "FATAL EXCEPTION" "$LOG"; then
-    crash "$LOG" | sed 's/^/  /' | tee -a "$DIAG"
+  # Buffer crash hanya diperiksa tiap 5 detik: dua panggilan adb per detik memperlambat
+  # emulator lama (API 26) tanpa menambah informasi.
+  if [ $((detik % 5)) -eq 0 ] && [ -n "$(crash_kita)" ]; then
+    crash_kita | head -18 | sed 's/^/  /' | tee -a "$DIAG"
     gagal "aplikasi crash sebelum avatar siap"
   fi
   [ -z "$galat" ] || break
@@ -146,9 +154,13 @@ catat "memantau crash/ANR 10 dtk..."
 # 5. tidak ada crash/ANR. Beri waktu 10 detik: crash pada WebView/FGS biasanya muncul cepat.
 sleep 10
 adb logcat -d > "$LOG" 2>/dev/null || true
-if grep -qE "FATAL EXCEPTION|ANR in $PKG" "$LOG"; then
-  crash "$LOG" | sed 's/^/  /' | tee -a "$DIAG"
-  gagal "crash/ANR terdeteksi"
+if [ -n "$(crash_kita)" ]; then
+  crash_kita | head -18 | sed 's/^/  /' | tee -a "$DIAG"
+  gagal "aplikasi crash"
+fi
+if grep -q "ANR in $PKG" "$LOG"; then
+  grep -A 6 "ANR in $PKG" "$LOG" | head -20 | sed 's/^/  /' | tee -a "$DIAG"
+  gagal "ANR terdeteksi"
 fi
 if ! adb shell pidof "$PKG" >/dev/null 2>&1; then gagal "proses aplikasi hilang"; fi
 lewat "tidak ada crash/ANR, proses masih hidup"
