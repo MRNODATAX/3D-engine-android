@@ -244,56 +244,26 @@ lulus "geser sampai tepi: jarak ke tepi kanan ${JARAK_KANAN} px (≤ 48 px), ter
 adb shell am start -a android.settings.SETTINGS >/dev/null 2>&1 || true
 sleep 3
 
-hash_ui() {
-  adb shell uiautomator dump /sdcard/ui.xml >/dev/null 2>&1 || true
-  adb shell cat /sdcard/ui.xml > /tmp/gestur-ui.xml 2>/dev/null || true
-  sha256sum /tmp/gestur-ui.xml 2>/dev/null | cut -d' ' -f1
-}
-
-# Dasar pembanding harus STABIL lebih dulu: di emulator ber-SwiftShader, Setelan masih
-# memuat daftar beberapa detik setelah dibuka, sehingga dua hash berbeda bisa berarti
-# "belum selesai memuat", bukan "ketukan menembus".
-SEBELUM=$(hash_ui)
-STABIL=0
-SAMA=0
-for _ in $(seq 1 30); do
-  sleep 1
-  BARU=$(hash_ui)
-  if [ -n "$BARU" ] && [ "$BARU" = "$SEBELUM" ]; then
-    # Dua pembacaan sama berturut-turut; tiga lebih aman karena Setelan kadang memuat
-    # baris tambahan belakangan.
-    SAMA=$((SAMA + 1))
-    if [ "$SAMA" -ge 2 ]; then STABIL=1; break; fi
-  else
-    SAMA=0
-  fi
-  SEBELUM=$BARU
-done
-cp /tmp/gestur-ui.xml /tmp/gestur-ui-sebelum.xml 2>/dev/null || true
-FOKUS_SEBELUM=$(adb shell dumpsys window | grep -m1 "mCurrentFocus" || true)
-catat "dasar UI stabil=${STABIL} (hash ${SEBELUM:0:12}), fokus: $(echo "$FOKUS_SEBELUM" | tr -s ' ' | cut -c1-90)"
+# Bukti "area kosong tidak tembus" diambil dari dua hal yang tidak bisa ditipu tampilan:
+#   1. logcat layanan mencatat `gestur UP` tepat setelah ketukan  → sentuhan DITANGKAP overlay
+#   2. aktivitas yang sedang berjalan tidak berubah              → tidak ada navigasi di bawah
+# Perbandingan teks uiautomator sengaja tidak dipakai: halaman Setelan menyusun ulang daftarnya
+# sendiri (mis. "Recently opened apps" muncul belakangan) sehingga hasilnya berubah walau
+# tidak ada ketukan yang menembus.
+RESUMED_SEBELUM=$(adb shell dumpsys activity activities | grep -m1 -E "mResumedActivity" || true)
+catat "aktivitas sebelum ketukan: $(echo "$RESUMED_SEBELUM" | tr -s ' ' | cut -c1-110)"
 
 KOSONG_X=$((KIRI + 3)); KOSONG_Y=$((ATAS + 3))
+sejak=$(wc -l < "$LOG")
 adb shell input tap "$KOSONG_X" "$KOSONG_Y"
-sleep 3
-SESUDAH=$(hash_ui)
-FOKUS_SESUDAH=$(adb shell dumpsys window | grep -m1 "mCurrentFocus" || true)
+TERTANGKAP=0
+tunggu_log "gestur UP" 25 "$sejak" && TERTANGKAP=1
 adb exec-out screencap -p > "$OUT/27-blokir-area-kosong.png" || true
-catat "ketuk area kosong (${KOSONG_X},${KOSONG_Y}): hash UI ${SEBELUM:0:12} -> ${SESUDAH:0:12}"
-[ "$STABIL" -eq 1 ] || gagal "UI Setelan tidak pernah stabil; hasil ketukan tidak bisa dinilai"
-if [ -z "$SESUDAH" ] || [ "$SEBELUM" != "$SESUDAH" ]; then
-  # Tampilkan APA yang berubah, bukan hanya "berubah": tanpa ini tidak bisa dibedakan
-  # antara ketukan menembus dan Setelan yang memuat baris baru sendiri.
-  tr '>' '\n' < /tmp/gestur-ui-sebelum.xml | grep -o 'text="[^"]*"' | head -20 > /tmp/gestur-teks-sebelum.txt || true
-  tr '>' '\n' < /tmp/gestur-ui.xml | grep -o 'text="[^"]*"' | head -20 > /tmp/gestur-teks-sesudah.txt || true
-  diff /tmp/gestur-teks-sebelum.txt /tmp/gestur-teks-sesudah.txt | head -12 | sed 's/^/  /' | tee -a "$DIAG" || true
-  gagal "ketukan menembus ke aplikasi di belakang (UI berubah)"
-fi
-case "$FOKUS_SESUDAH" in
-  *settings*) : ;;
-  *) gagal "fokus jendela berpindah setelah ketukan area kosong: $(echo "$FOKUS_SESUDAH" | tr -s ' ' | cut -c1-120)" ;;
-esac
-lulus "ketuk area kosong ditahan overlay; Setelan di belakang tidak berubah"
+RESUMED_SESUDAH=$(adb shell dumpsys activity activities | grep -m1 -E "mResumedActivity" || true)
+catat "ketuk area kosong (${KOSONG_X},${KOSONG_Y}): tertangkap overlay=${TERTANGKAP}"
+[ "$TERTANGKAP" -eq 1 ] || gagal "ketukan di area kosong tidak sampai ke overlay (tidak ada gestur tercatat)"
+[ "$RESUMED_SEBELUM" = "$RESUMED_SESUDAH" ] || gagal "ketukan area kosong membuka aktivitas lain: $(echo "$RESUMED_SESUDAH" | tr -s ' ' | cut -c1-110)"
+lulus "ketuk area kosong ditangkap overlay; aktivitas di belakang tidak berubah"
 
 # ---------------------------------------------------------------- 5. tiga ketuk
 LEWAT_E5=$(wc -l < "$LOG")
