@@ -14,16 +14,15 @@ val hasReleaseSigning = listOf(releaseKeystore, releaseStorePassword, releaseKey
 
 android {
     namespace = "io.github.mrnodatax.mateengine"
-    compileSdk = 34
+    compileSdk = 36
 
     defaultConfig {
         applicationId = "io.github.mrnodatax.mateengine"
         minSdk = 26
-        targetSdk = 34
+        targetSdk = 36
         versionCode = 13
         versionName = "0.1.13"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
-        resourceConfigurations += listOf("id", "en")
     }
 
     signingConfigs {
@@ -60,6 +59,12 @@ android {
 
     composeOptions {
         kotlinCompilerExtensionVersion = "1.5.14"
+    }
+
+    androidResources {
+        // `resourceConfigurations` usang di AGP 8.9 dan memicu peringatan keras; penggantinya
+        // `localeFilters`. Isi tetap sama: hanya bahasa Indonesia dan Inggris yang dikemas.
+        localeFilters += listOf("id", "en")
     }
 
     compileOptions {

@@ -76,7 +76,7 @@ jobs:
           java-version: "17"
       - uses: gradle/actions/setup-gradle@v4
         with:
-          gradle-version: "8.7"
+          gradle-version: "8.11.1"
       - name: Ambil model uji (tidak disimpan di Git)
         env:
           GITHUB_TOKEN: ${{ github.token }}
@@ -87,6 +87,30 @@ jobs:
         run: bash scripts/ci-gradle.sh :app:assembleDebug
       - name: Bangun APK release (unsigned bila secret signing belum diisi)
         run: bash scripts/ci-gradle.sh :app:assembleRelease
+      - name: Periksa target SDK dan pustaka native di APK
+        # Syarat Play sejak 31 Agustus 2026: targetSdk 36. Diperiksa dari APK hasil build, bukan
+        # dari berkas Gradle, supaya yang dibuktikan adalah artefak yang benar-benar dikirim.
+        run: |
+          set -uo pipefail
+          APK="$(find app/build/outputs/apk/debug -name '*.apk' | head -1)"
+          echo "APK: $APK"
+          AAPT2="$(ls -d "$ANDROID_HOME"/build-tools/*/aapt2 2>/dev/null | tail -1)"
+          BADGING="$("$AAPT2" dump badging "$APK")"
+          echo "$BADGING" | grep -E "^(package|sdkVersion|targetSdkVersion)" || true
+          TARGET="$(echo "$BADGING" | sed -n "s/.*targetSdkVersion:'\([0-9]*\)'.*/\1/p" | head -1)"
+          echo "targetSdk terbaca: $TARGET"
+          if [ "$TARGET" != "36" ]; then
+            echo "::error::targetSdk bukan 36 (terbaca: ${TARGET:-kosong}); Play menolak unggahan"
+            exit 1
+          fi
+          # 16 KB page size hanya relevan untuk pustaka native; proyek ini murni Kotlin+WebView.
+          NATIVE="$(unzip -l "$APK" | grep -c '\.so$' || true)"
+          echo "pustaka native (.so) di APK: $NATIVE"
+          if [ "$NATIVE" != "0" ]; then
+            echo "::warning::APK memuat ${NATIVE} berkas .so; perlu dicek dukungan halaman 16 KB"
+          fi
+          echo "== verifikasi APK: targetSdk 36, tanpa pustaka native"
+
       - name: Kumpulkan artefak
         run: |
           mkdir -p out
@@ -156,7 +180,7 @@ jobs:
           java-version: "17"
       - uses: gradle/actions/setup-gradle@v4
         with:
-          gradle-version: "8.7"
+          gradle-version: "8.11.1"
       - name: Ambil model uji (tidak disimpan di Git)
         env:
           GITHUB_TOKEN: ${{ github.token }}
