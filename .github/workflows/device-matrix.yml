@@ -106,17 +106,19 @@ jobs:
         if: always()
         run: |
           # Anotasi adalah satu-satunya cara membaca hasil dari sandbox pengembangan
-          # (unduhan log & artefak Actions diblokir di sana).
-          if [ -f "/tmp/matriks-api${{ matrix.api }}.txt" ]; then
-            while IFS= read -r line; do echo "::warning::API ${{ matrix.api }}: ${line:0:600}"; done \
-              < "/tmp/matriks-api${{ matrix.api }}.txt"
+          # (unduhan log & artefak Actions diblokir di sana). GitHub membatasi jumlah
+          # anotasi per job, jadi seluruh diagnostik digabung menjadi SATU baris.
+          DIAG="/tmp/matriks-api${{ matrix.api }}.txt"
+          if [ -f "$DIAG" ]; then
+            ringkas=$(tr '\n' '|' < "$DIAG" | cut -c1-4000)
+            echo "::warning::API ${{ matrix.api }} diagnostik: $ringkas"
           else
             echo "::warning::API ${{ matrix.api }}: tidak ada diagnostik (langkah emulator tidak sampai menulis berkas)"
           fi
-          LOG=/tmp/matriks-api${{ matrix.api }}-logcat.txt
+          LOG="/tmp/matriks-api${{ matrix.api }}-logcat.txt"
           if [ -f "$LOG" ]; then
-            grep -E "MateEngineRender|chromium|WebView|AndroidRuntime|FATAL" "$LOG" | tail -25 \
-              | while IFS= read -r line; do echo "::warning::${line:0:600}"; done
+            potong=$(grep -E "MateEngineRender|chromium|AndroidRuntime|FATAL" "$LOG" | tail -12 | tr '\n' '|' | cut -c1-4000)
+            [ -n "$potong" ] && echo "::warning::API ${{ matrix.api }} log: $potong"
           fi
 
       - uses: actions/upload-artifact@v4

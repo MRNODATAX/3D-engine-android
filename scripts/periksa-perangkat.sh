@@ -53,8 +53,12 @@ adb logcat -c || true
 
 catat "membuka aktivitas..."
 t0=$(date +%s)
-adb shell am start -W -n "$ACTIVITY" --ez start_overlay true --ez seed_sample true >/dev/null \
-  || gagal "aktivitas tidak bisa dibuka"
+keluaran_buka=$(adb shell am start -W -n "$ACTIVITY" --ez start_overlay true --ez seed_sample true 2>&1) || {
+  catat "keluaran am start: $(echo "$keluaran_buka" | tr '\n' '|' | cut -c1-400)"
+  catat "aktivitas yang ada: $(adb shell cmd package resolve-activity --brief "$PKG" 2>&1 | tail -1)"
+  catat "paket terpasang: $(adb shell pm list packages | grep -c mateengine || true) paket"
+  gagal "aktivitas tidak bisa dibuka"
+}
 
 # 1. renderer siap: tunggu salah satu dari dua sinyal (siap / galat) supaya kegagalan
 #    dilaporkan dengan sebabnya, bukan sebagai timeout tanpa keterangan.
@@ -89,16 +93,20 @@ catat "memeriksa jumlah jendela..."
 # jadi yang dihitung hanya baris deklarasi jendela: `Window{<hash> u<id> MateEngine avatar}`.
 DUMP=/tmp/matriks-dump-window.txt
 adb shell dumpsys window windows > "$DUMP"
-grep -E "^[[:space:]]*Window\{[^}]*MateEngine avatar" "$DUMP" > /tmp/matriks-jendela-baris.txt || true
-jumlah=$(wc -l < /tmp/matriks-jendela-baris.txt)
-catat "jumlah jendela avatar (baris Window{...}): $jumlah"
-if [ "$jumlah" -ne 1 ]; then
-  catat "baris 'Window{' yang cocok (maks 6):"
-  head -6 /tmp/matriks-jendela-baris.txt | sed 's/^/  /' | tee -a "$DIAG"
-  catat "semua baris yang memuat judul jendela: $(grep -c "MateEngine avatar" "$DUMP" || true)"
-  grep -m6 "MateEngine avatar" "$DUMP" | cut -c1-160 | sed 's/^/  /' | tee -a "$DIAG"
-  gagal "jendela avatar berjumlah $jumlah (seharusnya 1)"
-fi
+# Baris deklarasi jendela berformat `Window #0 Window{<hash> u0 MateEngine avatar}`, jadi
+# judul yang sama juga muncul di bagian fokus/target input dan tidak boleh ikut dihitung.
+python3 - "$DUMP" <<'PYHITUNG' > /tmp/matriks-hitung.txt
+import re, sys
+teks = open(sys.argv[1], encoding="utf-8", errors="ignore").read()
+pola = re.compile(r"Window #\d+ Window\{[^}]*MateEngine avatar")
+cocok = pola.findall(teks)
+semua = [l.strip() for l in teks.splitlines() if "MateEngine avatar" in l]
+print(len(cocok))
+print("|".join(l[:120] for l in semua[:4]))
+PYHITUNG
+jumlah=$(head -1 /tmp/matriks-hitung.txt)
+catat "jumlah jendela avatar: ${jumlah:-?} (baris berjudul: $(sed -n '2p' /tmp/matriks-hitung.txt | cut -c1-300))"
+[ "${jumlah:-0}" -eq 1 ] || gagal "jendela avatar berjumlah ${jumlah:-?} (seharusnya 1)"
 grep -A 3 -m1 "MateEngine avatar" "$DUMP" | head -4 > /tmp/matriks-jendela.txt
 adb shell dumpsys window displays | grep -o "cur=[0-9]*x[0-9]*" | head -1 >> /tmp/matriks-jendela.txt
 
