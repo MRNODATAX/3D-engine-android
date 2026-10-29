@@ -104,10 +104,6 @@ BADAN_X=$((JX + JW / 2)); BADAN_Y=$((JY + JH * 45 / 100))
 # mungkin lewat gerakan bolak-balik dalam satu gestur (bukan `input swipe` linear).
 # Pemetaan elusan → headpat diuji di web/test/touch.test.mjs; di sini yang dibuktikan bahwa
 # usapan halus (6 dp) TIDAK menggeser avatar.
-# Amplitudo 19 px dipilih dengan sengaja: di bawah ambang geser 22 dp (≈58 px di layar ini)
-# dan bahkan di bawah ambang "margin kosong" 8 dp (≈21 px), sehingga gerakan bolak-balik
-# kecil tidak boleh menyeret avatar. Elusan besar (±80 px seperti percobaan pertama) memang
-# DIRANCANG menyeret — itu fitur, bukan bug — jadi yang diuji di sini adalah elusan halus.
 DPI=$(adb shell wm density | sed -n 's/.*: \([0-9]*\).*/\1/p' | head -1)
 [ -n "$DPI" ] || DPI=420
 # Pergeseran TOTAL per usapan (bukan setengah amplitudo): harus di bawah ambang 8 dp
@@ -116,11 +112,18 @@ ELUS_AMP=$((DPI * 6 / 160))
 [ "$ELUS_AMP" -ge 10 ] || ELUS_AMP=10
 catat "amplitudo elus: ${ELUS_AMP} px"
 LEWAT_E1=$(wc -l < "$LOG")
-for _ in 1 2 3; do
-  adb shell input swipe "$KEPALA_X" "$KEPALA_Y" $((KEPALA_X + ELUS_AMP)) "$KEPALA_Y" 260
-  adb shell input swipe $((KEPALA_X + ELUS_AMP)) "$KEPALA_Y" "$KEPALA_X" "$KEPALA_Y" 260
+# Tiap usapan ditunggu sampai tercatat di logcat. Tanpa itu, sambungan `input swipe` berikutnya
+# masuk selagi utas UI masih sibuk (SwiftShader ~1 fps) dan sebagian gestur hilang — percobaan
+# sebelumnya hanya mencatat 2 dari 6 usapan.
+for arah in kanan kiri kanan; do
+  sejak=$(wc -l < "$LOG")
+  if [ "$arah" = "kanan" ]; then
+    adb shell input swipe "$KEPALA_X" "$KEPALA_Y" $((KEPALA_X + ELUS_AMP)) "$KEPALA_Y" 260
+  else
+    adb shell input swipe $((KEPALA_X + ELUS_AMP)) "$KEPALA_Y" "$KEPALA_X" "$KEPALA_Y" 260
+  fi
+  tunggu_log "gestur UP" 25 "$sejak" || true
 done
-tunggu_log "gestur UP" 30 "$LEWAT_E1" || true
 adb logcat -d > "$LOG" 2>/dev/null || true
 ELUS_SERET=$(tail -n +$((LEWAT_E1 + 1)) "$LOG" | grep -c "gestur UP.*menyeret=true" || true)
 ELUS_TOTAL=$(tail -n +$((LEWAT_E1 + 1)) "$LOG" | grep -c "gestur UP" || true)
