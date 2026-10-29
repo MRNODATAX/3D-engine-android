@@ -36,6 +36,20 @@ bingkai() {
 selisih() { local d=$(($1 - $2)); [ "$d" -lt 0 ] && d=$((-d)); echo "$d"; }
 
 # `x y w h` pertama dan kedua dianggap sama bila tiap nilai berselisih ≤ 2 px.
+# Emulator CI memakai SwiftShader: satu frame bisa butuh beberapa detik (terukur workMs
+# 5256 ms sekali), sehingga log gestur baru muncul jauh setelah jari lepas. Menunggu 2 detik
+# tetap membuat uji menyimpulkan "tidak ada gestur" padahal gestur baru diproses.
+# `tunggu_log <pola> <batas_detik> <sejak_baris>` memantau logcat sampai pola muncul.
+tunggu_log() {
+  local pola="$1" batas="$2" sejak="$3" i
+  for i in $(seq 1 "$batas"); do
+    adb logcat -d > "$LOG" 2>/dev/null || true
+    if tail -n +$((sejak + 1)) "$LOG" | grep -q "$pola"; then return 0; fi
+    sleep 1
+  done
+  return 1
+}
+
 sama_bingkai() {
   local ax ay aw ah bx by bw bh
   read -r ax ay aw ah <<< "$1"
@@ -66,7 +80,7 @@ LAYAR_H=${BACA_LAYAR#* }
 catat "layar: ${LAYAR_W}x${LAYAR_H}"
 
 catat "membuka overlay..."
-adb shell am start -n "$ACTIVITY" --ez start_overlay true --ez seed_sample true --ei scale 80 >/dev/null 2>&1 || true
+adb shell am start -n "$ACTIVITY" --ez start_overlay true --ez seed_sample true --ei scale 60 >/dev/null 2>&1 || true
 siap=0
 for _ in $(seq 1 "$BATAS_SIAP"); do
   sleep 1
@@ -99,7 +113,7 @@ for _ in 1 2 3; do
   adb shell input swipe $((KEPALA_X - ELUS_AMP)) "$KEPALA_Y" $((KEPALA_X + ELUS_AMP)) "$KEPALA_Y" 260
   adb shell input swipe $((KEPALA_X + ELUS_AMP)) "$KEPALA_Y" $((KEPALA_X - ELUS_AMP)) "$KEPALA_Y" 260
 done
-sleep 2
+tunggu_log "gestur UP" 30 "$LEWAT_E1" || true
 adb logcat -d > "$LOG" 2>/dev/null || true
 ELUS_SERET=$(tail -n +$((LEWAT_E1 + 1)) "$LOG" | grep -c "gestur UP.*menyeret=true" || true)
 ELUS_TOTAL=$(tail -n +$((LEWAT_E1 + 1)) "$LOG" | grep -c "gestur UP" || true)
@@ -113,7 +127,7 @@ lulus "elus kepala bolak-balik tidak menggeser avatar"
 # ---------------------------------------------------------------- 2. geser badan
 LEWAT_E2=$(wc -l < "$LOG")
 adb shell input swipe "$BADAN_X" "$BADAN_Y" $((BADAN_X + 120)) $((BADAN_Y + 60)) 600
-sleep 2
+tunggu_log "geser selesai" 40 "$LEWAT_E2" || true
 adb logcat -d > "$LOG" 2>/dev/null || true
 GESER_SERET=$(tail -n +$((LEWAT_E2 + 1)) "$LOG" | grep -c "menyeret=true" || true)
 tail -n +$((LEWAT_E2 + 1)) "$LOG" | grep -m1 "geser selesai" | sed 's/^/  /' | tee -a "$DIAG" || true
@@ -128,8 +142,9 @@ lulus "geser badan menggeser avatar (${AWAL} -> ${SETELAH_GESER})"
 set -- $SETELAH_GESER
 JX=$1; JY=$2; JW=$3; JH=$4
 BADAN_X=$((JX + JW / 2)); BADAN_Y=$((JY + JH * 45 / 100))
+LEWAT_E3=$(wc -l < "$LOG")
 adb shell input swipe "$BADAN_X" "$BADAN_Y" $((LAYAR_W - 5)) "$BADAN_Y" 700
-sleep 2
+tunggu_log "geser selesai" 40 "$LEWAT_E3" || true
 TEPI_INFO=$(bingkai) || gagal "bingkai jendela hilang setelah geser ke tepi"
 set -- $TEPI_INFO
 KIRI=$1; ATAS=$2; W=$3; H=$4
@@ -167,7 +182,7 @@ lulus "ketuk area kosong ditahan overlay; aplikasi di belakang tidak berubah"
 # ---------------------------------------------------------------- 5. tiga ketuk
 LEWAT_E5=$(wc -l < "$LOG")
 for _ in 1 2 3; do adb shell input tap "$BADAN_X" "$BADAN_Y"; done
-sleep 3
+tunggu_log "menu cepat dibuka" 40 "$LEWAT_E5" || true
 adb logcat -d > "$LOG" 2>/dev/null || true
 if tail -n +$((LEWAT_E5 + 1)) "$LOG" | grep -q "menu cepat dibuka"; then
   tail -n +$((LEWAT_E5 + 1)) "$LOG" | grep -m1 "menu cepat dibuka" | sed 's/^/  /' | tee -a "$DIAG"
