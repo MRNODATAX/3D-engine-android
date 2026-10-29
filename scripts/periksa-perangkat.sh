@@ -141,8 +141,24 @@ PYHITUNG
 jumlah=$(head -1 /tmp/matriks-hitung.txt)
 catat "jumlah jendela avatar: ${jumlah:-?} (baris berjudul: $(sed -n '2p' /tmp/matriks-hitung.txt | cut -c1-300))"
 [ "${jumlah:-0}" -eq 1 ] || gagal "jendela avatar berjumlah ${jumlah:-?} (seharusnya 1)"
-# Bagian jendela avatar saja: `mAttrs`/`mFrame` hanya ada di blok ini.
-grep -A 3 -m1 "MateEngine avatar" "$DUMP" | head -4 > /tmp/matriks-jendela.txt
+# Blok jendela avatar saja (dari baris `Window #N Window{...MateEngine avatar}` sampai jendela
+# berikutnya). `mAttrs`/`mFrame` ada puluhan baris di bawah judul di API 26, jadi `grep -A 3`
+# tidak cukup — itulah sebabnya pemeriksaan dulu melaporkan "tidak memuat mAttrs".
+python3 - "$DUMP" <<'PYAMBIL' > /tmp/matriks-jendela.txt
+import re, sys
+baris = open(sys.argv[1], encoding="utf-8", errors="ignore").read().splitlines()
+judul = re.compile(r"Window #\d+ Window\{[^}]*MateEngine avatar")
+awal = next((i for i, l in enumerate(baris) if judul.search(l)), None)
+if awal is not None:
+    keluar = []
+    for baris_ini in baris[awal:]:
+        if keluar and re.search(r"Window #\d+ Window\{", baris_ini):
+            break
+        keluar.append(baris_ini)
+        if len(keluar) > 200:
+            break
+    print("\n".join(keluar))
+PYAMBIL
 # Ukuran layar: `cur=` di versi baru, `init=` di API 26 (versi lama tidak menulis `cur=`).
 layar_baris=$(adb shell dumpsys window displays | grep -o -E "(cur|init)=[0-9]+x[0-9]+" | head -1)
 catat "ukuran layar dari dumpsys: ${layar_baris:-tidak terbaca}"
