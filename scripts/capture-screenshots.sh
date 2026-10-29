@@ -525,16 +525,24 @@ current_screen_size() {
 # Periksa jendela hanya dari log yang dibuat SESUDAH posisi ini, supaya baris dari orientasi
 # sebelumnya tidak ikut dinilai.
 cek_jendela() {
-  local label="$1" lebar="$2" tinggi="$3"
+  local label="$1"
   adb logcat -c || true
   sleep 4
-  if adb logcat -d -s MateEngineRender:I \
-    | grep -o "jendela siluet [0-9]*x[0-9]* di ([0-9-]*, [0-9-]*)" \
-    | python3 scripts/periksa-jendela-layar.py --layar "$lebar" "$tinggi"; then
-    echo "== $label: jendela di dalam layar ${lebar}x${tinggi}"
+  local hasil
+  hasil="$(adb logcat -d -s MateEngineRender:I \
+    | grep -o "jendela siluet [0-9]*x[0-9]* di ([0-9-]*, [0-9-]*).*layar [0-9]*x[0-9]*" \
+    | python3 scripts/periksa-jendela-layar.py 2>&1)"
+  local status=$?
+  echo "--- $label: $hasil" >> "$DIAG"
+  if [ "$status" -eq 0 ]; then
+    echo "== $label: $hasil"
     return 0
   fi
-  echo "::error::$label: ada jendela di luar layar ${lebar}x${tinggi}"
+  # Tiga baris pertama ikut dilaporkan sebagai anotasi: log mentah Actions tidak dapat diunduh
+  # dari lingkungan ini, jadi bukti angka harus muncul di ringkasan check-run.
+  echo "::error::$label gagal: $hasil"
+  adb logcat -d -s MateEngineRender:I | grep -o "jendela siluet [0-9]*x[0-9]* di ([0-9-]*, [0-9-]*).*layar [0-9]*x[0-9]*" | head -3 \
+    | while read -r baris; do echo "::warning::contoh: $baris"; done
   return 1
 }
 
@@ -563,11 +571,11 @@ for putaran in 1 2; do
     read -r LANSKAP_W LANSKAP_H <<<"$(screen_size)"
   fi
   adb exec-out screencap -p > "$OUT/26-rotasi-lanskap-$putaran.png"
-  cek_jendela "rotasi $putaran (lanskap)" "$LANSKAP_W" "$LANSKAP_H" || rotasi_ok=0
+  cek_jendela "rotasi $putaran (lanskap)" || rotasi_ok=0
   adb shell settings put system user_rotation 0
   sleep 5
   adb exec-out screencap -p > "$OUT/27-rotasi-kembali-$putaran.png"
-  cek_jendela "rotasi $putaran (kembali potret)" "$POTRET_W" "$POTRET_H" || rotasi_ok=0
+  cek_jendela "rotasi $putaran (kembali potret)" || rotasi_ok=0
 done
 if [ "$rotasi_ok" -eq 1 ]; then
   echo "== bukti rotasi: 4 perpindahan orientasi, jendela selalu di dalam layar"

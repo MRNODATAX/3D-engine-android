@@ -1,8 +1,11 @@
 #!/usr/bin/env python3
 """Pastikan setiap jendela overlay yang tercatat masih berada di dalam layar.
 
-Masukan: baris logcat yang memuat `jendela siluet WxH di (x, y)`.
-Argumen: `--layar LEBAR TINGGI` sesuai orientasi yang sedang diuji.
+Masukan: baris logcat yang memuat
+`jendela siluet WxH di (x, y) = N% dari desain ... layar LEBARxTINGGI`.
+
+Ukuran layar diambil dari log itu sendiri (nilai yang dipakai layanan untuk menghitung posisi).
+Argumen opsional `--layar LEBAR TINGGI` menimpanya bila log berasal dari versi lama.
 
 Keluar 0 bila semua baris muat (toleransi 2 px, karena pembulatan inset), 1 bila ada yang
 keluar layar, 2 bila tidak ada baris yang terbaca.
@@ -11,15 +14,17 @@ import argparse
 import re
 import sys
 
-POLA = re.compile(r"jendela siluet (\d+)x(\d+) di \((-?\d+), (-?\d+)\)")
+POLA = re.compile(
+    r"jendela siluet (\d+)x(\d+) di \((-?\d+), (-?\d+)\).*?(?:layar (\d+)x(\d+))?$",
+)
 TOLERANSI = 2
 
 
 def main() -> int:
     parser = argparse.ArgumentParser()
-    parser.add_argument("--layar", nargs=2, type=int, metavar=("LEBAR", "TINGGI"), required=True)
+    parser.add_argument("--layar", nargs=2, type=int, metavar=("LEBAR", "TINGGI"))
     args = parser.parse_args()
-    layar_w, layar_h = args.layar
+    layar_paksa = args.layar
 
     diperiksa = 0
     pelanggaran = []
@@ -27,7 +32,15 @@ def main() -> int:
         cocok = POLA.search(baris)
         if not cocok:
             continue
-        lebar, tinggi, kiri, atas = (int(v) for v in cocok.groups())
+        lebar, tinggi, kiri, atas, layar_w_teks, layar_h_teks = cocok.groups()
+        lebar, tinggi, kiri, atas = int(lebar), int(tinggi), int(kiri), int(atas)
+        if layar_paksa:
+            layar_w, layar_h = layar_paksa
+        elif layar_w_teks and layar_h_teks:
+            layar_w, layar_h = int(layar_w_teks), int(layar_h_teks)
+        else:
+            print("baris jendela tanpa ukuran layar; jalankan dengan --layar LEBAR TINGGI")
+            return 2
         diperiksa += 1
         kanan = kiri + lebar
         bawah = atas + tinggi
@@ -42,6 +55,7 @@ def main() -> int:
     if diperiksa == 0:
         print("tidak ada baris jendela siluet")
         return 2
+
     if pelanggaran:
         print(f"{len(pelanggaran)} dari {diperiksa} jendela keluar layar: {pelanggaran[:3]}")
         return 1

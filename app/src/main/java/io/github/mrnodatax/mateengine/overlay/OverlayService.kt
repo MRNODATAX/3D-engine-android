@@ -527,13 +527,21 @@ class OverlayService : Service() {
         logBlocked(visible)
     }
 
-    /** Catat luas area yang menelan sentuhan (dipakai diagnostik tangkapan layar). */
+    /**
+     * Catat luas area yang menelan sentuhan.
+     *
+     * Ukuran layar ikut dicatat karena inilah nilai yang dipakai menghitung posisi. Diagnostik
+     * rotasi (CI) membandingkan posisi jendela dengan angka ini, bukan dengan `wm size` yang
+     * selalu melaporkan ukuran fisik dan membuat pemeriksaan salah menilai lanskap.
+     */
     private fun logBlocked(visible: OverlayGeometry.Rect) {
         val blocked = OverlayGeometry.blockedFraction(designWidth, designHeight, visible)
+        val (screenWidth, screenHeight) = screenBounds()
         Log.i(
             TAG,
             "jendela siluet ${visible.width}x${visible.height} di (${visible.left}, ${visible.top}) " +
-                "= ${(blocked * 100).toInt()}% dari desain ${designWidth}x$designHeight",
+                "= ${(blocked * 100).toInt()}% dari desain ${designWidth}x$designHeight " +
+                "layar ${screenWidth}x$screenHeight",
         )
     }
 

@@ -94,16 +94,27 @@ jobs:
             exit 0
           fi
           git commit -m "docs: tangkapan layar APK dari emulator [skip ci]"
-          # Cabang bisa sudah bergerak selama emulator berjalan; ulangi dengan rebase
-          # dan utamakan gambar yang baru diambil bila ada bentrok biner.
+          # Cabang bisa sudah bergerak selama emulator berjalan (commit kode masuk saat
+          # emulator menyala). Karena itu commit gambar dibuat di atas HEAD terbaru, dengan
+          # rebase eksplisit dan output yang terlihat — versi lama menyembunyikan error git
+          # sehingga kegagalannya hanya muncul sebagai "4 percobaan gagal" tanpa sebab.
           for attempt in 1 2 3 4; do
-            if git pull --rebase -X theirs origin "$BRANCH" && git push origin "HEAD:$BRANCH"; then
+            echo "::group::percobaan $attempt"
+            git fetch origin "$BRANCH"
+            if ! git rebase "origin/$BRANCH"; then
+              # Bentrok biner pada gambar: yang baru diambil diutamakan.
+              git checkout --theirs -- docs/screenshots 2>/dev/null || true
+              git add docs/screenshots
+              git -c core.editor=true rebase --continue || git rebase --abort || true
+            fi
+            if git push origin "HEAD:$BRANCH"; then
               echo "tangkap layar tersimpan di commit $(git rev-parse --short HEAD)"
+              echo "::endgroup::"
               exit 0
             fi
-            git rebase --abort 2>/dev/null || true
+            echo "::endgroup::"
             echo "percobaan $attempt gagal, mengulang..."
-            sleep 8
+            sleep 10
           done
           echo "::error::Gagal menyimpan tangkapan layar setelah 4 percobaan"
           exit 1
