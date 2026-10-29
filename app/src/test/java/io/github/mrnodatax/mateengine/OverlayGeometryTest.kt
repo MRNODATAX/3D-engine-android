@@ -167,10 +167,11 @@ class OverlayGeometryTest {
     }
 
     @Test
-    fun `jendela lebih besar dari layar diratakan dengan tepi`() {
-        val p = OverlayGeometry.freePlacement(0, 0, 1200, 2600, 1080, 2400)
-        assertEquals(-120, p.x)
-        assertEquals(-200, p.y)
+    fun `jendela lebih besar dari layar tetap bisa digeser di dalam rentang yang menutup layar`() {
+        // Jendela 1200x2600 di layar 1080x2400: geseran yang sah hanya antara -120..0 dan -200..0.
+        assertEquals(0, OverlayGeometry.freePlacement(0, 0, 1200, 2600, 1080, 2400).x)
+        assertEquals(-120, OverlayGeometry.freePlacement(-9999, -9999, 1200, 2600, 1080, 2400).x)
+        assertEquals(-200, OverlayGeometry.freePlacement(-9999, -9999, 1200, 2600, 1080, 2400).y)
     }
 
     @Test
