@@ -50,6 +50,19 @@ tunggu_log() {
   return 1
 }
 
+# Pusat mendatar + tepi atas. Lebar jendela memang berubah sendiri saat siluet dihaluskan
+# (mis. 527 -> 757 px ketika lengan bergerak), jadi lebar tidak boleh dipakai sebagai bukti
+# "avatar tidak bergeser"; yang tetap adalah pusatnya.
+sama_pusat() {
+  local ax ay aw ah bx by bw bh
+  read -r ax ay aw ah <<< "$1"
+  read -r bx by bw bh <<< "$2"
+  local pusat_a=$((ax + aw / 2)) pusat_b=$((bx + bw / 2))
+  [ "$(selisih "$pusat_a" "$pusat_b")" -le 3 ] || return 1
+  [ "$(selisih "$ay" "$by")" -le 3 ] || return 1
+  return 0
+}
+
 sama_bingkai() {
   local ax ay aw ah bx by bw bh
   read -r ax ay aw ah <<< "$1"
@@ -145,7 +158,7 @@ SETELAH_ELUS=$(bingkai) || gagal "bingkai jendela hilang setelah elus"
 catat "elus kepala: ${ELUS_TOTAL} gestur, ${ELUS_SERET} menyeret; jendela ${SETELAH_ELUS}"
 [ "$ELUS_TOTAL" -ge 3 ] || gagal "gestur elus tidak tercatat (logcat: $ELUS_TOTAL)"
 [ "$ELUS_SERET" -eq 0 ] || gagal "elus kepala menyeret avatar ($ELUS_SERET kali)"
-sama_bingkai "$AWAL" "$SETELAH_ELUS" || gagal "jendela bergeser setelah elus ($AWAL -> $SETELAH_ELUS)"
+sama_pusat "$AWAL" "$SETELAH_ELUS" || gagal "avatar bergeser setelah usapan ($AWAL -> $SETELAH_ELUS)"
 lulus "elus kepala bolak-balik tidak menggeser avatar"
 
 # ---------------------------------------------------------------- 2. geser badan
