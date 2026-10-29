@@ -14,7 +14,11 @@ const result = await build({
   bundle: true,
   format: 'iife',
   globalName: 'MateRendererBundle',
-  target: ['chrome100'],
+  // Diturunkan ke Chrome 61 (WebView bawaan Android 8.x). Sintaks modern seperti `?.` dan
+  // `??` (dipakai three-vrm) akan diterjemahkan esbuild; API runtime yang belum ada ditangani
+  // `src/polifill.js`. Tanpa ini, renderer gagal dengan
+  // "Uncaught SyntaxError: Unexpected token ." di emulator API 26.
+  target: ['chrome61'],
   minify: true,
   sourcemap: false,
   legalComments: 'none',

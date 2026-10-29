@@ -47,9 +47,22 @@ jobs:
       - name: Uji 15 gaya reaksi
         working-directory: web
         run: npm run test:reactions
+      - name: Uji polyfill WebView lama (Android 8.x)
+        working-directory: web
+        run: npm run test:polifill
       - name: Build bundle renderer
         working-directory: web
         run: npm run build
+      - name: Pastikan bundel di repositori sama dengan hasil build
+        # APK memakai bundel yang di-commit. Bila hasil build berbeda, yang diuji di emulator
+        # bukan yang ada di repositori — jadi perbedaan sekecil apa pun dianggap gagal.
+        run: |
+          if ! git diff --quiet -- app/src/main/assets/renderer; then
+            git diff --stat -- app/src/main/assets/renderer
+            echo "::error::bundel renderer di repositori berbeda dari hasil build (jalankan: cd web && npm run build lalu commit)"
+            exit 1
+          fi
+          echo "== bundel renderer di repositori identik dengan hasil build"
       - name: Pasang Chromium untuk uji render
         working-directory: web
         run: npx playwright install chromium --with-deps

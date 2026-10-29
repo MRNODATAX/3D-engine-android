@@ -8,6 +8,9 @@
  * Renderer tidak pernah mengambil alih sentuhan atau menggambar panel: kanvas
  * selalu transparan di luar model, sehingga aplikasi di belakang tetap terlihat.
  */
+// Harus diimpor paling awal: shim ini menyiapkan API WebView lama sebelum modul lain
+// (three, three-vrm) dieksekusi di WebView Chrome 6x milik Android 8.x.
+import './polifill.js';
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import { VRMLoaderPlugin, VRMUtils } from '@pixiv/three-vrm';
