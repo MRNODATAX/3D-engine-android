@@ -5,6 +5,10 @@ name: Perangkat (matriks API)
 # dilaporkan di ringkasan job.
 on:
   workflow_dispatch:
+    inputs:
+      api:
+        description: "Daftar API yang diuji (dipisah koma), mis. 26 atau 26,34,36"
+        default: "26,34,36"
   push:
     paths:
       - ".github/workflows/device-matrix.yml"
@@ -49,7 +53,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        api: [26, 34, 36]
+        api: ${{ fromJSON(format('[{0}]', github.event.inputs.api || '26,34,36')) }}
     steps:
       - uses: actions/checkout@v5
 
@@ -117,7 +121,7 @@ jobs:
           fi
           LOG="/tmp/matriks-api${{ matrix.api }}-logcat.txt"
           if [ -f "$LOG" ]; then
-            potong=$(grep -E "MateEngineRender|chromium|AndroidRuntime|FATAL" "$LOG" | tail -12 | tr '\n' '|' | cut -c1-4000)
+            potong=$(awk '/FATAL EXCEPTION/{t=1} t{print} t&&/^$/{exit}' "$LOG" | head -14 | tr '\n' '|' | cut -c1-4000)
             [ -n "$potong" ] && echo "::warning::API ${{ matrix.api }} log: $potong"
           fi
 

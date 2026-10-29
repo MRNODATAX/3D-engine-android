@@ -20,6 +20,11 @@ BATAS_SIAP="${BATAS_SIAP:-150}"
 : > "$DIAG"
 
 catat() { echo "$*" | tee -a "$DIAG"; }
+# Blok crash pertama dari logcat: bagian ATAS tumpukan (jenis galat + frame aplikasi)
+# yang menentukan penyebab, bukan bagian bawahnya yang hanya ViewRootImpl/Choreographer.
+crash() {
+  awk '/FATAL EXCEPTION/{t=1} t{print} t&&/^$/{exit}' "$1" 2>/dev/null | head -25
+}
 # Setiap panggilan adb dibatasi waktunya. Tanpa ini, satu perintah yang menggantung membuat
 # seluruh job dibatalkan pada batas waktu dan tidak ada diagnostik yang tersisa.
 ADB_BIN="$(command -v adb || true)"
@@ -73,7 +78,8 @@ case "$fokus" in
   *)
     catat "keluaran am start: $(echo "$keluaran_buka" | tr '\n' '|' | cut -c1-400)"
     catat "fokus jendela: $(echo "$fokus" | tr -s ' ' | cut -c1-200)"
-    adb logcat -d 2>/dev/null | grep -E "AndroidRuntime|FATAL|mateengine" | tail -15 | sed 's/^/  /' | tee -a "$DIAG" || true
+    adb logcat -d > "$LOG" 2>/dev/null || true
+    crash "$LOG" | sed 's/^/  /' | tee -a "$DIAG" || true
     gagal "aktivitas tidak bisa dibuka"
     ;;
 esac
@@ -86,10 +92,14 @@ for _ in $(seq 1 "$BATAS_SIAP"); do
   adb logcat -d > "$LOG" 2>/dev/null || true
   if grep -q "avatar-ready" "$LOG"; then siap=1; break; fi
   galat=$(grep -m1 -E "renderer belum siap|renderer gagal|Galat renderer|Uncaught|SyntaxError" "$LOG" || true)
+  if grep -q "FATAL EXCEPTION" "$LOG"; then
+    crash "$LOG" | sed 's/^/  /' | tee -a "$DIAG"
+    gagal "aplikasi crash sebelum avatar siap"
+  fi
   [ -z "$galat" ] || break
 done
 if [ "$siap" -ne 1 ]; then
-  grep -E "MateEngineRender|chromium|WebView|AndroidRuntime" "$LOG" | tail -40 | tee -a "$DIAG" || true
+  grep -E "MateEngineRender|chromium|WebView" "$LOG" | tail -20 | sed 's/^/  /' | tee -a "$DIAG" || true
   gagal "avatar tidak siap dalam ${BATAS_SIAP} dtk ${galat:+($galat)}"
 fi
 lewat "avatar-ready setelah $(( $(date +%s) - t0 )) dtk"
@@ -137,7 +147,7 @@ catat "memantau crash/ANR 10 dtk..."
 sleep 10
 adb logcat -d > "$LOG" 2>/dev/null || true
 if grep -qE "FATAL EXCEPTION|ANR in $PKG" "$LOG"; then
-  grep -E -A 12 "FATAL EXCEPTION|ANR in $PKG" "$LOG" | head -40 | tee -a "$DIAG"
+  crash "$LOG" | sed 's/^/  /' | tee -a "$DIAG"
   gagal "crash/ANR terdeteksi"
 fi
 if ! adb shell pidof "$PKG" >/dev/null 2>&1; then gagal "proses aplikasi hilang"; fi
