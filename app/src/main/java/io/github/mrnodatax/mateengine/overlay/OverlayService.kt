@@ -1562,11 +1562,20 @@ class OverlayService : Service() {
                     applySilhouette(force = true)
                     dragStartVisible = null
                     val placed = lastVisible
-                    if (placed != null) {
+                    if (placed != null && wasDragging) {
                         Log.i(
                             TAG,
                             "geser selesai: jendela ${placed.width}x${placed.height} di " +
                                 "(${placed.left}, ${placed.top}) dari layar ${screenWidth}x$screenHeight",
+                        )
+                    } else if (placed != null) {
+                        // Tanpa pemisahan ini, setiap ketukan/elusan mencetak "geser selesai"
+                        // walau avatar tidak berpindah — log jadi tidak bisa dipakai sebagai
+                        // bukti, dan uji regresi gestur salah menyimpulkan ada geseran.
+                        Log.i(
+                            TAG,
+                            "sentuhan selesai tanpa geser: jendela ${placed.width}x${placed.height} " +
+                                "di (${placed.left}, ${placed.top})",
                         )
                     }
                     return true
