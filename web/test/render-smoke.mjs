@@ -413,8 +413,17 @@ try {
     const metricsSeated = window.MateEngine.poseMetrics();
     window.MateEngine.setSeated(false);
     const stoodUp = await until(() => window.MateEngine.poseMetrics()?.builtinClip === 'idle_loop');
-    await wait(600);
-    const standingAgain = bottomGap();
+    // Bingkai kamera kembali ke pose berdiri secara bertahap (bukan seketika), dan di CI
+    // ber-SwiftShader transisi itu bisa lebih lambat dari jam dinding. Dahulu di sini ada
+    // `wait(600)` tetap dan uji gagal acak dengan tinggi 357 px vs 457 px. Yang diuji adalah
+    // keadaan akhir, jadi tunggu sampai tinggi kembali — maksimal 8 detik.
+    const standingDeadline = performance.now() + 8000;
+    let standingAgain = bottomGap();
+    while (performance.now() < standingDeadline) {
+      if (standingAgain.height > standing.height * 0.8) break;
+      await wait(150);
+      standingAgain = bottomGap();
+    }
 
     // Ayunan saat digeser: kecepatan tinggi → badan miring, lalu mereda.
     window.MateEngine.setDragVelocity(1800, 0);

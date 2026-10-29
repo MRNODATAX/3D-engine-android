@@ -20,7 +20,11 @@ POLA = re.compile(
 # `dumpsys window windows` menulis: mAttrs={(x,y)(WxH) gr=...}
 POLA_ATTRS = re.compile(r"mAttrs=\{\((-?\d+),(-?\d+)\)\((\d+)x(\d+)\)")
 # `dumpsys window displays` menulis beberapa kali: ... cur=WxH app=WxH ...
-POLA_LAYAR = re.compile(r"cur=(\d+)x(\d+)")
+# API 26 hanya menulis `init=WxH`, jadi keduanya diterima.
+POLA_LAYAR = re.compile(r"(?:cur|init)=(\d+)x(\d+)")
+# API 26 tidak menulis `mAttrs` numerik (isinya `fillxfill`), tetapi selalu menulis bingkai
+# hasil tata letak: mFrame=[kiri,atas][kanan,bawah].
+POLA_FRAME = re.compile(r"mFrame=\[(-?\d+),(-?\d+)\]\[(-?\d+),(-?\d+)\]")
 TOLERANSI = 2
 
 
@@ -38,11 +42,16 @@ def main() -> int:
     if args.dumpsys:
         teks = sys.stdin.read()
         attrs = POLA_ATTRS.search(teks)
+        frame = POLA_FRAME.search(teks)
         layar = POLA_LAYAR.search(teks)
-        if not attrs or not layar:
-            print("dumpsys tidak memuat mAttrs/cur= window avatar")
+        if not layar or not (attrs or frame):
+            print("dumpsys tidak memuat mAttrs/mFrame/cur= window avatar")
             return 2
-        kiri, atas, lebar, tinggi = (int(v) for v in attrs.groups())
+        if attrs:
+            kiri, atas, lebar, tinggi = (int(v) for v in attrs.groups())
+        else:
+            x1, y1, x2, y2 = (int(v) for v in frame.groups())
+            kiri, atas, lebar, tinggi = x1, y1, x2 - x1, y2 - y1
         layar_w, layar_h = (int(v) for v in layar.groups())
         kanan = kiri + lebar
         bawah = atas + tinggi

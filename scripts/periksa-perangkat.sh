@@ -141,8 +141,12 @@ PYHITUNG
 jumlah=$(head -1 /tmp/matriks-hitung.txt)
 catat "jumlah jendela avatar: ${jumlah:-?} (baris berjudul: $(sed -n '2p' /tmp/matriks-hitung.txt | cut -c1-300))"
 [ "${jumlah:-0}" -eq 1 ] || gagal "jendela avatar berjumlah ${jumlah:-?} (seharusnya 1)"
+# Bagian jendela avatar saja: `mAttrs`/`mFrame` hanya ada di blok ini.
 grep -A 3 -m1 "MateEngine avatar" "$DUMP" | head -4 > /tmp/matriks-jendela.txt
-adb shell dumpsys window displays | grep -o "cur=[0-9]*x[0-9]*" | head -1 >> /tmp/matriks-jendela.txt
+# Ukuran layar: `cur=` di versi baru, `init=` di API 26 (versi lama tidak menulis `cur=`).
+layar_baris=$(adb shell dumpsys window displays | grep -o -E "(cur|init)=[0-9]+x[0-9]+" | head -1)
+catat "ukuran layar dari dumpsys: ${layar_baris:-tidak terbaca}"
+echo "$layar_baris" >> /tmp/matriks-jendela.txt
 
 hasil_jendela=$(python3 scripts/periksa-jendela-layar.py --dumpsys < /tmp/matriks-jendela.txt 2>&1) || {
   catat "$hasil_jendela"
