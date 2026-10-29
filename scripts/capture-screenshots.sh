@@ -206,33 +206,21 @@ else
   echo "== bukti gerak: dua tangkapan berbeda (avatar bergerak)"
 fi
 
-# ---- bukti tangan tidak terangkat: sudut lengan dari jejak renderer harus < 45 derajat ----
-arm_report="$(adb logcat -d | grep -o 'motion {.*}' | tail -6 || true)"
+# ---- bukti tangan tidak terangkat: sudut lengan hanya diukur saat klip istirahat ----
+arm_report="$(adb logcat -d | grep -o 'motion {.*}' | tail -40 || true)"
 echo "--- jejak sudut lengan ---" >> "$DIAG"
 echo "$arm_report" >> "$DIAG" 2>&1 || true
-worst="$(printf '%s\n' "$arm_report" | python3 -c '
-import json, sys, re
-values = []
-for line in sys.stdin:
-    match = re.search(r"motion (\{.*\})", line)
-    if not match:
-        continue
-    try:
-        data = json.loads(match.group(1))
-    except json.JSONDecodeError:
-        continue
-    for key in ("armLeftDeg", "armRightDeg"):
-        if isinstance(data.get(key), (int, float)):
-            values.append(float(data[key]))
-if values:
-    print(max(values))
-' 2>/dev/null || true)"
-if [ -z "$worst" ]; then
-  echo "::warning::Tidak ada jejak sudut lengan di logcat; bukti pose tidak terbaca"
-elif python3 -c "import sys; sys.exit(0 if float('$worst') < 45 else 1)"; then
-  echo "== bukti pose: sudut lengan terjauh ${worst} derajat (< 45 derajat, tangan di bawah)"
+# `set -e` akan mematikan skrip kalau status diambil langsung dari assignment, jadi status
+# ditangkap lewat `||`.
+arm_check="$(printf '%s\n' "$arm_report" | python3 scripts/periksa-sudut-lengan.py 2>&1)" && arm_status=0 || arm_status=$?
+echo "--- pemeriksaan sudut lengan ---" >> "$DIAG"
+echo "$arm_check" >> "$DIAG" 2>&1 || true
+if [ "$arm_status" -eq 2 ]; then
+  echo "::warning::Tidak ada jejak klip istirahat; bukti pose tidak terbaca"
+elif [ "$arm_status" -eq 0 ]; then
+  echo "== bukti pose: ${arm_check} (tangan di bawah bahu)"
 else
-  echo "::error::Sudut lengan ${worst} derajat: tangan terangkat saat diam"
+  echo "::error::Tangan terangkat saat diam (${arm_check})"
 fi
 
 # ---- bukti direktur perilaku: avatar harus bergerak sendiri tanpa disentuh ----
