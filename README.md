@@ -81,7 +81,9 @@ menimpa build rilis bertanda tangan dan datanya terpisah. Karena masih debug, AP
 untuk distribusi luas.
 
 Bukti pengujian otomatis dan daftar yang **belum** terverifikasi ada di
-[docs/verification.md](docs/verification.md).
+[docs/verification.md](docs/verification.md). Rencana menuju rilis final (v1.0.0), termasuk
+syarat Play API 36 dan kesiapan rilis, ada di
+[docs/rencana-finalisasi-v1.0.md](docs/rencana-finalisasi-v1.0.md).
 
 ## Arsitektur
 
