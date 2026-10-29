@@ -351,6 +351,10 @@ echo "== menunggu renderer memuat model (maks 180 detik)"
 # dari proses sebelumnya (logcat tidak kosong setelah force-stop), sehingga tangkapan 06
 # diambil sebelum avatar tergambar — hasilnya layar kosong.
 adb logcat -c || true
+# Aplikasi harus dinyalakan lagi: `am force-stop` di atas mematikan prosesnya, dan tanpa
+# `am start` tidak ada apa pun yang menggambar avatar (tangkapan 06 dulu selalu kosong).
+adb shell am start -W -n "$ACTIVITY" --ez seed_sample true --ez start_overlay true \
+  --ei scale 80 --es screen home >/dev/null
 ready=0
 for i in $(seq 1 36); do
   sleep 5
