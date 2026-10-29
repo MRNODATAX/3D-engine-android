@@ -89,9 +89,20 @@ for _ in $(seq 1 "$BATAS_SIAP"); do
 done
 [ "$siap" -eq 1 ] || { grep -E "MateEngineRender|chromium" "$LOG" | tail -12 | sed 's/^/  /' | tee -a "$DIAG"; gagal "avatar tidak siap"; }
 lulus "avatar siap"
-sleep 4
+sleep 8
 
-AWAL=$(bingkai) || gagal "bingkai jendela avatar tidak terbaca"
+# Bingkai jendela masih menyempit beberapa detik setelah avatar siap (siluet dihaluskan tiap
+# frame). Geser/ketuk di tengah penyempitan itu bisa tidak terkirim ke jendela mana pun —
+# percobaan sebelumnya mencatat 0 gestur. Tunggu sampai dua pembacaan sama.
+AWAL=""
+for _ in $(seq 1 12); do
+  BARU=$(bingkai) || gagal "bingkai jendela avatar tidak terbaca"
+  if [ -n "$AWAL" ] && sama_bingkai "$AWAL" "$BARU"; then AWAL=$BARU; break; fi
+  AWAL=$BARU
+  sleep 3
+done
+[ -n "$AWAL" ] || gagal "bingkai jendela avatar tidak terbaca"
+catat "bingkai stabil: $AWAL"
 set -- $AWAL
 JX=$1; JY=$2; JW=$3; JH=$4
 catat "jendela awal: ${JW}x${JH} di (${JX},${JY})"
@@ -117,12 +128,15 @@ LEWAT_E1=$(wc -l < "$LOG")
 # sebelumnya hanya mencatat 2 dari 6 usapan.
 for arah in kanan kiri kanan; do
   sejak=$(wc -l < "$LOG")
-  if [ "$arah" = "kanan" ]; then
-    adb shell input swipe "$KEPALA_X" "$KEPALA_Y" $((KEPALA_X + ELUS_AMP)) "$KEPALA_Y" 260
-  else
-    adb shell input swipe $((KEPALA_X + ELUS_AMP)) "$KEPALA_Y" "$KEPALA_X" "$KEPALA_Y" 260
-  fi
-  tunggu_log "gestur UP" 25 "$sejak" || true
+  for percobaan in 1 2; do
+    if [ "$arah" = "kanan" ]; then
+      adb shell input swipe "$KEPALA_X" "$KEPALA_Y" $((KEPALA_X + ELUS_AMP)) "$KEPALA_Y" 260
+    else
+      adb shell input swipe $((KEPALA_X + ELUS_AMP)) "$KEPALA_Y" "$KEPALA_X" "$KEPALA_Y" 260
+    fi
+    tunggu_log "gestur UP" 20 "$sejak" && break
+    sleep 2
+  done
 done
 adb logcat -d > "$LOG" 2>/dev/null || true
 ELUS_SERET=$(tail -n +$((LEWAT_E1 + 1)) "$LOG" | grep -c "gestur UP.*menyeret=true" || true)
