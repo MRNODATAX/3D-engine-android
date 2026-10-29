@@ -347,6 +347,10 @@ adb shell am force-stop "$PKG" || true
 
 
 echo "== menunggu renderer memuat model (maks 180 detik)"
+# Logcat dibersihkan dulu. Tanpa ini, penantian langsung cocok dengan baris `avatar-ready`
+# dari proses sebelumnya (logcat tidak kosong setelah force-stop), sehingga tangkapan 06
+# diambil sebelum avatar tergambar — hasilnya layar kosong.
+adb logcat -c || true
 ready=0
 for i in $(seq 1 36); do
   sleep 5
