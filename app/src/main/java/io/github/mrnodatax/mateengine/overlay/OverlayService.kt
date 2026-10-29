@@ -547,13 +547,21 @@ class OverlayService : Service() {
     private fun applyWindowRect(visible: OverlayGeometry.Rect) {
         val container = rootView ?: return
         val layoutParams = params ?: return
+        val unchanged = layoutParams.width == visible.width &&
+            layoutParams.height == visible.height &&
+            layoutParams.x == visible.left &&
+            layoutParams.y == visible.top
         lastVisible = visible
-        layoutParams.width = visible.width
-        layoutParams.height = visible.height
-        layoutParams.x = visible.left
-        layoutParams.y = visible.top
-        runCatching { windowManager.updateViewLayout(container, layoutParams) }
-            .onFailure { Log.w(TAG, "gagal menerapkan jendela siluet: ${it.message}") }
+        if (!unchanged) {
+            layoutParams.width = visible.width
+            layoutParams.height = visible.height
+            layoutParams.x = visible.left
+            layoutParams.y = visible.top
+            // Setiap `updateViewLayout` adalah relayout jendela. Dulu dipanggil untuk setiap
+            // event gerak walau posisinya sama, dan pada perangkat itu membuat gestur tersendat.
+            runCatching { windowManager.updateViewLayout(container, layoutParams) }
+                .onFailure { Log.w(TAG, "gagal menerapkan jendela siluet: ${it.message}") }
+        }
         // Kanvas **seukuran jendela**, bukan kanvas desain yang digeser dengan margin negatif.
         //
         // Versi lama memasang kanvas 1010x1919 dengan margin negatif di dalam jendela 512x1919.
@@ -1461,7 +1469,7 @@ class OverlayService : Service() {
                     // ikut miring seperti tertinggal, lalu mereda sendiri setelah jari berhenti.
                     val nowMs = System.currentTimeMillis()
                     val span = (nowMs - lastMoveAt).coerceAtLeast(16L)
-                    if (nowMs - lastVelocitySentAt >= 50) {
+                    if (nowMs - lastVelocitySentAt >= 100) {
                         val vx = (event.rawX - lastMoveX) * 1000f / span
                         val vy = (event.rawY - lastMoveY) * 1000f / span
                         lastMoveX = event.rawX

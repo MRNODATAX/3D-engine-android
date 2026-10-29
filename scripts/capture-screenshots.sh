@@ -321,7 +321,7 @@ echo "== tersimpan $OUT/20-overlay-geser-pojok.png (avatar digeser ke pojok)"
 {
   echo "--- jendela tepat setelah digeser ke pojok ---"
   adb shell dumpsys window windows | grep -A 3 "MateEngine avatar" | head -6
-  adb logcat -d -s MateEngineRender:I | grep -E "jendela siluet|kotak tubuh|digeser ke" | tail -6
+  adb logcat -d -s MateEngineRender:I | grep -E "gestur |jendela siluet|kotak tubuh|digeser ke|geser selesai" | tail -14
 } >> "$DIAG" 2>&1 || true
 # Setelah pegas menetapkan posisi akhir, ambil ulang bukti: kalau isi kanvas sejajar dengan
 # jendelanya, avatar harus tampil utuh pada tangkapan berikut.
@@ -330,7 +330,7 @@ adb exec-out screencap -p > "$OUT/20b-overlay-pojok-menepet.png"
 {
   echo "--- jendela setelah pegas menetap (4 dtk) ---"
   adb shell dumpsys window windows | grep -A 3 "MateEngine avatar" | head -6
-  adb logcat -d -s MateEngineRender:I | grep -E "jendela siluet|digeser ke" | tail -3
+  adb logcat -d -s MateEngineRender:I | grep -E "gestur |jendela siluet|digeser ke|geser selesai" | tail -6
 } >> "$DIAG" 2>&1 || true
 echo "== tersimpan $OUT/20b-overlay-pojok-menepet.png"
 drag_line="$(adb logcat -d | grep -o 'geser selesai: jendela [0-9]*x[0-9]* di ([0-9-]*, [0-9-]*) dari layar [0-9]*x[0-9]*' | tail -1)"
