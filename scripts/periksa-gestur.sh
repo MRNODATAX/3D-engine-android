@@ -98,20 +98,27 @@ catat "jendela awal: ${JW}x${JH} di (${JX},${JY})"
 KEPALA_X=$((JX + JW / 2)); KEPALA_Y=$((JY + JH * 12 / 100))
 BADAN_X=$((JX + JW / 2)); BADAN_Y=$((JY + JH * 45 / 100))
 
-# ---------------------------------------------------------------- 1. elus kepala
+# ------------------------------------------------ 1. usapan halus di kepala
+# Catatan jujur: elusan yang MEMICU headpat butuh lintasan ≥ 60 px dalam 900 ms (JS), sedangkan
+# ambang geser Android 22 dp (≈58 px) — jadi "elus yang memicu reaksi tanpa menyeret" hanya
+# mungkin lewat gerakan bolak-balik dalam satu gestur (bukan `input swipe` linear).
+# Pemetaan elusan → headpat diuji di web/test/touch.test.mjs; di sini yang dibuktikan bahwa
+# usapan halus (6 dp) TIDAK menggeser avatar.
 # Amplitudo 19 px dipilih dengan sengaja: di bawah ambang geser 22 dp (≈58 px di layar ini)
 # dan bahkan di bawah ambang "margin kosong" 8 dp (≈21 px), sehingga gerakan bolak-balik
 # kecil tidak boleh menyeret avatar. Elusan besar (±80 px seperti percobaan pertama) memang
 # DIRANCANG menyeret — itu fitur, bukan bug — jadi yang diuji di sini adalah elusan halus.
 DPI=$(adb shell wm density | sed -n 's/.*: \([0-9]*\).*/\1/p' | head -1)
 [ -n "$DPI" ] || DPI=420
-ELUS_AMP=$((DPI * 7 / 160))
+# Pergeseran TOTAL per usapan (bukan setengah amplitudo): harus di bawah ambang 8 dp
+# (margin kosong) supaya tidak menyeret walau sentuhan tidak tepat di badan.
+ELUS_AMP=$((DPI * 6 / 160))
 [ "$ELUS_AMP" -ge 10 ] || ELUS_AMP=10
 catat "amplitudo elus: ${ELUS_AMP} px"
 LEWAT_E1=$(wc -l < "$LOG")
 for _ in 1 2 3; do
-  adb shell input swipe $((KEPALA_X - ELUS_AMP)) "$KEPALA_Y" $((KEPALA_X + ELUS_AMP)) "$KEPALA_Y" 260
-  adb shell input swipe $((KEPALA_X + ELUS_AMP)) "$KEPALA_Y" $((KEPALA_X - ELUS_AMP)) "$KEPALA_Y" 260
+  adb shell input swipe "$KEPALA_X" "$KEPALA_Y" $((KEPALA_X + ELUS_AMP)) "$KEPALA_Y" 260
+  adb shell input swipe $((KEPALA_X + ELUS_AMP)) "$KEPALA_Y" "$KEPALA_X" "$KEPALA_Y" 260
 done
 tunggu_log "gestur UP" 30 "$LEWAT_E1" || true
 adb logcat -d > "$LOG" 2>/dev/null || true
