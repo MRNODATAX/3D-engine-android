@@ -346,12 +346,15 @@ fi
 adb shell am force-stop "$PKG" || true
 
 
-echo "== menunggu renderer memuat model (maks 90 detik)"
+echo "== menunggu renderer memuat model (maks 180 detik)"
 ready=0
-for i in $(seq 1 18); do
+for i in $(seq 1 36); do
   sleep 5
-  if adb logcat -d | grep -q "MateEngineRender.*avatar-ready"; then
-    echo "== renderer melaporkan avatar-ready setelah $((i * 5)) detik"
+  # `avatar-ready` adalah bukti terbaik, tetapi pada emulator GL perangkat lunak model kadang
+  # siap lebih lambat dari 90 detik. `body-box` hanya dikirim setelah badan benar-benar diukur,
+  # jadi itu pun sah sebagai bukti avatar sudah hidup.
+  if adb logcat -d | grep -qE "MateEngineRender.*(avatar-ready|kotak tubuh)"; then
+    echo "== renderer siap setelah $((i * 5)) detik"
     ready=1
     break
   fi
