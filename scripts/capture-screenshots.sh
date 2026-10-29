@@ -355,6 +355,11 @@ for i in $(seq 1 18); do
   fi
 done
 sleep 4
+{
+  echo "--- jendela saat tangkapan 06 (tanpa aplikasi di depan) ---"
+  adb shell dumpsys window windows | grep -A 3 "MateEngine avatar" | head -6
+  adb logcat -d -s MateEngineRender:I | grep -E "avatar-ready|jendela siluet|renderer error" | tail -6
+} >> "$DIAG" 2>&1 || true
 adb exec-out screencap -p > "$OUT/06-overlay.png"
 echo "== tersimpan $OUT/06-overlay.png"
 

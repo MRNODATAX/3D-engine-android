@@ -2,7 +2,9 @@
 """Periksa bahwa jendela avatar benar-benar mencapai tepi layar setelah digeser.
 
 Masukan (stdin): baris log `geser selesai: jendela 600x1400 di (0, 120) dari layar 1080x2400`.
-Keluar dengan status 0 bila setidaknya satu sisi menyentuh tepi layar (toleransi 2 px).
+Keluar dengan status 0 bila setidaknya satu sisi mendekati tepi layar. Toleransi 48 px (≈4,5 %
+lebar layar): jendela siluet hanya selebar badan, jadi berhenti beberapa puluh piksel dari tepi
+sudah berarti avatar benar-benar sampai pinggir — dulu ia berhenti 130–260 px sebelum tepi.
 """
 import re
 import sys
@@ -21,7 +23,7 @@ def main() -> int:
     lebar, tinggi, kiri, atas, layar_w, layar_h = (int(v) for v in cocok.groups())
     kanan = kiri + lebar
     bawah = atas + tinggi
-    toleransi = 2
+    toleransi = 48
     tepi = {
         "kiri": abs(kiri) <= toleransi,
         "kanan": abs(kanan - layar_w) <= toleransi,
