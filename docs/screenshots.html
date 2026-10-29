@@ -1,0 +1,443 @@
+<!doctype html>
+<html lang="id" data-theme="light" data-filter="all">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Mate Engine Android — tangkapan layar APK</title>
+<style>
+  :root {
+    --bg: #f4f6f7; --surface: #ffffff; --surface-2: #eef1f2; --line: #dbe0e2;
+    --text: #12171a; --muted: #5b666d; --accent: #0e7490; --accent-soft: #e3f4f8;
+    --ok: #1f7a4d; --ok-soft: #e6f4ec; --warn: #8a5a00; --warn-soft: #fbf1dc;
+    --radius: 16px;
+  }
+  [data-theme="dark"] {
+    --bg: #0b0f11; --surface: #141a1d; --surface-2: #1c2428; --line: #283237;
+    --text: #e8edef; --muted: #9aa7ad; --accent: #4dd6f0; --accent-soft: #10333a;
+    --ok: #6cd39c; --ok-soft: #12301f; --warn: #e4b25c; --warn-soft: #33290f;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; background: var(--bg); color: var(--text);
+    font: 15px/1.5 "Roboto", "Noto Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+    -webkit-font-smoothing: antialiased;
+  }
+  a { color: var(--accent); }
+  .toolbar {
+    position: sticky; top: 0; z-index: 20; display: flex; flex-wrap: wrap; gap: 8px 14px;
+    align-items: center; padding: 10px 20px; background: var(--surface);
+    border-bottom: 1px solid var(--line); font-size: 12.5px;
+  }
+  .toolbar strong { font-weight: 650; }
+  .toolbar .group { display: flex; gap: 5px; align-items: center; }
+  .toolbar .group > span { color: var(--muted); margin-right: 2px; }
+  .toolbar button {
+    font: inherit; padding: 5px 10px; border-radius: 8px; cursor: pointer;
+    background: var(--surface-2); color: var(--text); border: 1px solid var(--line);
+  }
+  .toolbar button[aria-pressed="true"] {
+    background: var(--accent); border-color: var(--accent); color: #fff; font-weight: 600;
+  }
+  [data-theme="dark"] .toolbar button[aria-pressed="true"] { color: #04191d; }
+  .toolbar .spacer { margin-left: auto; color: var(--muted); }
+
+  header.hero { padding: 40px 20px 8px; max-width: 1180px; margin: 0 auto; }
+  header.hero .eyebrow {
+    font-size: 12px; letter-spacing: .1em; text-transform: uppercase;
+    color: var(--accent); font-weight: 700;
+  }
+  header.hero h1 { font-size: 30px; line-height: 1.2; margin: 8px 0 10px; letter-spacing: -.02em; }
+  header.hero p { max-width: 760px; color: var(--muted); margin: 0; }
+  .facts { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 18px; }
+  .fact {
+    display: inline-flex; align-items: center; gap: 7px; font-size: 12.5px;
+    padding: 6px 11px; border-radius: 999px; background: var(--surface);
+    border: 1px solid var(--line); color: var(--muted);
+  }
+  .fact .dot { width: 7px; height: 7px; border-radius: 50%; background: var(--ok); }
+  .fact.warn .dot { background: var(--warn); }
+
+  main { max-width: 1180px; margin: 0 auto; padding: 24px 20px 60px; }
+  .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 22px; }
+  figure.shot {
+    margin: 0; background: var(--surface); border: 1px solid var(--line);
+    border-radius: var(--radius); overflow: hidden; display: flex; flex-direction: column;
+  }
+  figure.shot[data-kind="overlay"] { border-color: var(--accent); }
+  .frame {
+    display: flex; align-items: center; justify-content: center;
+    background: repeating-linear-gradient(45deg, var(--surface-2) 0 10px, transparent 10px 20px);
+    padding: 16px;
+  }
+  .frame img {
+    display: block; width: 100%; max-width: 300px; height: auto;
+    border-radius: 14px; border: 1px solid var(--line); background: #000;
+  }
+  figure.shot[data-orientation="landscape"] .frame img { max-width: 100%; }
+  figcaption { padding: 14px 16px 16px; display: flex; flex-direction: column; gap: 6px; }
+  figcaption h2 { font-size: 15px; margin: 0; font-weight: 650; }
+  figcaption p { margin: 0; font-size: 13px; color: var(--muted); }
+  .tag {
+    align-self: flex-start; font-size: 11px; font-weight: 700; letter-spacing: .04em;
+    text-transform: uppercase; padding: 3px 8px; border-radius: 999px;
+    background: var(--accent-soft); color: var(--accent);
+  }
+  .tag.overlay { background: var(--ok-soft); color: var(--ok); }
+
+  section.notes {
+    margin-top: 36px; display: grid; gap: 16px;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  }
+  .card {
+    background: var(--surface); border: 1px solid var(--line);
+    border-radius: var(--radius); padding: 18px;
+  }
+  .card h2 { font-size: 15px; margin: 0 0 8px; }
+  .card ul { margin: 0; padding-left: 18px; color: var(--muted); font-size: 13.5px; }
+  .card li { margin-bottom: 6px; }
+  .card.warn { border-color: var(--warn); background: var(--warn-soft); }
+  .card.warn h2 { color: var(--warn); }
+  .card.warn ul { color: inherit; }
+  footer { max-width: 1180px; margin: 0 auto; padding: 0 20px 60px; color: var(--muted); font-size: 12.5px; }
+  [data-filter="app"] figure[data-kind="overlay"] { display: none; }
+  [data-filter="overlay"] figure[data-kind="app"] { display: none; }
+</style>
+</head>
+<body>
+
+<div class="toolbar" role="group" aria-label="Kontrol tampilan galeri">
+  <strong>Galeri tangkapan layar</strong>
+  <div class="group" role="group" aria-label="Filter">
+    <span>Tampilkan</span>
+    <button data-filter="all" aria-pressed="true">Semua</button>
+    <button data-filter="app" aria-pressed="false">Aplikasi</button>
+    <button data-filter="overlay" aria-pressed="false">Overlay</button>
+  </div>
+  <div class="group" role="group" aria-label="Tema halaman">
+    <span>Tema</span>
+    <button data-theme-btn="light" aria-pressed="true">Terang</button>
+    <button data-theme-btn="dark" aria-pressed="false">Gelap</button>
+  </div>
+  <span class="spacer">Gambar di bawah adalah tangkapan layar dari emulator, bukan mockup.</span>
+</div>
+
+<header class="hero">
+  <div class="eyebrow">Mate Engine Android 0.1.0</div>
+  <h1>Tangkapan layar APK yang benar-benar dijalankan</h1>
+  <p>
+    Galeri ini memuat hasil <code>adb exec-out screencap</code> dari APK debug yang dipasang di
+    emulator Android 34 (profil Pixel 6) di GitHub Actions. Data model diisi dari berkas
+    <code>vrm1-twist-sample.vrm</code> berlisensi redistribusi lewat hook debug, sehingga yang
+    terlihat adalah aplikasi asli yang membaca metadata VRM asli.
+  </p>
+  <div class="facts">
+    <span class="fact"><span class="dot"></span>APK debug 0.1.8 (8)</span>
+    <span class="fact"><span class="dot"></span><a href="https://github.com/MRNODATAX/3D-engine-android/releases/tag/v0.1.8-test">Unduh APK uji v0.1.8-test</a></span>
+    <span class="fact"><span class="dot"></span>Android 14 · API 34 · x86_64</span>
+    <span class="fact"><span class="dot"></span>1080 × 2400 · 420 dpi</span>
+    <span class="fact warn"><span class="dot"></span>Perangkat fisik belum diuji</span>
+  </div>
+</header>
+
+<main>
+  <div class="grid">
+    <figure class="shot" data-kind="app" data-orientation="portrait">
+      <div class="frame"><img src="screenshots/01-beranda.png" alt="Halaman Beranda aplikasi: status siap dijalankan, chip izin overlay aktif, tombol Jalankan avatar, kontrol cepat ukuran/opasitas/kunci posisi."></div>
+      <figcaption>
+        <span class="tag">Beranda</span>
+        <h2>Status, izin, dan kontrol cepat</h2>
+        <p>Kartu status membaca izin overlay dan model terpilih. Slider ukuran/opasitas langsung mengubah window overlay.</p>
+      </figcaption>
+    </figure>
+
+    <figure class="shot" data-kind="app" data-orientation="portrait">
+      <div class="frame"><img src="screenshots/02-avatar.png" alt="Halaman Avatar: tombol impor .vrm, daftar model, dan detail metadata VRM 1.0, ukuran 10,3 MB, pemilik pixiv Inc., redistribusi diizinkan."></div>
+      <figcaption>
+        <span class="tag">Avatar</span>
+        <h2>Metadata dibaca dari berkas</h2>
+        <p>Format, lisensi, pemilik, dan jumlah bone berasal dari chunk JSON di dalam berkas VRM, bukan isian manual.</p>
+      </figcaption>
+    </figure>
+
+    <figure class="shot" data-kind="app" data-orientation="portrait">
+      <div class="frame"><img src="screenshots/03-animasi.png" alt="Halaman Animasi: pemutar .vrma, tombol putar/berhenti/impor, daftar animasi, opsi loop, shuffle, dan kecepatan."></div>
+      <figcaption>
+        <span class="tag">Animasi</span>
+        <h2>Pemutar .vrma yang tidak lagi berantakan</h2>
+        <p>Aksi utama satu baris penuh, aksi sekunder berupa ikon 48dp, dan klip bawaan disusun dua kolom
+        sehingga label seperti "Menari" tidak lagi membungkus jadi pilar vertikal.</p>
+      </figcaption>
+    </figure>
+
+    <figure class="shot" data-kind="app" data-orientation="portrait">
+      <div class="frame"><img src="screenshots/04-diagnosa.png" alt="Halaman Diagnosa: status izin overlay, optimasi baterai, pembatasan latar, notifikasi, WebView, dan service overlay."></div>
+      <figcaption>
+        <span class="tag">Diagnosa</span>
+        <h2>Kondisi perangkat apa adanya</h2>
+        <p>Termasuk yang tidak menyenangkan: emulator melaporkan optimasi baterai membatasi service, dan itu ditampilkan sebagai peringatan.</p>
+      </figcaption>
+    </figure>
+
+    <figure class="shot" data-kind="app" data-orientation="portrait">
+      <div class="frame"><img src="screenshots/05-pengaturan.png" alt="Halaman Pengaturan: batas FPS, kualitas render, tema sistem, bahasa, versi, dan data aplikasi."></div>
+      <figcaption>
+        <span class="tag">Pengaturan</span>
+        <h2>Beban render dan data</h2>
+        <p>Batas FPS dan kualitas diteruskan ke renderer; penghapusan data hanya menyentuh salinan milik aplikasi.</p>
+      </figcaption>
+    </figure>
+
+    <figure class="shot" data-kind="overlay" data-orientation="portrait" id="overlay-shot">
+      <div class="frame"><img src="screenshots/06-overlay.png" alt="Avatar transparan di atas launcher Android; tidak ada panel atau kartu di belakang avatar."></div>
+      <figcaption>
+        <span class="tag overlay">Overlay</span>
+        <h2>Avatar di atas aplikasi lain</h2>
+        <p>Diambil setelah menekan tombol <em>Jalankan avatar</em> di aplikasi dan menekan Home. Tidak ada panel atau kartu di belakang avatar; piksel kosong benar-benar transparan. Pose lengan berasal dari pose rileks prosedural karena model uji tersimpan dalam T-pose.</p>
+      </figcaption>
+    </figure>
+
+    <figure class="shot" data-kind="app" data-orientation="portrait">
+      <div class="frame"><img src="screenshots/07-beranda-saat-overlay.png" alt="Halaman Beranda saat overlay berjalan: status Sedang tampil, FPS terukur, tombol Hentikan dan Muat ulang."></div>
+      <figcaption>
+        <span class="tag">Beranda · berjalan</span>
+        <h2>Status dari renderer, bukan karangan</h2>
+        <p>FPS dan "Renderer siap" hanya terisi setelah renderer mengirim laporan lewat jembatan JavaScript. Angka 8 fps berasal dari emulator dengan renderer perangkat lunak.</p>
+      </figcaption>
+    </figure>
+
+    <figure class="shot" data-kind="app" data-orientation="portrait">
+      <div class="frame"><img src="screenshots/08-diagnosa-berjalan.png" alt="Halaman Diagnosa saat layanan overlay aktif, menampilkan status service dan FPS terakhir."></div>
+      <figcaption>
+        <span class="tag">Diagnosa · berjalan</span>
+        <h2>Bukti service hidup</h2>
+        <p>Baris "Service overlay" berubah menjadi berjalan setelah renderer siap; bila layanan mati, statusnya kembali "Tidak berjalan".</p>
+      </figcaption>
+    </figure>
+
+    <figure class="shot" data-kind="app" data-orientation="portrait">
+      <div class="frame"><img src="screenshots/09-beranda-gelap.png" alt="Halaman Beranda dalam tema gelap."></div>
+      <figcaption>
+        <span class="tag">Tema gelap</span>
+        <h2>Mengikuti sistem</h2>
+        <p>Tema diambil dari setelan sistem, tanpa dynamic color agar identitas produk tetap konsisten.</p>
+      </figcaption>
+    </figure>
+
+    <figure class="shot" data-kind="app" data-orientation="landscape">
+      <div class="frame"><img src="screenshots/10-beranda-lebar.png" alt="Tata letak lebar: navigation rail di kiri dan konten dua kolom."></div>
+      <figcaption>
+        <span class="tag">Jendela lebar</span>
+        <h2>Navigation rail + dua kolom</h2>
+        <p>Pada lebar ≥ 600dp, konten dipecah dua kolom dan navigasi pindah ke rail kiri.</p>
+      </figcaption>
+    </figure>
+    <figure class="shot" data-kind="overlay" data-orientation="portrait">
+      <div class="frame"><img src="screenshots/13-overlay-skala-100.png" alt="Avatar dengan tinggi 100% layar: memenuhi layar di atas aplikasi."></div>
+      <figcaption>
+        <span class="tag">Skala · 100%</span>
+        <h2>Tinggi 100% layar</h2>
+        <p>Slider kini berarti tinggi avatar di layar. Pada 100% window overlay selebar layar dan avatar benar-benar besar — bukan lagi dua sistem skala yang saling meniadakan.</p>
+      </figcaption>
+    </figure>
+
+    <figure class="shot" data-kind="overlay" data-orientation="portrait">
+      <div class="frame"><img src="screenshots/14-overlay-skala-40.png" alt="Avatar dengan tinggi 40% layar, jauh lebih kecil, di sudut kanan bawah."></div>
+      <figcaption>
+        <span class="tag">Skala · 40%</span>
+        <h2>Tinggi 40% layar</h2>
+        <p>Perbandingan langsung dengan gambar sebelumnya: ukuran berubah nyata, tersimpan, dan bisa diubah dengan cubit dua jari di overlay.</p>
+      </figcaption>
+    </figure>
+
+    <figure class="shot" data-kind="overlay" data-orientation="portrait">
+      <div class="frame"><img src="screenshots/12-gerak-a.png" alt="Avatar di overlay dengan kedua tangan tergantung di samping badan, memakai klip idle CC0."></div>
+      <figcaption>
+        <span class="tag">Klip idle · tangan di bawah</span>
+        <h2>Tangan tidak lagi terangkat</h2>
+        <p>Klip <code>idle_loop</code> hasil konversi memutar kedua lengan ke bawah. Jejak renderer mencatat sudut lengan terukur:
+        <code>armLeftDeg 18,6</code> dan <code>armRightDeg 21</code> — jauh di bawah ambang 45°.</p>
+      </figcaption>
+    </figure>
+
+    <figure class="shot" data-kind="overlay" data-orientation="portrait">
+      <div class="frame"><img src="screenshots/12-gerak-b.png" alt="Avatar di overlay 1,8 detik kemudian; pose berubah karena animasi berjalan."></div>
+      <figcaption>
+        <span class="tag">Gerak otomatis</span>
+        <h2>Dua tangkapan, dua pose</h2>
+        <p>Skrip menangkap dua kali dengan jeda 1,8 detik; bila gambarnya identik, CI gagal. Sejak 0.1.5 pemeriksaan
+        juga menolak build bila sudut lengan ≥ 45° saat diam.</p>
+      </figcaption>
+    </figure>
+
+    <figure class="shot" data-kind="app" data-orientation="portrait">
+      <div class="frame"><img src="screenshots/21-animasi-katalog.png" alt="Layar Animasi setelah digulir: kolom pencarian klip, chip kategori dengan jumlah tiap kategori, dan kartu klip dua kolom."></div>
+      <figcaption>
+        <span class="tag">Animasi · katalog</span>
+        <h2>29 klip, bisa dicari</h2>
+        <p>Angka di layar dihitung dari katalog (<code>BuiltinClips.all.size</code>), bukan ditulis tangan —
+        sebelumnya layar menyebut "Dua puluh satu klip" padahal aplikasi membundel 29. Kolom cari
+        mencocokkan label Indonesia maupun nama berkas, dan chip kategori membagi 29 klip menjadi
+        lima kelompok.</p>
+      </figcaption>
+    </figure>
+
+    <figure class="shot" data-kind="app" data-orientation="portrait">
+      <div class="frame"><img src="screenshots/22-animasi-diputar.png" alt="Layar Animasi saat overlay berjalan: kartu klip 'Diam' tersorot dengan penanda 'Diputar', kartu lain menampilkan kategorinya."></div>
+      <figcaption>
+        <span class="tag">Animasi · klip aktif</span>
+        <h2>Klip yang sedang diputar selalu terlihat</h2>
+        <p>Kartu klip aktif diberi latar <code>primaryContainer</code>, garis merek, dan penanda "Diputar"
+        dengan titik berdenyut halus — satu-satunya animasi di layar ini. Overlay berjalan pada skala 25%
+        supaya daftar tetap bisa digulir; pada skala besar jendela overlay memang menahan seluruh sentuhan
+        (permintaan produk).</p>
+      </figcaption>
+    </figure>
+
+    <figure class="shot" data-kind="app" data-orientation="portrait">
+      <div class="frame"><img src="screenshots/24-teks-besar-animasi.png" alt="Layar Animasi dengan ukuran teks sistem 1,3x: tombol Putar, Berhenti, dan Impor ditumpuk penuh lebar tanpa teks terpotong."></div>
+      <figcaption>
+        <span class="tag">Aksesibilitas · teks 1,3×</span>
+        <h2>Tidak ada label yang terpotong</h2>
+        <p>Pada fontScale &gt; 1,15 baris tiga tombol otomatis ditumpuk penuh lebar, jadi "Berhenti" tetap
+        terbaca utuh. Sebelum perbaikan, tangkapan yang sama memperlihatkan label "Berh…".</p>
+      </figcaption>
+    </figure>
+
+    <figure class="shot" data-kind="overlay" data-orientation="portrait">
+      <div class="frame"><img src="screenshots/19-overlay-duduk.png" alt="Avatar duduk di overlay; seluruh tubuh termasuk sepatu terlihat, tidak terpotong tepi kanvas."></div>
+      <figcaption>
+        <span class="tag">Duduk · kaki terlihat</span>
+        <h2>Kaki tidak lagi hilang saat duduk</h2>
+        <p>Geseran kamera tetap saat duduk sudah dihapus; bingkai kini mengikuti kerangka. Renderer juga mengirim
+        angka celah tubuh ke setiap tepi kanvas, dan CI menolak build bila celah ≤ 1 px. Pada gambar ini
+        <code>bodyGap</code> = atas 109 px, bawah 111 px (bukan 0 px).</p>
+      </figcaption>
+    </figure>
+
+    <figure class="shot" data-kind="overlay" data-orientation="portrait">
+      <div class="frame"><img src="screenshots/20-overlay-geser-pojok.png" alt="Avatar yang sama setelah digeser dengan swipe ke arah kiri-atas, sekarang berada jauh dari posisi awalnya."></div>
+      <figcaption>
+        <span class="tag">Geser bebas</span>
+        <h2>Digeser ke mana saja di layar</h2>
+        <p>Swipe sungguhan dari tengah layar memindahkan avatar ke kiri-atas. Jendela overlay boleh keluar tepi layar
+        (selama 62% masih terlihat), jadi avatar skala 100% pun bisa dipindah — bukan lagi terkurung kotak 1,9:1.
+        Logcat mencatat <code>overlay digeser ke (-327, -602)</code>, posisi negatif yang dulu mustahil.</p>
+      </figcaption>
+    </figure>
+
+    <figure class="shot" data-kind="overlay" data-orientation="portrait">
+      <div class="frame"><img src="screenshots/18-menu-3x-ketuk.png" alt="Panel menu cepat terbuka setelah avatar diketuk tiga kali di layar emulator."></div>
+      <figcaption>
+        <span class="tag">Menu · 3× ketuk</span>
+        <h2>Ketuk tiga kali, menu muncul</h2>
+        <p>Tiga ketukan beruntun pada avatar (jeda ≤ 700 ms, jarak ≤ 90 px) membuka panel kecil: Gerak, Chat AI,
+        Duduk/Berdiri, dan Setelan. Gambar ini diambil setelah CI mengetuk avatar lewat perintah sentuh sungguhan,
+        bukan lewat hook debug.</p>
+      </figcaption>
+    </figure>
+
+    <figure class="shot" data-kind="overlay" data-orientation="portrait">
+      <div class="frame"><img src="screenshots/16-menu-gerak.png" alt="Panel menu pada halaman Gerak: empat tombol klip bawaan CC0 dalam dua kolom."></div>
+      <figcaption>
+        <span class="tag">Menu · Gerak</span>
+        <h2>Gerakan custom langsung dari overlay</h2>
+        <p>Empat klip bawaan diputar tanpa membuka aplikasi utama. Tombol menyala mengikuti klip yang sedang
+        berjalan; animasi impor <code>.vrma</code> tetap dibuka dari tab Animasi.</p>
+      </figcaption>
+    </figure>
+
+    <figure class="shot" data-kind="overlay" data-orientation="portrait">
+      <div class="frame"><img src="screenshots/17-menu-chat.png" alt="Panel menu pada halaman Chat AI; kunci Gemini belum diisi sehingga muncul tombol Buka tab Chat."></div>
+      <figcaption>
+        <span class="tag">Menu · Chat AI</span>
+        <h2>Balon obrolan di atas aplikasi lain</h2>
+        <p>Balasan muncul sebagai balon dan tetap dibacakan sesuai pengaturan suara. Bila kunci Gemini belum ada,
+        panel mengatakannya apa adanya dan menawarkan jalan ke tab Chat — bukan jawaban palsu.</p>
+      </figcaption>
+    </figure>
+
+    <figure class="shot" data-kind="app" data-orientation="portrait">
+      <div class="frame"><img src="screenshots/11-chat.png" alt="Halaman Chat: status kunci API, tombol isi kunci, edit persona, dan kolom pesan."></div>
+      <figcaption>
+        <span class="tag">Chat · Gemini</span>
+        <h2>Waifu dengan kunci milikmu</h2>
+        <p>Kunci Gemini disimpan terenkripsi; persona sudah terisi dan bisa diedit. Di layar sempit, opsi suara dan model dibuka lewat tombol opsi di kartu atas.</p>
+      </figcaption>
+    </figure>
+
+  </div>
+
+  <section class="notes">
+    <div class="card">
+      <h2>Bukti skala: dua angka, satu perbandingan</h2>
+      <p>Slider "Tinggi avatar di layar" sekarang berarti persentase tinggi layar. Angka pada kedua
+        gambar di atas berasal dari aplikasi yang sama, hanya berbeda nilai <code>scale</code>:
+        100% memenuhi layar, 40% menjadi kecil di sudut. Sebelum perbaikan, satu nilai dipakai dua
+        kali (lebar jendela <em>dan</em> skala model) sehingga rentangnya menyusut jadi seperempat.</p>
+    </div>
+
+    <div class="card">
+      <h2>Yang dibuktikan galeri ini</h2>
+      <ul>
+        <li>Aplikasi terpasang dan berjalan di Android 14 tanpa crash.</li>
+        <li>Tab Chat tampil dengan status kunci yang jujur: belum ada kunci berarti belum bisa mengirim.</li>
+        <li>Izin overlay, notifikasi, dan pembatasan baterai terbaca dari sistem.</li>
+        <li>Metadata VRM asli terbaca dan ditampilkan.</li>
+        <li>Layanan overlay dapat dijalankan dan dilaporkan statusnya.</li>
+        <li>Navigasi, tema, dan tata letak lebar berfungsi.</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h2>Urutan pengambilan</h2>
+      <ul>
+        <li>Pasang APK debug, izinkan overlay, isi data contoh lewat hook debug.</li>
+        <li>Ambil 5 halaman aplikasi (Beranda, Avatar, Animasi, Diagnosa, Pengaturan).</li>
+        <li>Tekan tombol <em>Jalankan avatar</em> seperti pengguna, verifikasi service lewat <code>dumpsys</code>, tekan Home, lalu tangkap overlay.</li>
+        <li>Terakhir: tema gelap dan tata letak lanskap.</li>
+      </ul>
+    </div>
+    <div class="card warn">
+      <h2>Yang belum dibuktikan</h2>
+      <ul>
+        <li>Perilaku pada HP fisik dan ROM produsen (HyperOS, ColorOS, One UI, Funtouch).</li>
+        <li>Kualitas render pada GPU ponsel; emulator memakai renderer perangkat lunak (SwiftShader).</li>
+        <li>Ketahanan layanan saat layar mati atau Recent Apps dibersihkan.</li>
+        <li>Interaksi drag pada layar sentuh nyata.</li>
+        <li>Kualitas animasi pada perangkat keras sungguhan; emulator memakai SwiftShader sehingga FPS rendah.</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h2>Cara memperbarui gambar</h2>
+      <ul>
+        <li>Jalankan workflow <code>Screenshots</code> di GitHub Actions.</li>
+        <li>Skrip <code>scripts/capture-screenshots.sh</code> memasang APK debug dan mengambil tangkapan layar.</li>
+        <li>Hasilnya di-commit otomatis ke <code>docs/screenshots/</code>.</li>
+      </ul>
+    </div>
+  </section>
+</main>
+
+<footer>
+  Model uji: <em>VRM1_Constraint_Twist_Sample</em> © pixiv Inc., lisensi VRM 1.0 dengan
+  <code>allowRedistribution: true</code>. Bukan avatar produk. Mate Engine desktop adalah karya
+  <a href="https://github.com/shinyflvre/Mate-Engine/releases" target="_blank" rel="noreferrer">shinyflvre</a>
+  (AGPL v3 &amp; MateProv2). Status fitur: <code>docs/android-parity.md</code>.
+</footer>
+
+<script>
+  const root = document.documentElement;
+  document.querySelectorAll('[data-filter]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      root.dataset.filter = btn.dataset.filter;
+      document.querySelectorAll('[data-filter]').forEach(b => b.setAttribute('aria-pressed', String(b === btn)));
+    });
+  });
+  document.querySelectorAll('[data-theme-btn]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      root.dataset.theme = btn.dataset.themeBtn;
+      document.querySelectorAll('[data-theme-btn]').forEach(b => b.setAttribute('aria-pressed', String(b === btn)));
+    });
+  });
+</script>
+</body>
+</html>

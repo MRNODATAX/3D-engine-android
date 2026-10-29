@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Tanda merek "Mate Engine" untuk dipakai DI DALAM aplikasi: huruf M dari ikon peluncur,
+  tanpa percikan agar tetap tajam pada 20–24dp.
+
+  Aturan dari docs/brand-guidelines.md:
+    - satu warna (di-tint `colorPrimary` oleh pemanggil), tanpa gradien/bayangan/outline;
+    - huruf M di dalam kanvas 512 lalu diperkecil (skala 0,11) dan dipusatkan di kanvas 64,
+      jadi proporsinya sama dengan ikon peluncur;
+    - clear space minimal setinggi setengah tanda.
+  Ukuran: 20dp (menu overlay), 24dp (header), 40dp (kartu Tentang), 56dp (empty state).
+-->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="48dp"
+    android:height="48dp"
+    android:viewportWidth="64"
+    android:viewportHeight="64">
+    <group
+        android:scaleX="0.11"
+        android:scaleY="0.11"
+        android:translateX="3.84"
+        android:translateY="1.53">
+        <path
+            android:fillColor="#FF000000"
+            android:pathData="M112,404 L112,150 L170,150 L256,272 L342,150 L400,150 L400,404 L344,404 L344,254 L268,362 L244,362 L168,254 L168,404 Z" />
+    </group>
+</vector>

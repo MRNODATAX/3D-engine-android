@@ -1,0 +1,296 @@
+name: Android build
+
+on:
+  push:
+    branches: ["**"]
+    tags: ["v*"]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  renderer:
+    name: Renderer (build + uji render)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+          cache-dependency-path: web/package-lock.json
+      - name: Pasang dependensi renderer
+        working-directory: web
+        run: npm ci
+      - name: Ambil fixture uji berlisensi
+        run: bash scripts/fetch-test-vrm.sh web/test-fixtures
+      - name: Uji logika performa
+        working-directory: web
+        run: npm run test:perf
+      - name: Uji mesin gerak
+        working-directory: web
+        run: npm run test:motion
+      - name: Uji direktur perilaku
+        working-directory: web
+        run: npm run test:behavior
+      - name: Uji batas sendi & ayunan geser
+        working-directory: web
+        run: npm run test:smoothness
+      - name: Uji berkas klip .vrma
+        working-directory: web
+        run: npm run test:vrma
+      - name: Uji zona sentuh per tulang
+        working-directory: web
+        run: npm run test:touch
+      - name: Uji 15 gaya reaksi
+        working-directory: web
+        run: npm run test:reactions
+      - name: Uji polyfill WebView lama (Android 8.x)
+        working-directory: web
+        run: npm run test:polifill
+      - name: Build bundle renderer
+        working-directory: web
+        run: npm run build
+      - name: Pastikan bundel di repositori sama dengan hasil build
+        # APK memakai bundel yang di-commit. Bila hasil build berbeda, yang diuji di emulator
+        # bukan yang ada di repositori — jadi perbedaan sekecil apa pun dianggap gagal.
+        run: |
+          if ! git diff --quiet -- app/src/main/assets/renderer; then
+            git diff --stat -- app/src/main/assets/renderer
+            echo "::error::bundel renderer di repositori berbeda dari hasil build (jalankan: cd web && npm run build lalu commit)"
+            exit 1
+          fi
+          echo "== bundel renderer di repositori identik dengan hasil build"
+      - name: Pasang Chromium untuk uji render
+        working-directory: web
+        run: npx playwright install chromium --with-deps
+      - name: Uji render headless (VRM + transparansi + animasi)
+        working-directory: web
+        run: npm run test:render
+      - name: Unggah bundle renderer
+        uses: actions/upload-artifact@v4
+        with:
+          name: renderer-bundle
+          path: |
+            app/src/main/assets/renderer/renderer.js
+            app/src/main/assets/renderer/index.html
+
+  android:
+    name: APK (uji unit + assemble)
+    runs-on: ubuntu-latest
+    needs: renderer
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: "17"
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: "8.11.1"
+      - name: Ambil model uji (tidak disimpan di Git)
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: bash scripts/fetch-test-vrm.sh app/src/main/assets/testmodels
+      - name: Uji unit JVM
+        run: bash scripts/ci-gradle.sh :app:testDebugUnitTest
+      - name: Bangun APK debug
+        run: bash scripts/ci-gradle.sh :app:assembleDebug
+      - name: Bangun APK release (unsigned bila secret signing belum diisi)
+        run: bash scripts/ci-gradle.sh :app:assembleRelease
+      - name: Lint panggilan API di atas minSdk (NewApi)
+        # Sumber bug nyata: `ActivityManager.isBackgroundRestricted` (API 28) dipanggil tanpa
+        # penjaga sehingga Diagnosa crash di Android 8.x. Ditemukan oleh matriks API 26,
+        # bukan oleh build; langkah ini menutup kelas bug yang sama untuk seterusnya.
+        run: |
+          set -uo pipefail
+          bash scripts/ci-gradle.sh :app:lintDebug || true
+          LAPORAN="app/build/reports/lint-results-debug.txt"
+          if [ ! -f "$LAPORAN" ]; then
+            echo "::error::laporan lint tidak dihasilkan ($LAPORAN)"
+            exit 1
+          fi
+          JUMLAH="$(grep -c "\[NewApi\]" "$LAPORAN" || true)"
+          echo "temuan NewApi: $JUMLAH"
+          if [ "$JUMLAH" != "0" ]; then
+            grep -n -A 2 "\[NewApi\]" "$LAPORAN" | head -40
+            echo "::error::ada panggilan API di atas minSdk 26"
+            exit 1
+          fi
+          echo "== tidak ada panggilan API di atas minSdk 26"
+
+      - name: Periksa target SDK dan pustaka native di APK
+        # Syarat Play sejak 31 Agustus 2026: targetSdk 36. Diperiksa dari APK hasil build, bukan
+        # dari berkas Gradle, supaya yang dibuktikan adalah artefak yang benar-benar dikirim.
+        run: |
+          set -uo pipefail
+          APK="$(find app/build/outputs/apk/debug -name '*.apk' | head -1)"
+          echo "APK: $APK"
+          AAPT2="$(ls -d "$ANDROID_HOME"/build-tools/*/aapt2 2>/dev/null | tail -1)"
+          BADGING="$("$AAPT2" dump badging "$APK")"
+          echo "$BADGING" | grep -E "^(package|sdkVersion|targetSdkVersion)" || true
+          TARGET="$(echo "$BADGING" | sed -n "s/.*targetSdkVersion:'\([0-9]*\)'.*/\1/p" | head -1)"
+          echo "targetSdk terbaca: $TARGET"
+          if [ "$TARGET" != "36" ]; then
+            echo "::error::targetSdk bukan 36 (terbaca: ${TARGET:-kosong}); Play menolak unggahan"
+            exit 1
+          fi
+          # 16 KB page size hanya relevan untuk pustaka native; proyek ini murni Kotlin+WebView.
+          NATIVE="$(unzip -l "$APK" | grep -c '\.so$' || true)"
+          echo "pustaka native (.so) di APK: $NATIVE"
+          if [ "$NATIVE" != "0" ]; then
+            echo "::warning::APK memuat ${NATIVE} berkas .so; perlu dicek dukungan halaman 16 KB"
+          fi
+          echo "== verifikasi APK: targetSdk 36, tanpa pustaka native"
+
+      - name: Kumpulkan artefak
+        run: |
+          mkdir -p out
+          find app/build/outputs/apk -name '*.apk' -exec cp {} out/ \;
+          ls -lh out
+      - uses: actions/upload-artifact@v4
+        with:
+          name: apk-${{ github.sha }}
+          path: out/*.apk
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: test-reports-${{ github.sha }}
+          path: |
+            app/build/reports/tests/**
+            app/build/reports/lint-results-*.html
+          if-no-files-found: ignore
+
+  # Penanda rilis: bila `release/tag.txt` berisi versi yang belum punya rilis, job di bawah
+  # membuat rilis itu dari commit ini. Dipakai karena push tag kadang tidak memicu workflow
+  # (kejadian nyata: v0.1.7-test); jalur ini selalu jalan pada push branch.
+  release-check:
+    name: Periksa rilis baru
+    runs-on: ubuntu-latest
+    needs: android
+    if: github.ref_type == 'branch'
+    outputs:
+      tag: ${{ steps.check.outputs.tag }}
+    steps:
+      - uses: actions/checkout@v5
+      - name: Baca penanda rilis
+        id: check
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          version="$(head -1 release/tag.txt 2>/dev/null | tr -d '[:space:]')"
+          echo "penanda: '${version}'"
+          if [ -z "$version" ]; then
+            echo "tag=" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          if gh release view "$version" >/dev/null 2>&1; then
+            echo "::notice::Rilis $version sudah ada; tidak diterbitkan ulang"
+            echo "tag=" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          # Buat tag di server agar rilis menempel ke commit yang diuji.
+          gh api -X POST "repos/${{ github.repository }}/git/refs" \
+            -f ref="refs/tags/$version" -f sha="$GITHUB_SHA" >/dev/null || true
+          echo "tag=$version" >> "$GITHUB_OUTPUT"
+
+  release:
+    name: Rilis APK
+    runs-on: ubuntu-latest
+    needs: [android, release-check]
+    # Tag `v*` tetap jalur utama; penanda release/tag.txt jadi cadangan saat push tag tidak memicu.
+    if: |
+      always() && (needs.release-check.result != 'failure') &&
+      (startsWith(github.ref, 'refs/tags/v') || needs.release-check.outputs.tag != '')
+    env:
+      TAG: ${{ needs.release-check.outputs.tag || github.ref_name }}
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: "17"
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: "8.11.1"
+      - name: Ambil model uji (tidak disimpan di Git)
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: bash scripts/fetch-test-vrm.sh app/src/main/assets/testmodels
+      - name: Siapkan keystore bila secret tersedia
+        id: keystore
+        env:
+          KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+        run: |
+          if [ -n "$KEYSTORE_BASE64" ]; then
+            echo "$KEYSTORE_BASE64" | base64 -d > "$RUNNER_TEMP/release.jks"
+            echo "ANDROID_KEYSTORE_PATH=$RUNNER_TEMP/release.jks" >> "$GITHUB_ENV"
+            echo "signed=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "signed=false" >> "$GITHUB_OUTPUT"
+          fi
+      - name: Bangun APK
+        env:
+          ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+        run: |
+          if [ "${{ steps.keystore.outputs.signed }}" = "true" ]; then
+            bash scripts/ci-gradle.sh :app:assembleRelease
+            APK=app/build/outputs/apk/release/app-release.apk
+            NAME="MateEngine-${TAG}.apk"
+            echo "SIGNATURE=ditandatangani keystore rilis" >> "$GITHUB_ENV"
+          else
+            bash scripts/ci-gradle.sh :app:assembleDebug
+            APK=app/build/outputs/apk/debug/app-debug.apk
+            NAME="MateEngine-${TAG}-debug.apk"
+            echo "SIGNATURE=debug (secret signing belum diisi)" >> "$GITHUB_ENV"
+          fi
+          test -f "$APK"
+          cp "$APK" "$NAME"
+          echo "APK_NAME=$NAME" >> "$GITHUB_ENV"
+          echo "SIGNED=${{ steps.keystore.outputs.signed }}" >> "$GITHUB_ENV"
+      - name: Tulis catatan rilis
+        run: |
+          cat > notes.md <<NOTES
+          Build otomatis dari commit ${GITHUB_SHA} (tag ${TAG}).
+
+          Tanda tangan: ${SIGNATURE}
+
+          Status fitur (lihat docs/android-parity.md di repositori):
+          - Sudah ada: impor VRM, overlay transparan + drag/skala 25-100%/cubit dua jari,
+            opasitas, batas FPS, kunci posisi (geser), render VRM 1.0/0.x, pemutar .vrma,
+            diagnosa perangkat, chat Gemini dengan persona, Gemini TTS + lip-sync,
+            29 klip animasi CC0 (gerak acak + gestur sekali-jalan), direktur perilaku
+            (avatar bergerak sendiri sesuai suasana),
+            duduk di tepi layar, ayunan badan saat avatar digeser, headpat (mata menutup),
+            menu cepat 3× ketuk (Gerak, balon Chat AI, Duduk/Berdiri, Setelan) — panel View biasa
+            di jendela overlay sendiri, bukan Compose,
+            gerak prosedural (napas, goyangan, pandangan, tidur, jalan, tari, reaksi sentuh).
+          - Belum ada: duduk di jendela aplikasi lain/taskbar desktop, screenshot transparan,
+            timer, Workshop, food system, head tracking kamera.
+
+          Batasan: overlay Android berbentuk persegi — area kosong di sekitar avatar selalu
+          menahan sentuhan (tidak ada click-through per piksel, sesuai permintaan produk);
+          service dapat dihentikan sistem bila optimasi baterai tidak dikecualikan.
+          Model uji yang disertakan berlisensi redistribusi (pixiv Inc.), bukan avatar produk.
+          NOTES
+          cat notes.md
+      - name: Terbitkan GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          # Idempoten: bila rilisnya sudah ada (mis. job ini diulang, atau unggahan sebelumnya
+          # berhasil tapi perintahnya keluar dengan kode ≠ 0 karena gangguan jaringan), cukup
+          # ganti aset dan catatannya — jangan gagal.
+          if gh release view "$TAG" >/dev/null 2>&1; then
+            echo "rilis $TAG sudah ada, memperbarui aset + catatan"
+            gh release upload "$TAG" "$APK_NAME" --clobber
+            gh release edit "$TAG" --notes-file notes.md
+          elif [ "$SIGNED" = "true" ]; then
+            gh release create "$TAG" "$APK_NAME" --title "Mate Engine Android ${TAG}" --notes-file notes.md --verify-tag
+          else
+            gh release create "$TAG" "$APK_NAME" --title "Mate Engine Android ${TAG} (uji)" --notes-file notes.md --verify-tag --prerelease
+          fi
