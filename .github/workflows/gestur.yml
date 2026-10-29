@@ -60,6 +60,7 @@ jobs:
           emulator-options: >-
             -no-window -no-audio -no-boot-anim -no-snapshot
             -gpu swiftshader_indirect -camera-back none -camera-front none
+            -cores 4 -memory 3072
           script: |
             set +e
             timeout -k 30 1200 bash scripts/periksa-gestur.sh

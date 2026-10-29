@@ -80,7 +80,7 @@ LAYAR_H=${BACA_LAYAR#* }
 catat "layar: ${LAYAR_W}x${LAYAR_H}"
 
 catat "membuka overlay..."
-adb shell am start -n "$ACTIVITY" --ez start_overlay true --ez seed_sample true --ei scale 60 >/dev/null 2>&1 || true
+adb shell am start -n "$ACTIVITY" --ez start_overlay true --ez seed_sample true --ei scale 40 >/dev/null 2>&1 || true
 siap=0
 for _ in $(seq 1 "$BATAS_SIAP"); do
   sleep 1
@@ -143,7 +143,13 @@ ELUS_SERET=$(tail -n +$((LEWAT_E1 + 1)) "$LOG" | grep -c "gestur UP.*menyeret=tr
 ELUS_TOTAL=$(tail -n +$((LEWAT_E1 + 1)) "$LOG" | grep -c "gestur UP" || true)
 SETELAH_ELUS=$(bingkai) || gagal "bingkai jendela hilang setelah elus"
 catat "elus kepala: ${ELUS_TOTAL} gestur, ${ELUS_SERET} menyeret; jendela ${SETELAH_ELUS}"
-[ "$ELUS_TOTAL" -ge 3 ] || gagal "gestur elus tidak tercatat (logcat: $ELUS_TOTAL)"
+if [ "$ELUS_TOTAL" -lt 3 ]; then
+  # Sentuhan yang tidak sampai ke aplikasi hampir selalu berarti antrean masukan sistem
+  # dibuang karena utas utama sibuk (renderer SwiftShader bisa 5 detik per frame).
+  adb logcat -d 2>/dev/null | grep -E "Input dispatching timed out|ANR in|not responding" | tail -5 | sed 's/^/  /' | tee -a "$DIAG" || true
+  adb shell dumpsys input 2>/dev/null | grep -m3 -E "PendingEvent|RecentQueue|Dispatch" | sed 's/^/  /' | tee -a "$DIAG" || true
+  gagal "gestur elus tidak tercatat (logcat: $ELUS_TOTAL)"
+fi
 [ "$ELUS_SERET" -eq 0 ] || gagal "elus kepala menyeret avatar ($ELUS_SERET kali)"
 # Bukti "tidak bergeser" diambil dari jalur kode yang mengeksekusi pergeseran: avatar hanya
 # berpindah lewat `menyeret=true` lalu `geser selesai`. Geometri jendela TIDAK dipakai karena
