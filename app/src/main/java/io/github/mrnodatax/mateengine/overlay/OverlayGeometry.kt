@@ -122,6 +122,29 @@ object OverlayGeometry {
     }
 
     /**
+     * Posisi jendela saat pengguna menggeser: **menempel tepat di tepi layar diperbolehkan**.
+     *
+     * `clampToFrame` sengaja tidak dipakai untuk gestur karena bingkai menyisakan inset sistem +
+     * margin, sehingga avatar selalu berhenti beberapa puluh piksel sebelum tepi — di perangkat
+     * itu terasa "mentok". Di sini jendela cukup tetap berada di dalam layar (boleh menyentuh
+     * tepi), dan bila jendela lebih besar dari layar ia diratakan dengan tepi yang sesuai.
+     */
+    fun freePlacement(
+        rawX: Int,
+        rawY: Int,
+        width: Int,
+        height: Int,
+        screenWidth: Int,
+        screenHeight: Int,
+    ): Placement {
+        val minX = minOf(0, screenWidth - width)
+        val maxX = maxOf(0, screenWidth - width)
+        val minY = minOf(0, screenHeight - height)
+        val maxY = maxOf(0, screenHeight - height)
+        return Placement(rawX.coerceIn(minX, maxX), rawY.coerceIn(minY, maxY))
+    }
+
+    /**
      * Posisi saat jari sedang menggeser: di luar bingkai gerakan diredam (karet), tetapi tetap
      * ada batas keras [maxOverPx] supaya jendela tidak "kabur" jauh dari jari.
      */

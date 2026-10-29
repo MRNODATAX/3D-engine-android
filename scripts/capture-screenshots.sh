@@ -322,6 +322,10 @@ read -r DRAG_W DRAG_H <<<"$(screen_size)"
 adb logcat -c || true
 adb shell input swipe $((DRAG_W / 2)) $((DRAG_H / 2)) 20 20 700
 sleep 3
+# Geser kedua menuju tepi kanan-bawah: membuktikan avatar benar-benar sampai pinggir layar,
+# bukan berhenti beberapa puluh piksel sebelumnya.
+adb shell input swipe 120 600 $((DRAG_W - 8)) $((DRAG_H - 8)) 600
+sleep 3
 adb exec-out screencap -p > "$OUT/20-overlay-geser-pojok.png"
 echo "== tersimpan $OUT/20-overlay-geser-pojok.png (avatar digeser ke pojok)"
 {
@@ -339,13 +343,15 @@ adb exec-out screencap -p > "$OUT/20b-overlay-pojok-menepet.png"
   adb logcat -d -s MateEngineRender:I | grep -E "jendela siluet|digeser ke" | tail -3
 } >> "$DIAG" 2>&1 || true
 echo "== tersimpan $OUT/20b-overlay-pojok-menepet.png"
-drag_line="$(adb logcat -d | grep -o 'overlay digeser ke ([0-9-]*, [0-9-]*)' | tail -1)"
+drag_line="$(adb logcat -d | grep -o 'geser selesai: jendela [0-9]*x[0-9]* di ([0-9-]*, [0-9-]*) dari layar [0-9]*x[0-9]*' | tail -1)"
 echo "--- hasil geser ---" >> "$DIAG"
 echo "${drag_line:-kosong}" >> "$DIAG" 2>&1 || true
 if [ -z "$drag_line" ]; then
   echo "::warning::Geseran tidak tercatat di logcat; bukti geser bebas tidak terbaca"
+elif echo "$drag_line" | python3 scripts/periksa-tepi-geser.py; then
+  echo "== bukti geser sampai tepi: ${drag_line}"
 else
-  echo "== bukti geser bebas: ${drag_line}"
+  echo "::error::Avatar tidak sampai tepi layar (${drag_line}); geser masih mentok"
 fi
 adb shell am force-stop "$PKG" || true
 

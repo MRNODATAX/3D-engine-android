@@ -98,6 +98,11 @@ class OverlayService : Service() {
     private var canvasOffsetY = 0
     private var settleAnim: Runnable? = null
     private var nudgeReturn: OverlayGeometry.Placement? = null
+    private var nudgeTask: Runnable? = null
+    /** Jendela yang terlihat saat gestur dimulai: dasar hitungan geser (lihat `dragTo`). */
+    private var dragStartVisible: OverlayGeometry.Rect? = null
+    private var dragStartDesignX = 0
+    private var dragStartDesignY = 0
     private var lastScreenWidth = 0
     private var lastScreenHeight = 0
 
@@ -449,17 +454,30 @@ class OverlayService : Service() {
         return OverlayGeometry.Insets(0, statusBar, 0, (48 * density).toInt())
     }
 
+    /**
+     * Bingkai yang dipakai untuk **semua** penempatan: seluruh layar, tanpa margin.
+     *
+     * Dulu inset sistem + margin 8 dp ikut dijepit di sini, sehingga avatar selalu berhenti
+     * ~24–56 px sebelum tepi layar — dilaporkan sebagai "geser mentok tidak sampai pinggir".
+     * Inset tetap dipakai, tetapi hanya untuk penempatan awal (`safeFrame`).
+     */
     private fun currentFrame(): OverlayGeometry.Frame {
+        val (screenWidth, screenHeight) = screenBounds()
+        val frame = OverlayGeometry.frame(screenWidth, screenHeight, OverlayGeometry.Insets(0, 0, 0, 0), 0)
+        lastFrame = frame
+        return frame
+    }
+
+    /** Bingkai aman (inset sistem + margin) — hanya untuk posisi awal, bukan untuk gestur. */
+    private fun safeFrame(): OverlayGeometry.Frame {
         val density = resources.displayMetrics.density
         val (screenWidth, screenHeight) = screenBounds()
-        val frame = OverlayGeometry.frame(
+        return OverlayGeometry.frame(
             screenWidth,
             screenHeight,
             systemInsets(),
             (FRAME_MARGIN_DP * density).toInt(),
         )
-        lastFrame = frame
-        return frame
     }
 
     /** Ukuran jendela **desain** (kanvas): tetap sama seperti sebelum v0.1.10. */
@@ -478,8 +496,6 @@ class OverlayService : Service() {
      * diblokir, tetapi blokirannya tidak boleh selebar layar) tanpa mengubah ukuran avatar.
      */
     private fun applySilhouette(force: Boolean = false) {
-        val container = rootView ?: return
-        val layoutParams = params ?: return
         if (designWidth <= 0 || designHeight <= 0) return
         val density = resources.displayMetrics.density
         val frame = currentFrame()
@@ -503,6 +519,30 @@ class OverlayService : Service() {
             if (now - lastResizeAt < RESIZE_INTERVAL_MS) return
         }
         lastResizeAt = now
+        applyWindowRect(visible)
+        logBlocked(visible)
+    }
+
+    /** Catat luas area yang menelan sentuhan (dipakai diagnostik tangkapan layar). */
+    private fun logBlocked(visible: OverlayGeometry.Rect) {
+        val blocked = OverlayGeometry.blockedFraction(designWidth, designHeight, visible)
+        Log.i(
+            TAG,
+            "jendela siluet ${visible.width}x${visible.height} di (${visible.left}, ${visible.top}) " +
+                "= ${(blocked * 100).toInt()}% dari desain ${designWidth}x$designHeight",
+        )
+    }
+
+    /**
+     * Satu-satunya jalur yang boleh menyentuh `layoutParams`.
+     *
+     * `x/y/width/height` jendela dan pergeseran kanvas dihitung **bersamaan** di sini. Ketika
+     * keduanya diubah di tempat berbeda (dulu: jalur geser menulis `layoutParams` sendiri), isi
+     * kanvas bisa bergeser terhadap jendelanya — avatar tampak melompat saat digeser.
+     */
+    private fun applyWindowRect(visible: OverlayGeometry.Rect) {
+        val container = rootView ?: return
+        val layoutParams = params ?: return
         lastVisible = visible
         layoutParams.width = visible.width
         layoutParams.height = visible.height
@@ -523,17 +563,47 @@ class OverlayService : Service() {
                 view.layoutParams = paramsChild
             }
         }
-        val blocked = OverlayGeometry.blockedFraction(designWidth, designHeight, visible)
-        Log.i(
-            TAG,
-            "jendela siluet ${visible.width}x${visible.height} di (${visible.left}, ${visible.top}) " +
-                "= ${(blocked * 100).toInt()}% dari desain ${designWidth}x$designHeight",
-        )
     }
 
     /**
-     * Geser jendela desain (dan jendela siluet mengikutinya) lalu jepit ke bingkai.
-     * Dipakai saat pengguna menggeser avatar dan saat reaksi "mundur/maju".
+     * Pindahkan jendela **yang terlihat** selama gestur: ukurannya tidak dihitung ulang.
+     *
+     * Menghitung ulang siluet di tengah gestur membuat jendela berubah ukuran tiap gerakan jari
+     * (dan `body-box` ditangguhkan → jendela melompat ke ukuran desain penuh). Referensi praktik
+     * overlay Android juga menyarankan hanya menulis `x/y` saat menggser dan memakai `rawX/rawY`
+     * terhadap posisi awal. Posisi desain ikut digeser sejauh jendela bergeser, supaya kanvas dan
+     * jendela tetap sejajar.
+     */
+    private fun dragWindowTo(dx: Int, dy: Int) {
+        val start = dragStartVisible ?: return
+        val (screenWidth, screenHeight) = screenBounds()
+        val target = OverlayGeometry.freePlacement(
+            start.left + dx,
+            start.top + dy,
+            start.width,
+            start.height,
+            screenWidth,
+            screenHeight,
+        )
+        designX = dragStartDesignX + (target.x - start.left)
+        designY = dragStartDesignY + (target.y - start.top)
+        applyWindowRect(
+            OverlayGeometry.Rect(target.x, target.y, target.x + start.width, target.y + start.height),
+        )
+    }
+
+    /** Hentikan semua gerak otomatis (pegas posisi & reaksi mundur) sebelum gestur pengguna. */
+    private fun cancelAutoMotion() {
+        settleAnim?.let { mainHandler.removeCallbacks(it) }
+        settleAnim = null
+        nudgeTask?.let { mainHandler.removeCallbacks(it) }
+        nudgeTask = null
+        nudgeReturn = null
+    }
+
+    /**
+     * Geser jendela desain (dan jendela siluet mengikutinya) lalu jepit ke layar.
+     * Dipakai saat reaksi "mundur/maju" dan saat jendela perlu masuk kembali ke layar.
      */
     private fun moveDesignTo(x: Int, y: Int, animate: Boolean = false) {
         val frame = currentFrame()
@@ -575,9 +645,12 @@ class OverlayService : Service() {
         designHeight = height
         val frame = currentFrame()
         val target = if (recenter || prefs.offsetX < 0 || prefs.offsetY < 0) {
+            // Penempatan awal tetap menghormati inset sistem + margin; hanya gestur pengguna
+            // yang boleh menempel ke tepi layar.
+            val safe = safeFrame()
             val density = resources.displayMetrics.density
             val margin = (12 * density).toInt()
-            OverlayGeometry.clampToFrame(frame.right - width - margin, frame.bottom - height - margin, width, height, frame)
+            OverlayGeometry.clampToFrame(safe.right - width - margin, safe.bottom - height - margin, width, height, safe)
         } else {
             OverlayGeometry.clampToFrame(prefs.offsetX, prefs.offsetY, width, height, frame)
         }
@@ -1101,17 +1174,32 @@ class OverlayService : Service() {
     private fun applyNudge(dx: Int, dy: Int, style: String) {
         if (silhouetteSuspended) return
         val density = resources.displayMetrics.density
-        val maxShift = (32 * density).toInt()
+        val maxShift = (24 * density).toInt()
         val shiftX = dx.coerceIn(-maxShift, maxShift)
         val shiftY = dy.coerceIn(-maxShift, maxShift)
+        // Tugas balik sebelumnya dibatalkan: dulu dua reaksi beruntun meninggalkan dua timer,
+        // dan yang paling akhir menarik avatar kembali ke posisi lama **setelah** pengguna
+        // menggesernya — inilah "avatar bergerak sendiri" yang terasa seperti glitch.
+        nudgeTask?.let { mainHandler.removeCallbacks(it) }
         val origin = nudgeReturn ?: currentDesignPlacement().also { nudgeReturn = it }
         moveDesignTo(designX + shiftX, designY + shiftY)
         Log.i(TAG, "reaksi $style menggeser avatar ($shiftX, $shiftY)")
-        mainHandler.postDelayed({
-            val back = nudgeReturn ?: origin
-            nudgeReturn = null
-            moveDesignTo(back.x, back.y, animate = true)
-        }, 2200)
+        val task = object : Runnable {
+            override fun run() {
+                nudgeTask = null
+                // `silhouetteSuspended` true selama jari masih menempel (lihat ACTION_DOWN).
+                if (silhouetteSuspended) {
+                    // Pengguna sedang memegang avatar: jangan tarik kembali.
+                    nudgeReturn = null
+                    return
+                }
+                val back = nudgeReturn ?: origin
+                nudgeReturn = null
+                moveDesignTo(back.x, back.y, animate = true)
+            }
+        }
+        nudgeTask = task
+        mainHandler.postDelayed(task, 2200)
     }
 
     // ---------------------------------------------------------------- suara & memori
@@ -1255,12 +1343,8 @@ class OverlayService : Service() {
         private var lastMoveY = 0f
         private var lastMoveAt = 0L
         private var lastVelocitySentAt = 0L
-        private var startX = 0
-        private var startY = 0
         private var dragging = false
         private var downTime = 0L
-        private var designStartX = 0
-        private var designStartY = 0
         /** Diisi dari JS (`touch-zone`): sentuhan mendarat di badan atau di margin kosong. */
         private var touchOnBody = false
 
@@ -1298,17 +1382,18 @@ class OverlayService : Service() {
                     // Jendela siluet dikunci selama gestur: ukurannya tidak boleh berubah di
                     // tengah gerakan (jendela yang mengecil saat jari menempel terasa "lepas").
                     silhouetteSuspended = true
+                    // Semua gerak otomatis dihentikan di sini (pegas posisi & reaksi mundur);
+                    // tanpa ini avatar bisa "kabur" beberapa saat setelah jari menyentuh.
+                    cancelAutoMotion()
+                    dragStartVisible = lastVisible
+                    dragStartDesignX = designX
+                    dragStartDesignY = designY
                     touchOnBody = false
                     onPointer?.invoke("down", event.x, event.y)
-                    val design = currentDesignPlacement()
-                    designStartX = design.x
-                    designStartY = design.y
 
                     lastMoveX = event.rawX
                     lastMoveY = event.rawY
                     lastMoveAt = downTime
-                    startX = layoutParams.x
-                    startY = layoutParams.y
                     dragging = false
                     pinching = false
                     return true
@@ -1344,9 +1429,15 @@ class OverlayService : Service() {
                         // Geser hanya dimulai bila sentuhan **tidak** mengenai badan (margin
                         // kosong), atau setelah avatar ditahan ~0,3 dtk. Tanpa aturan ini,
                         // mengelus kepala akan ikut menyeret avatar ke seluruh layar.
+                        // Di badan: geser langsung bila jari benar-benar menggeser (≈22 dp),
+                        // tanpa harus menahan dulu — dulu pengguna harus menekan 0,3 dtk dan
+                        // gestur terasa "mentok". Elusan kecil (mengelus kepala/badan) tetap
+                        // tidak menyeret avatar karena ambangnya lebih besar.
                         val held = System.currentTimeMillis() - downTime >= GRAB_HOLD_MS
-                        val canGrab = !touchOnBody || held
-                        if (canGrab && (kotlin.math.abs(dx) > 8 || kotlin.math.abs(dy) > 8)) {
+                        val thresholdPx = (
+                            if (touchOnBody) (if (held) 6f else 22f) else 8f
+                            ) * resources.displayMetrics.density
+                        if (kotlin.math.abs(dx) > thresholdPx || kotlin.math.abs(dy) > thresholdPx) {
                             dragging = true
                             voicePack.play(VoicePack.Event.DRAG_START, 0.5f)
                         }
@@ -1367,23 +1458,17 @@ class OverlayService : Service() {
                         onDragVelocity?.invoke(vx, vy)
                     }
 
-                    // Geser memakai posisi DESAIN; jendela siluet mengikuti dengan selisih tetap.
-                    // Di luar bingkai gerakan diredam (karet), lalu dilepas kembali oleh pegas.
-                    val frame = currentFrame()
-                    val placement = OverlayGeometry.dragPlacement(
-                        designStartX + dx,
-                        designStartY + dy,
-                        designWidth,
-                        designHeight,
-                        frame,
-                    )
-                    designX = placement.x
-                    designY = placement.y
-                    // Jangan menulis layoutParams di sini: posisi jendela dan pergeseran kanvas di
-                    // dalamnya HARUS dihitung di satu tempat (`applySilhouette`). Dulu keduanya
-                    // diubah terpisah, dan setelah avatar digeser isi kanvas bisa bergeser
-                    // terhadap jendelanya (avatar tampak hanya sebatas kaki di emulator).
-                    applySilhouette(force = true)
+                    // Geser memakai jendela yang TERLIHAT sebagai acuan (bukan jendela desain
+                    // yang jauh lebih lebar), sehingga avatar benar-benar bisa menempel di tepi
+                    // layar. Posisi desain ikut bergeser supaya kanvas tetap sejajar.
+                    if (dragStartVisible == null) {
+                        dragStartVisible = lastVisible
+                        dragStartDesignX = designX
+                        dragStartDesignY = designY
+                    }
+                    // Ukuran jendela TIDAK dihitung ulang selama gestur: `dragWindowTo` hanya
+                    // memindahkan jendela yang sudah ada beserta kanvasnya.
+                    dragWindowTo(dx, dy)
                     return true
                 }
                 MotionEvent.ACTION_POINTER_UP -> {
@@ -1399,7 +1484,6 @@ class OverlayService : Service() {
                     when {
                         dragging -> {
                             onDragFinished?.invoke(designX, designY)
-                            onDragVelocity?.invoke(0f, 0f)
                             voicePack.play(VoicePack.Event.DRAG_STOP, 0.5f)
                         }
                         !pinching -> {
@@ -1411,17 +1495,40 @@ class OverlayService : Service() {
                             }
                         }
                     }
+                    // Kecepatan selalu dinolkan saat jari lepas; sisa nilai lama membuat badan
+                    // terus miring/berayun ("gerak sendiri") setelah gestur selesai.
+                    onDragVelocity?.invoke(0f, 0f)
+                    val wasDragging = dragging
                     silhouetteSuspended = false
                     dragging = false
                     pinching = false
-                    // Kembalikan jendela ke dalam bingkai dengan pegas, lalu ukuran siluet
-                    // diperbarui lagi (di luar gestur).
-                    val frame = currentFrame()
-                    val clamped = OverlayGeometry.clampToFrame(designX, designY, designWidth, designHeight, frame)
-                    if (clamped.x != designX || clamped.y != designY) {
-                        moveDesignTo(designX, designY, animate = true)
-                    } else {
-                        applySilhouette(force = true)
+                    // Jendela hasil geser dijepit ke layar, lalu ukuran siluet diperbarui lagi
+                    // (di luar gestur) supaya area kosong kembali menyusut.
+                    val (screenWidth, screenHeight) = screenBounds()
+                    val visible = lastVisible
+                    if (visible != null && wasDragging) {
+                        // Jendela yang terlihat dijepit ke layar (boleh menempel tepi), lalu posisi
+                        // desain dihitung ulang dari hasil jepitan itu.
+                        val target = OverlayGeometry.freePlacement(
+                            visible.left,
+                            visible.top,
+                            visible.width,
+                            visible.height,
+                            screenWidth,
+                            screenHeight,
+                        )
+                        designX += target.x - visible.left
+                        designY += target.y - visible.top
+                    }
+                    applySilhouette(force = true)
+                    dragStartVisible = null
+                    val placed = lastVisible
+                    if (placed != null) {
+                        Log.i(
+                            TAG,
+                            "geser selesai: jendela ${placed.width}x${placed.height} di " +
+                                "(${placed.left}, ${placed.top}) dari layar ${screenWidth}x$screenHeight",
+                        )
                     }
                     return true
                 }

@@ -150,6 +150,30 @@ class OverlayGeometryTest {
     }
 
     @Test
+    fun `geser bebas boleh menempel tepat di tepi layar`() {
+        // Jendela siluet 600x1400 di layar 1080x2400: sisi kiri boleh sampai 0 dan kanan 480.
+        val kiri = OverlayGeometry.freePlacement(-500, 2000, 600, 1400, 1080, 2400)
+        assertEquals(0, kiri.x)
+        val kanan = OverlayGeometry.freePlacement(9999, 9999, 600, 1400, 1080, 2400)
+        assertEquals(480, kanan.x)
+        assertEquals(1000, kanan.y)
+    }
+
+    @Test
+    fun `geser bebas tidak pernah menyisakan jendela di luar layar`() {
+        val a = OverlayGeometry.freePlacement(120, 400, 600, 1400, 1080, 2400)
+        assertEquals(120, a.x)
+        assertEquals(400, a.y)
+    }
+
+    @Test
+    fun `jendela lebih besar dari layar diratakan dengan tepi`() {
+        val p = OverlayGeometry.freePlacement(0, 0, 1200, 2600, 1080, 2400)
+        assertEquals(-120, p.x)
+        assertEquals(-200, p.y)
+    }
+
+    @Test
     fun `karet saat digeser melewati bingkai tetapi tidak kabur`() {
         val frame = OverlayGeometry.frame(1080, 2400, OverlayGeometry.Insets(0, 100, 0, 100), marginPx = 20)
         val width = 400
