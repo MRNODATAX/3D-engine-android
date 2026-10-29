@@ -1,0 +1,692 @@
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Mate Engine Android — 5 arah desain untuk dipilih</title>
+<style>
+  :root {
+    --page: #0c1113;
+    --page2: #131a1d;
+    --text: #e8f1f1;
+    --muted: #93a4a6;
+    --line: #24302f;
+    --cyan: #4fe3d6;
+    --radius: 18px;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background:
+      radial-gradient(1200px 600px at 80% -10%, #10302e 0%, transparent 60%),
+      var(--page);
+    color: var(--text);
+    font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    line-height: 1.55;
+    -webkit-font-smoothing: antialiased;
+  }
+  a { color: var(--cyan); text-decoration: none; border-bottom: 1px solid rgba(79,227,214,.35); }
+  a:hover { border-bottom-color: var(--cyan); }
+  .wrap { max-width: 1180px; margin: 0 auto; padding: 40px 22px 90px; }
+
+  header.top h1 { font-size: clamp(26px, 4vw, 40px); line-height: 1.15; margin: 0 0 10px; letter-spacing: -.02em; }
+  header.top p { color: var(--muted); max-width: 72ch; margin: 0 0 8px; }
+  .badges { display: flex; flex-wrap: wrap; gap: 8px; margin: 18px 0 0; }
+  .badge {
+    font-size: 12px; padding: 6px 11px; border-radius: 999px;
+    border: 1px solid var(--line); color: var(--muted); background: #101819;
+  }
+  .badge.warn { border-color: #6b4a1e; color: #f0c286; background: #241a10; }
+
+  .notice {
+    margin: 26px 0 0; padding: 16px 18px; border-radius: var(--radius);
+    background: linear-gradient(180deg, #161f21, #101718);
+    border: 1px solid var(--line);
+  }
+  .notice strong { color: var(--cyan); }
+  .notice p { margin: 6px 0 0; color: var(--muted); font-size: 14px; }
+
+  h2.sect { font-size: 13px; text-transform: uppercase; letter-spacing: .14em; color: var(--muted); margin: 46px 0 14px; }
+
+  table.cmp { width: 100%; border-collapse: collapse; font-size: 13.5px; }
+  table.cmp th, table.cmp td { text-align: left; padding: 11px 12px; border-bottom: 1px solid var(--line); vertical-align: top; }
+  table.cmp th { color: var(--muted); font-weight: 600; font-size: 12px; text-transform: uppercase; letter-spacing: .08em; }
+  table.cmp td:first-child { color: var(--text); font-weight: 600; white-space: nowrap; }
+
+  .opt {
+    margin: 34px 0 0; border-radius: 22px; overflow: hidden;
+    border: 1px solid var(--line);
+    background: linear-gradient(180deg, #121a1c, #0e1416);
+  }
+  .opt-head { display: flex; gap: 14px; align-items: center; padding: 20px 22px; border-bottom: 1px solid var(--line); }
+  .opt-no {
+    flex: 0 0 auto; width: 40px; height: 40px; border-radius: 12px; display: grid; place-items: center;
+    background: #172022; color: var(--cyan); font-weight: 700; border: 1px solid var(--line);
+  }
+  .opt-head h3 { margin: 0; font-size: 20px; letter-spacing: -.01em; }
+  .opt-head p { margin: 2px 0 0; color: var(--muted); font-size: 13.5px; }
+  .opt-body { display: grid; grid-template-columns: 300px 1fr; gap: 26px; padding: 24px 22px 26px; }
+  @media (max-width: 880px) { .opt-body { grid-template-columns: 1fr; } }
+
+  /* ---------------- phone mockup ---------------- */
+  .phone {
+    width: 288px; height: 600px; border-radius: 34px; padding: 10px; margin: 0 auto;
+    background: #05090a; border: 1px solid #2a3537;
+    box-shadow: 0 24px 50px rgba(0,0,0,.55);
+    position: relative;
+  }
+  .screen {
+    width: 100%; height: 100%; border-radius: 26px; overflow: hidden;
+    display: flex; flex-direction: column; position: relative;
+  }
+  .sb { height: 22px; display: flex; align-items: center; justify-content: space-between; padding: 0 14px; font-size: 9.5px; opacity: .75; }
+  .app-head { padding: 6px 16px 10px; }
+  .app-head .brand { font-size: 9.5px; letter-spacing: .1em; text-transform: uppercase; font-weight: 700; }
+  .app-head .ttl { font-size: 21px; font-weight: 700; letter-spacing: -.02em; margin-top: 1px; }
+  .app-head .tag { font-size: 9.5px; opacity: .68; }
+  .content { flex: 1; padding: 0 14px; display: flex; flex-direction: column; gap: 9px; overflow: hidden; }
+  .card { padding: 11px 12px; }
+  .row { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+  .chip { font-size: 9px; padding: 3px 8px; border-radius: 999px; font-weight: 600; }
+  .lbl { font-size: 10px; opacity: .72; }
+  .val { font-size: 12.5px; font-weight: 700; }
+  .slider { height: 4px; border-radius: 999px; margin: 8px 0 0; position: relative; }
+  .knob { position: absolute; top: 50%; width: 13px; height: 13px; border-radius: 50%; transform: translate(-50%, -50%); }
+  .bubble { font-size: 10.5px; padding: 8px 10px; max-width: 82%; line-height: 1.4; }
+  .bubble.me { align-self: flex-end; }
+  .bubble.her { align-self: flex-start; }
+  .nav { height: 54px; display: flex; align-items: center; justify-content: space-around; padding: 0 4px 6px; }
+  .nav .it { display: flex; flex-direction: column; align-items: center; gap: 3px; font-size: 7.6px; opacity: .62; }
+  .nav .it.on { opacity: 1; }
+  .nav .pill { width: 34px; height: 22px; display: grid; place-items: center; border-radius: 999px; }
+  svg.ic { width: 13px; height: 13px; stroke-width: 1.7; fill: none; stroke: currentColor; stroke-linecap: round; stroke-linejoin: round; }
+  .homebar { height: 4px; width: 96px; border-radius: 999px; margin: 0 auto 6px; }
+
+  /* ---------------- option 1: M3 Expressive ---------------- */
+  .o1 .screen { background: #f4fbfa; color: #0b1b1a; }
+  .o1 .app-head .brand { color: #006a66; }
+  .o1 .card { background: #ffffff; border-radius: 20px; border: 1px solid #dce9e7; }
+  .o1 .chip { background: #9ff2ea; color: #00423f; }
+  .o1 .slider { background: #cdeae7; }
+  .o1 .knob { background: #006a66; }
+  .o1 .bubble.me { background: #006a66; color: #eafffd; border-radius: 18px 18px 6px 18px; }
+  .o1 .bubble.her { background: #dff3f0; color: #0b1b1a; border-radius: 18px 18px 18px 6px; }
+  .o1 .btn { background: #006a66; color: #eafffd; border-radius: 999px; font-size: 10px; font-weight: 700; text-align: center; padding: 8px; }
+  .o1 .nav { background: #ffffff; border-top: 1px solid #e2eeec; }
+  .o1 .nav .pill.on { background: #9ff2ea; }
+  .o1 .nav .on { color: #00423f; }
+  .o1 .homebar { background: #0b1b1a33; }
+
+  /* ---------------- option 2: Liquid glass ---------------- */
+  .o2 .screen { background: radial-gradient(120% 90% at 20% 0%, #1d4f5e 0%, #0a1420 55%, #060b12 100%); color: #e9f6ff; }
+  .o2 .app-head .brand { color: #6fe7ff; }
+  .o2 .card, .o2 .bubble.her {
+    background: rgba(255,255,255,.10);
+    backdrop-filter: blur(14px);
+    border: 1px solid rgba(255,255,255,.22);
+    box-shadow: 0 10px 30px rgba(0,0,0,.35), inset 0 1px 0 rgba(255,255,255,.18);
+  }
+  .o2 .card { border-radius: 18px; }
+  .o2 .chip { background: rgba(111,231,255,.18); color: #bff4ff; border: 1px solid rgba(111,231,255,.4); }
+  .o2 .slider { background: rgba(255,255,255,.18); }
+  .o2 .knob { background: #6fe7ff; box-shadow: 0 0 12px #6fe7ff; }
+  .o2 .bubble.me { background: rgba(111,231,255,.9); color: #04242c; border-radius: 16px 16px 5px 16px; }
+  .o2 .bubble.her { border-radius: 16px 16px 16px 5px; }
+  .o2 .btn { background: linear-gradient(180deg, #8ceeff, #4fd8ee); color: #04242c; border-radius: 14px; font-size: 10px; font-weight: 800; text-align: center; padding: 8px; }
+  .o2 .nav { background: rgba(255,255,255,.07); border-top: 1px solid rgba(255,255,255,.16); backdrop-filter: blur(12px); }
+  .o2 .nav .pill.on { background: rgba(111,231,255,.22); }
+  .o2 .nav .on { color: #bff4ff; }
+  .o2 .homebar { background: #ffffff55; }
+
+  /* ---------------- option 3: neo-editorial ---------------- */
+  .o3 .screen { background: #f7f4ec; color: #111; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; }
+  .o3 .app-head .brand { color: #111; letter-spacing: .18em; }
+  .o3 .app-head .ttl { font-weight: 800; text-transform: uppercase; letter-spacing: -.01em; }
+  .o3 .card { background: #fff; border: 2px solid #111; border-radius: 4px; box-shadow: 4px 4px 0 #111; }
+  .o3 .chip { background: #00d8c6; color: #08211f; border: 2px solid #111; border-radius: 3px; font-weight: 800; }
+  .o3 .slider { background: #fff; border: 2px solid #111; }
+  .o3 .knob { background: #111; border-radius: 2px; width: 11px; height: 11px; }
+  .o3 .bubble.me { background: #00d8c6; color: #061b19; border: 2px solid #111; border-radius: 3px; font-weight: 600; }
+  .o3 .bubble.her { background: #fff; color: #111; border: 2px solid #111; border-radius: 3px; }
+  .o3 .btn { background: #111; color: #f7f4ec; border-radius: 3px; font-size: 10px; font-weight: 700; text-align: center; padding: 8px; letter-spacing: .06em; }
+  .o3 .nav { background: #fff; border-top: 2px solid #111; }
+  .o3 .nav .pill.on { background: #00d8c6; border: 2px solid #111; border-radius: 3px; }
+  .o3 .nav .on { color: #111; }
+  .o3 .homebar { background: #111; }
+
+  /* ---------------- option 4: claymorphism ---------------- */
+  .o4 .screen { background: #e9f5f1; color: #17332f; }
+  .o4 .app-head .brand { color: #22c7b8; }
+  .o4 .app-head .ttl { font-weight: 800; }
+  .o4 .card {
+    background: #fdfdfb; border-radius: 26px;
+    box-shadow: 0 12px 20px rgba(23,51,47,.10), 0 2px 4px rgba(23,51,47,.06), inset 0 -3px 0 rgba(23,51,47,.05);
+  }
+  .o4 .chip { background: #bfede4; color: #0f4a43; border-radius: 999px; box-shadow: inset 0 -2px 0 rgba(15,74,67,.12); }
+  .o4 .slider { background: #cfe9e3; height: 6px; border-radius: 999px; box-shadow: inset 0 1px 2px rgba(23,51,47,.15); }
+  .o4 .knob { background: #22c7b8; width: 16px; height: 16px; box-shadow: 0 3px 6px rgba(34,199,184,.5); }
+  .o4 .bubble.me { background: #22c7b8; color: #04302c; border-radius: 18px 18px 6px 18px; box-shadow: 0 6px 12px rgba(34,199,184,.35); }
+  .o4 .bubble.her { background: #fff; border-radius: 18px 18px 18px 6px; box-shadow: 0 6px 12px rgba(23,51,47,.10); }
+  .o4 .btn { background: #22c7b8; color: #04302c; border-radius: 18px; font-size: 10.5px; font-weight: 800; text-align: center; padding: 9px; box-shadow: 0 6px 14px rgba(34,199,184,.4); }
+  .o4 .nav { background: #fdfdfb; border-top: 1px solid #dcece8; }
+  .o4 .nav .pill.on { background: #bfede4; box-shadow: inset 0 -2px 0 rgba(15,74,67,.14); }
+  .o4 .nav .on { color: #0f4a43; }
+  .o4 .homebar { background: #17332f33; }
+
+  /* ---------------- option 5: dark neon ---------------- */
+  .o5 .screen { background: radial-gradient(100% 70% at 50% 110%, #2a0b3d 0%, #0a0a12 60%, #06060b 100%); color: #f3e9ff; }
+  .o5 .app-head .brand { color: #35f0e0; letter-spacing: .22em; }
+  .o5 .app-head .ttl { font-weight: 800; text-shadow: 0 0 18px rgba(255,61,154,.45); }
+  .o5 .card { background: rgba(255,255,255,.05); border: 1px solid rgba(53,240,224,.28); border-radius: 16px; }
+  .o5 .chip { background: rgba(255,61,154,.16); color: #ff9dc8; border: 1px solid rgba(255,61,154,.5); }
+  .o5 .slider { background: rgba(255,255,255,.14); }
+  .o5 .knob { background: #35f0e0; box-shadow: 0 0 14px #35f0e0; }
+  .o5 .bubble.me { background: linear-gradient(90deg, #ff3d9a, #b03dff); color: #fff; border-radius: 15px 15px 4px 15px; }
+  .o5 .bubble.her { background: rgba(53,240,224,.12); border: 1px solid rgba(53,240,224,.35); color: #d9fffb; border-radius: 15px 15px 15px 4px; }
+  .o5 .btn { background: linear-gradient(90deg, #35f0e0, #6fd0ff); color: #04141a; border-radius: 12px; font-size: 10px; font-weight: 800; text-align: center; padding: 8px; box-shadow: 0 0 20px rgba(53,240,224,.4); }
+  .o5 .nav { background: rgba(6,6,12,.9); border-top: 1px solid rgba(255,255,255,.1); }
+  .o5 .nav .pill.on { background: rgba(53,240,224,.18); box-shadow: 0 0 14px rgba(53,240,224,.35); }
+  .o5 .nav .on { color: #b9fff9; }
+  .o5 .homebar { background: #ffffff44; }
+
+  /* ---------------- detail column ---------------- */
+  .meta { display: flex; flex-direction: column; gap: 16px; }
+  .meta .blk h4 { margin: 0 0 6px; font-size: 11px; letter-spacing: .12em; text-transform: uppercase; color: var(--muted); }
+  .meta .blk p { margin: 0; font-size: 13.5px; color: #cfdedd; }
+  .meta .blk ul { margin: 6px 0 0; padding-left: 18px; font-size: 13.5px; color: #cfdedd; }
+  .meta .blk li { margin: 3px 0; }
+  .meta .blk a { font-size: 13.5px; }
+  .swatches { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 4px; }
+  .sw { width: 56px; }
+  .sw i { display: block; height: 34px; border-radius: 8px; border: 1px solid rgba(255,255,255,.12); }
+  .sw span { display: block; font-size: 9.5px; color: var(--muted); margin-top: 4px; font-family: ui-monospace, monospace; }
+  .grid2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 14px; }
+  .icon-row { display: flex; gap: 14px; align-items: center; }
+  .appicon { width: 64px; height: 64px; border-radius: 18px; display: grid; place-items: center; flex: 0 0 auto; position: relative; overflow: hidden; }
+  .appicon.mono { border-radius: 18px; }
+  .appicon svg { width: 34px; height: 34px; }
+  .o1 .appicon { background: linear-gradient(160deg, #00b3a6, #006a66); }
+  .o1 .appicon.mono { background: #e6e9e8; }
+  .o2 .appicon { background: linear-gradient(160deg, #2a7f95, #08131f); border: 1px solid rgba(255,255,255,.35); box-shadow: inset 0 1px 0 rgba(255,255,255,.5); }
+  .o2 .appicon.mono { background: #e6e9e8; }
+  .o3 .appicon { background: #00d8c6; border: 3px solid #111; border-radius: 8px; box-shadow: 4px 4px 0 #111; }
+  .o3 .appicon.mono { background: #e6e9e8; border: 3px solid #111; border-radius: 8px; box-shadow: none; }
+  .o4 .appicon { background: linear-gradient(160deg, #7fe3d6, #22c7b8); box-shadow: 0 10px 18px rgba(34,199,184,.5), inset 0 -4px 0 rgba(0,0,0,.08); }
+  .o4 .appicon.mono { background: #e6e9e8; box-shadow: none; }
+  .o5 .appicon { background: linear-gradient(160deg, #ff3d9a, #b03dff 55%, #35f0e0); }
+  .o5 .appicon.mono { background: #e6e9e8; }
+  .verdict { margin-top: 4px; padding: 12px 14px; border-radius: 12px; background: #101a1b; border: 1px solid var(--line); font-size: 13px; color: #cfdedd; }
+  .verdict b { color: var(--cyan); }
+
+  footer { margin-top: 50px; padding-top: 22px; border-top: 1px solid var(--line); color: var(--muted); font-size: 13px; }
+  footer ul { padding-left: 20px; }
+  .acc {
+    display: inline-block; margin-top: 10px; font-size: 12.5px; font-weight: 700;
+    padding: 8px 14px; border-radius: 999px; background: #17332f; color: #bff4ff; border: 1px solid #2a5b54;
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header class="top">
+    <h1>Lima arah desain untuk Mate Engine Android</h1>
+    <p>Setiap opsi di bawah memakai data nyata dari aplikasi yang sudah berjalan: enam tab, kartu status,
+      slider ukuran, gelembung chat, dan ikon aplikasi. Pilih satu, lalu saya kerjakan seluruh aplikasi
+      mengikuti arah itu.</p>
+    <div class="badges">
+      <span class="badge">UI bahasa Indonesia</span>
+      <span class="badge">Material 3 / Jetpack Compose</span>
+      <span class="badge">Adaptif ponsel + jendela lebar</span>
+      <span class="badge warn">Pratinjau = mockup CSS, bukan tangkapan layar APK</span>
+    </div>
+    <div class="notice">
+      <strong>Cara memilih:</strong>
+      <p>Balas dengan nomor opsinya, misalnya “ACC opsi 2”, atau gabungan seperti “opsi 1, tapi ikon dari opsi 4”.
+        Setelah ACC saya tulis token warna, bentuk, dan motion resmi di satu berkas tema, lalu menerapkannya ke
+        semua layar — bukan hanya layar contoh di bawah.</p>
+    </div>
+  </header>
+
+  <h2 class="sect">Ringkasan cepat</h2>
+  <table class="cmp">
+    <thead>
+      <tr><th>Opsi</th><th>Karakter</th><th>Paling cocok bila…</th><th>Risiko</th></tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>1 · Expressive</td>
+        <td>Vivid, ramah, bentuk besar, tombol pil</td>
+        <td>ingin terasa seperti aplikasi Android modern standar 2026</td>
+        <td>kurang “khas waifu”, mudah terlihat generik</td>
+      </tr>
+      <tr>
+        <td>2 · Liquid Glass</td>
+        <td>Panel kaca, latar bercahaya, cyan lembut</td>
+        <td>ingin terasa premium dan futuristik</td>
+        <td>kontras teks harus diuji; `backdrop-filter` mahal di perangkat tua</td>
+      </tr>
+      <tr>
+        <td>3 · Editorial</td>
+        <td>Garis tebal, monospace, blok warna</td>
+        <td>ingin tampil beda dan berani, tidak seperti app template</td>
+        <td>paling sulit dibuat terasa “hangat” untuk waifu</td>
+      </tr>
+      <tr>
+        <td>4 · Clay</td>
+        <td>Lembut, chunky, sudut 26px, bayangan ganda</td>
+        <td>ingin terasa menggemaskan dan akrab</td>
+        <td>bisa terlihat kekanak-kanakan bila berlebihan</td>
+      </tr>
+      <tr>
+        <td>5 · Neon</td>
+        <td>Gelap, magenta–cyan, glow</td>
+        <td>ingin nuansa anime/cyber dan fokus pada avatar</td>
+        <td>paling berat di mata untuk pemakaian lama; aksesibilitas kontras</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <!-- ============ OPSI 1 ============ -->
+  <section class="opt o1">
+    <div class="opt-head">
+      <div class="opt-no">1</div>
+      <div>
+        <h3>Expressive Cyan</h3>
+        <p>Material 3 Expressive dengan biji warna cyan; bentuk besar, tombol pil, gerak ber-pegas.</p>
+      </div>
+    </div>
+    <div class="opt-body">
+      <div class="phone"><div class="screen">
+        <div class="sb"><span>9:41</span><span>▮▮▮</span></div>
+        <div class="app-head">
+          <div class="brand">Mate Engine</div>
+          <div class="ttl">Beranda</div>
+          <div class="tag">Avatar VRM di atas aplikasi lain</div>
+        </div>
+        <div class="content">
+          <div class="card">
+            <div class="row"><span class="val">Sedang tampil</span><span class="chip">Aktif</span></div>
+            <div class="lbl" style="margin-top:3px">VRM1 · 8 fps · Renderer siap</div>
+          </div>
+          <div class="card">
+            <div class="row"><span class="lbl">Ukuran avatar</span><span class="val">135%</span></div>
+            <div class="slider"><div class="knob" style="left:62%"></div></div>
+          </div>
+          <div class="bubble me">Temani aku kerja ya</div>
+          <div class="bubble her">Siap! Aku duduk di sini, kalau capek bilang.</div>
+          <div style="margin-top:auto; padding-bottom:6px"><div class="btn">Jalankan avatar</div></div>
+        </div>
+        <div class="nav">
+          <div class="it on"><div class="pill on"><svg class="ic"><use href="#i-home"/></svg></div>Beranda</div>
+          <div class="it"><div class="pill"><svg class="ic"><use href="#i-user"/></svg></div>Avatar</div>
+          <div class="it"><div class="pill"><svg class="ic"><use href="#i-mail"/></svg></div>Chat</div>
+          <div class="it"><div class="pill"><svg class="ic"><use href="#i-play"/></svg></div>Animasi</div>
+          <div class="it"><div class="pill"><svg class="ic"><use href="#i-tool"/></svg></div>Diagnosa</div>
+          <div class="it"><div class="pill"><svg class="ic"><use href="#i-gear"/></svg></div>Setelan</div>
+        </div>
+        <div class="homebar"></div>
+      </div></div>
+
+      <div class="meta">
+        <div class="blk">
+          <h4>Acuan dari web</h4>
+          <ul>
+            <li><a href="https://m3.material.io/">m3.material.io — Material 3 Expressive</a>: sistem gerak berbasis pegas, token bentuk, komponen tombol pil.</li>
+            <li><a href="https://supercharge.design/blog/material-3-expressive">Material 3 Expressive: komponen &amp; motion baru</a>: Compose sudah mendukung penuh tanpa anotasi eksperimental.</li>
+          </ul>
+        </div>
+        <div class="blk">
+          <h4>Palet</h4>
+          <div class="swatches">
+            <div class="sw"><i style="background:#006a66"></i><span>#006A66</span></div>
+            <div class="sw"><i style="background:#9ff2ea"></i><span>#9FF2EA</span></div>
+            <div class="sw"><i style="background:#f4fbfa"></i><span>#F4FBFA</span></div>
+            <div class="sw"><i style="background:#0b1b1a"></i><span>#0B1B1A</span></div>
+            <div class="sw"><i style="background:#dce9e7"></i><span>#DCE9E7</span></div>
+          </div>
+        </div>
+        <div class="grid2">
+          <div class="blk"><h4>Tipografi</h4><p>Plus Jakarta Sans (judul) + system sans (isi). Skala 24/16/13, judul semi-bold, angka tabular untuk FPS.</p></div>
+          <div class="blk"><h4>Bentuk &amp; gerak</h4><p>Radius 20–28px, tombol pil penuh. Pegas: stiffness 380, damping 0.72 — overshoot tipis saat kartu muncul.</p></div>
+        </div>
+        <div class="blk">
+          <h4>Ikon aplikasi</h4>
+          <div class="icon-row">
+            <div class="appicon"><svg viewBox="0 0 24 24" fill="none" stroke="#eafffd" stroke-width="1.6"><use href="#i-user"/></svg></div>
+            <div class="appicon mono"><svg viewBox="0 0 24 24" fill="none" stroke="#1d1b20" stroke-width="1.6"><use href="#i-user"/></svg></div>
+            <p style="margin:0">Adaptive icon: latar gradien cyan, siluet kepala+rambut sebagai foreground di dalam safe zone 66dp,
+              <b>plus layer monokrom</b> karena Android 16 menurunkan ikon tema otomatis dari launcher icon.</p>
+          </div>
+        </div>
+        <div class="verdict"><b>Paling aman.</b> Semua komponen sudah tersedia di Compose; saya tidak perlu menulis ulang widget apa pun. Cocok bila kamu ingin aplikasi ini terasa “resmi”.</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ OPSI 2 ============ -->
+  <section class="opt o2">
+    <div class="opt-head">
+      <div class="opt-no">2</div>
+      <div>
+        <h3>Liquid Glass</h3>
+        <p>Panel kaca tembus pandang di atas latar bercahaya; cyan sebagai satu-satunya aksen.</p>
+      </div>
+    </div>
+    <div class="opt-body">
+      <div class="phone"><div class="screen">
+        <div class="sb"><span>9:41</span><span>▮▮▮</span></div>
+        <div class="app-head">
+          <div class="brand">Mate Engine</div>
+          <div class="ttl">Beranda</div>
+          <div class="tag">Avatar VRM di atas aplikasi lain</div>
+        </div>
+        <div class="content">
+          <div class="card">
+            <div class="row"><span class="val">Sedang tampil</span><span class="chip">Aktif</span></div>
+            <div class="lbl" style="margin-top:3px">VRM1 · 8 fps · Renderer siap</div>
+          </div>
+          <div class="card">
+            <div class="row"><span class="lbl">Ukuran avatar</span><span class="val">135%</span></div>
+            <div class="slider"><div class="knob" style="left:62%"></div></div>
+          </div>
+          <div class="bubble me">Temani aku kerja ya</div>
+          <div class="bubble her">Siap! Aku duduk di sini, kalau capek bilang.</div>
+          <div style="margin-top:auto; padding-bottom:6px"><div class="btn">Jalankan avatar</div></div>
+        </div>
+        <div class="nav">
+          <div class="it on"><div class="pill on"><svg class="ic"><use href="#i-home"/></svg></div>Beranda</div>
+          <div class="it"><div class="pill"><svg class="ic"><use href="#i-user"/></svg></div>Avatar</div>
+          <div class="it"><div class="pill"><svg class="ic"><use href="#i-mail"/></svg></div>Chat</div>
+          <div class="it"><div class="pill"><svg class="ic"><use href="#i-play"/></svg></div>Animasi</div>
+          <div class="it"><div class="pill"><svg class="ic"><use href="#i-tool"/></svg></div>Diagnosa</div>
+          <div class="it"><div class="pill"><svg class="ic"><use href="#i-gear"/></svg></div>Setelan</div>
+        </div>
+        <div class="homebar"></div>
+      </div></div>
+
+      <div class="meta">
+        <div class="blk">
+          <h4>Acuan dari web</h4>
+          <ul>
+            <li><a href="https://muz.li/blog/whats-changing-in-mobile-app-design-ui-patterns-that-matter-in-2026/">muz.li — tren UI 2026</a>: kaca dipakai bedah, hanya untuk lapisan sementara di atas konten.</li>
+            <li><a href="https://www.iconikai.com/blog/glassmorphism-app-icons-2026">Panduan ikon glassmorphism 2026</a>: opasitas panel 10–25%, blur 8–20px, garis tepi 1–2px.</li>
+          </ul>
+        </div>
+        <div class="blk">
+          <h4>Palet</h4>
+          <div class="swatches">
+            <div class="sw"><i style="background:#0a1420"></i><span>#0A1420</span></div>
+            <div class="sw"><i style="background:#1d4f5e"></i><span>#1D4F5E</span></div>
+            <div class="sw"><i style="background:#6fe7ff"></i><span>#6FE7FF</span></div>
+            <div class="sw"><i style="background:#e9f6ff"></i><span>#E9F6FF</span></div>
+            <div class="sw"><i style="background:#ffffff1a"></i><span>10% putih</span></div>
+          </div>
+        </div>
+        <div class="grid2">
+          <div class="blk"><h4>Tipografi</h4><p>Sora / Inter Tight untuk judul, system sans untuk isi. Judul tanpa huruf kapital semua.</p></div>
+          <div class="blk"><h4>Bentuk &amp; gerak</h4><p>Radius 16–20px. Kaca naik 8px + fade 180ms saat muncul; tidak ada bounce, pantulan terasa murah di atas kaca.</p></div>
+        </div>
+        <div class="blk">
+          <h4>Ikon aplikasi</h4>
+          <div class="icon-row">
+            <div class="appicon"><svg viewBox="0 0 24 24" fill="none" stroke="#d8fbff" stroke-width="1.5"><use href="#i-user"/></svg></div>
+            <div class="appicon mono"><svg viewBox="0 0 24 24" fill="none" stroke="#1d1b20" stroke-width="1.6"><use href="#i-user"/></svg></div>
+            <p style="margin:0">Panel kaca di atas gradien laut; tanda tetap tajam, hanya latar yang diburamkan. Siapkan juga versi monokrom solid untuk ikon tema.</p>
+          </div>
+        </div>
+        <div class="verdict"><b>Paling cantik, paling mahal.</b> Di WebView overlay, `backdrop-filter` bisa memotong FPS; untuk overlay avatar sendiri saya tetap pakai latar transparan penuh (tidak ada kaca di belakang avatar).</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ OPSI 3 ============ -->
+  <section class="opt o3">
+    <div class="opt-head">
+      <div class="opt-no">3</div>
+      <div>
+        <h3>Editorial Tegas</h3>
+        <p>Garis hitam tebal, tipografi monospace, blok cyan datar, bayangan offset tanpa blur.</p>
+      </div>
+    </div>
+    <div class="opt-body">
+      <div class="phone"><div class="screen">
+        <div class="sb"><span>9:41</span><span>▮▮▮</span></div>
+        <div class="app-head">
+          <div class="brand">Mate Engine</div>
+          <div class="ttl">Beranda</div>
+          <div class="tag">Avatar VRM di atas aplikasi lain</div>
+        </div>
+        <div class="content">
+          <div class="card">
+            <div class="row"><span class="val">SEDANG TAMPIL</span><span class="chip">AKTIF</span></div>
+            <div class="lbl" style="margin-top:3px">VRM1 · 8 fps · SIAP</div>
+          </div>
+          <div class="card">
+            <div class="row"><span class="lbl">UKURAN</span><span class="val">135%</span></div>
+            <div class="slider"><div class="knob" style="left:62%"></div></div>
+          </div>
+          <div class="bubble me">Temani aku kerja ya</div>
+          <div class="bubble her">Siap. Aku di sini.</div>
+          <div style="margin-top:auto; padding-bottom:6px"><div class="btn">JALANKAN</div></div>
+        </div>
+        <div class="nav">
+          <div class="it on"><div class="pill on"><svg class="ic"><use href="#i-home"/></svg></div>Beranda</div>
+          <div class="it"><div class="pill"><svg class="ic"><use href="#i-user"/></svg></div>Avatar</div>
+          <div class="it"><div class="pill"><svg class="ic"><use href="#i-mail"/></svg></div>Chat</div>
+          <div class="it"><div class="pill"><svg class="ic"><use href="#i-play"/></svg></div>Animasi</div>
+          <div class="it"><div class="pill"><svg class="ic"><use href="#i-tool"/></svg></div>Diagnosa</div>
+          <div class="it"><div class="pill"><svg class="ic"><use href="#i-gear"/></svg></div>Setelan</div>
+        </div>
+        <div class="homebar"></div>
+      </div></div>
+
+      <div class="meta">
+        <div class="blk">
+          <h4>Acuan dari web</h4>
+          <ul>
+            <li><a href="https://www.abdulazizahwan.com/2026/02/beyond-the-glass-7-mobile-ui-trends-defining-2026.html">Beyond the Glass: tren UI 2026</a>: neo-brutalisme — kontras tinggi, garis mentah, tipografi monospace.</li>
+            <li><a href="https://muz.li/inspiration/android-app-examples/">muz.li — 50+ pola aplikasi Android 2026</a> sebagai pembanding struktur navigasi.</li>
+          </ul>
+        </div>
+        <div class="blk">
+          <h4>Palet</h4>
+          <div class="swatches">
+            <div class="sw"><i style="background:#f7f4ec"></i><span>#F7F4EC</span></div>
+            <div class="sw"><i style="background:#111111"></i><span>#111111</span></div>
+            <div class="sw"><i style="background:#00d8c6"></i><span>#00D8C6</span></div>
+            <div class="sw"><i style="background:#ffffff"></i><span>#FFFFFF</span></div>
+          </div>
+        </div>
+        <div class="grid2">
+          <div class="blk"><h4>Tipografi</h4><p>JetBrains Mono untuk semua label teknis, Space Grotesk untuk angka besar. Huruf kapital dipakai hemat, hanya untuk status.</p></div>
+          <div class="blk"><h4>Bentuk &amp; gerak</h4><p>Radius 3–4px, border 2px, bayangan 4px 4px 0 tanpa blur. Transisi 90ms linear; tidak ada pegas sama sekali.</p></div>
+        </div>
+        <div class="blk">
+          <h4>Ikon aplikasi</h4>
+          <div class="icon-row">
+            <div class="appicon"><svg viewBox="0 0 24 24" fill="none" stroke="#111" stroke-width="2"><use href="#i-user"/></svg></div>
+            <div class="appicon mono"><svg viewBox="0 0 24 24" fill="none" stroke="#1d1b20" stroke-width="1.6"><use href="#i-user"/></svg></div>
+            <p style="margin:0">Kotak cyan bersudut 8px dengan garis hitam dan bayangan offset. Harus tetap terbaca pada 48px.</p>
+          </div>
+        </div>
+        <div class="verdict"><b>Paling berkarakter.</b> Tapi paling jauh dari nuansa “waifu menemani”; hanya pilih ini bila kamu ingin aplikasi terasa seperti alat, bukan pendamping.</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ OPSI 4 ============ -->
+  <section class="opt o4">
+    <div class="opt-head">
+      <div class="opt-no">4</div>
+      <div>
+        <h3>Clay Lembut</h3>
+        <p>Kartu chunky dengan bayangan ganda, sudut 26px, mint–cyan, terasa seperti mainan meja.</p>
+      </div>
+    </div>
+    <div class="opt-body">
+      <div class="phone"><div class="screen">
+        <div class="sb"><span>9:41</span><span>▮▮▮</span></div>
+        <div class="app-head">
+          <div class="brand">Mate Engine</div>
+          <div class="ttl">Beranda</div>
+          <div class="tag">Avatar VRM di atas aplikasi lain</div>
+        </div>
+        <div class="content">
+          <div class="card">
+            <div class="row"><span class="val">Sedang tampil</span><span class="chip">Aktif</span></div>
+            <div class="lbl" style="margin-top:3px">VRM1 · 8 fps · Renderer siap</div>
+          </div>
+          <div class="card">
+            <div class="row"><span class="lbl">Ukuran avatar</span><span class="val">135%</span></div>
+            <div class="slider"><div class="knob" style="left:62%"></div></div>
+          </div>
+          <div class="bubble me">Temani aku kerja ya</div>
+          <div class="bubble her">Siap! Aku duduk di sini, kalau capek bilang.</div>
+          <div style="margin-top:auto; padding-bottom:6px"><div class="btn">Jalankan avatar</div></div>
+        </div>
+        <div class="nav">
+          <div class="it on"><div class="pill on"><svg class="ic"><use href="#i-home"/></svg></div>Beranda</div>
+          <div class="it"><div class="pill"><svg class="ic"><use href="#i-user"/></svg></div>Avatar</div>
+          <div class="it"><div class="pill"><svg class="ic"><use href="#i-mail"/></svg></div>Chat</div>
+          <div class="it"><div class="pill"><svg class="ic"><use href="#i-play"/></svg></div>Animasi</div>
+          <div class="it"><div class="pill"><svg class="ic"><use href="#i-tool"/></svg></div>Diagnosa</div>
+          <div class="it"><div class="pill"><svg class="ic"><use href="#i-gear"/></svg></div>Setelan</div>
+        </div>
+        <div class="homebar"></div>
+      </div></div>
+
+      <div class="meta">
+        <div class="blk">
+          <h4>Acuan dari web</h4>
+          <ul>
+            <li><a href="https://www.setproduct.com/blog/claymorphism-design-guide">Panduan claymorphism (resep CSS)</a>: radius kartu 28px, tombol 18px, chip pil penuh, bayangan ganda.</li>
+            <li><a href="https://logoaitool.com/logo-design-trends-2026-prompts/">Tren logo 2026 — geometri squircle</a>: bentuk antara kotak dan lingkaran, terasa ramah tapi stabil.</li>
+          </ul>
+        </div>
+        <div class="blk">
+          <h4>Palet</h4>
+          <div class="swatches">
+            <div class="sw"><i style="background:#e9f5f1"></i><span>#E9F5F1</span></div>
+            <div class="sw"><i style="background:#22c7b8"></i><span>#22C7B8</span></div>
+            <div class="sw"><i style="background:#bfede4"></i><span>#BFEDE4</span></div>
+            <div class="sw"><i style="background:#17332f"></i><span>#17332F</span></div>
+            <div class="sw"><i style="background:#fdfdfb"></i><span>#FDFDFB</span></div>
+          </div>
+        </div>
+        <div class="grid2">
+          <div class="blk"><h4>Tipografi</h4><p>Baloo 2 / Nunito untuk judul (bulat), system sans untuk isi. Hindari font tipis — kontras rendah merusak efek clay.</p></div>
+          <div class="blk"><h4>Bentuk &amp; gerak</h4><p>Radius 26–28px, bayangan dua lapis. Tekan = mengecil ke 0.96 dengan pegas ringan (stiffness 300, damping 0.6).</p></div>
+        </div>
+        <div class="blk">
+          <h4>Ikon aplikasi</h4>
+          <div class="icon-row">
+            <div class="appicon"><svg viewBox="0 0 24 24" fill="none" stroke="#04302c" stroke-width="2"><use href="#i-user"/></svg></div>
+            <div class="appicon mono"><svg viewBox="0 0 24 24" fill="none" stroke="#1d1b20" stroke-width="1.6"><use href="#i-user"/></svg></div>
+            <p style="margin:0">Squircle mint dengan highlight bawah-dalam, tanda tebal di tengah. Versi tema = siluet datar satu warna.</p>
+          </div>
+        </div>
+        <div class="verdict"><b>Paling cocok dengan tema waifu.</b> Risikonya: kalau semua kartu memakai bayangan tebal, layar panjang jadi berat. Saya akan batasi efek clay pada kartu utama saja.</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ OPSI 5 ============ -->
+  <section class="opt o5">
+    <div class="opt-head">
+      <div class="opt-no">5</div>
+      <div>
+        <h3>Neon Gelap</h3>
+        <p>Hitam kebiruan, gradien magenta→cyan, glow halus; avatar jadi pusat perhatian.</p>
+      </div>
+    </div>
+    <div class="opt-body">
+      <div class="phone"><div class="screen">
+        <div class="sb"><span>9:41</span><span>▮▮▮</span></div>
+        <div class="app-head">
+          <div class="brand">Mate Engine</div>
+          <div class="ttl">Beranda</div>
+          <div class="tag">Avatar VRM di atas aplikasi lain</div>
+        </div>
+        <div class="content">
+          <div class="card">
+            <div class="row"><span class="val">Sedang tampil</span><span class="chip">Aktif</span></div>
+            <div class="lbl" style="margin-top:3px">VRM1 · 8 fps · Renderer siap</div>
+          </div>
+          <div class="card">
+            <div class="row"><span class="lbl">Ukuran avatar</span><span class="val">135%</span></div>
+            <div class="slider"><div class="knob" style="left:62%"></div></div>
+          </div>
+          <div class="bubble me">Temani aku kerja ya</div>
+          <div class="bubble her">Siap! Aku duduk di sini, kalau capek bilang.</div>
+          <div style="margin-top:auto; padding-bottom:6px"><div class="btn">Jalankan avatar</div></div>
+        </div>
+        <div class="nav">
+          <div class="it on"><div class="pill on"><svg class="ic"><use href="#i-home"/></svg></div>Beranda</div>
+          <div class="it"><div class="pill"><svg class="ic"><use href="#i-user"/></svg></div>Avatar</div>
+          <div class="it"><div class="pill"><svg class="ic"><use href="#i-mail"/></svg></div>Chat</div>
+          <div class="it"><div class="pill"><svg class="ic"><use href="#i-play"/></svg></div>Animasi</div>
+          <div class="it"><div class="pill"><svg class="ic"><use href="#i-tool"/></svg></div>Diagnosa</div>
+          <div class="it"><div class="pill"><svg class="ic"><use href="#i-gear"/></svg></div>Setelan</div>
+        </div>
+        <div class="homebar"></div>
+      </div></div>
+
+      <div class="meta">
+        <div class="blk">
+          <h4>Acuan dari web</h4>
+          <ul>
+            <li><a href="https://www.iconikai.com/blog/app-icon-design-trends-2026">Tren ikon aplikasi 2026</a>: gradien berani, palet dark-mode-first, minimalisme ekstrem.</li>
+            <li><a href="https://www.manypixels.co/blog/illustrations/icon-trends">Tren ikon 2026</a>: satu simbol, satu warna aksen; motion dan mode gelap kini standar.</li>
+          </ul>
+        </div>
+        <div class="blk">
+          <h4>Palet</h4>
+          <div class="swatches">
+            <div class="sw"><i style="background:#06060b"></i><span>#06060B</span></div>
+            <div class="sw"><i style="background:#2a0b3d"></i><span>#2A0B3D</span></div>
+            <div class="sw"><i style="background:#ff3d9a"></i><span>#FF3D9A</span></div>
+            <div class="sw"><i style="background:#35f0e0"></i><span>#35F0E0</span></div>
+            <div class="sw"><i style="background:#f3e9ff"></i><span>#F3E9FF</span></div>
+          </div>
+        </div>
+        <div class="grid2">
+          <div class="blk"><h4>Tipografi</h4><p>Space Grotesk / Chakra Petch untuk judul; isi memakai sans netral agar tetap terbaca di latar gelap.</p></div>
+          <div class="blk"><h4>Bentuk &amp; gerak</h4><p>Radius 14–16px. Glow hanya pada elemen aktif; denyut 2 detik saat menunggu balasan chat.</p></div>
+        </div>
+        <div class="blk">
+          <h4>Ikon aplikasi</h4>
+          <div class="icon-row">
+            <div class="appicon"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.8"><use href="#i-user"/></svg></div>
+            <div class="appicon mono"><svg viewBox="0 0 24 24" fill="none" stroke="#1d1b20" stroke-width="1.6"><use href="#i-user"/></svg></div>
+            <p style="margin:0">Gradien tiga warna magenta→ungu→cyan dengan tanda putih tajam. Versi monokrom wajib: gradien tidak selamat saat difilter jadi satu warna.</p>
+          </div>
+        </div>
+        <div class="verdict"><b>Paling dramatis.</b> Karena aplikasi ini sering dipakai sore–malam sambil kerja, tema gelap total bisa melelahkan; saya sarankan versi ini dengan mode terang pilihan.</div>
+      </div>
+    </div>
+  </section>
+
+  <footer>
+    <p><b>Catatan kejujuran:</b> gambar ponsel di halaman ini adalah <b>mockup HTML/CSS</b> yang saya tulis untuk
+      membandingkan arah desain. Itu bukan tangkapan layar APK. Tangkapan layar asli hanya ada di
+      <a href="screenshots.html">galeri bukti</a>, dan setelah desain dipilih, bukti barunya akan diambil dengan cara yang
+      sama: `adb screencap` dari emulator.</p>
+    <p>Semua tautan acuan di atas dibuka dan diperiksa isinya saat halaman ini dibuat. Materi pihak ketiga tidak
+      disalin ke repo ini — hanya tautan dan ringkasan prinsipnya.</p>
+    <p><b>Tombol ACC</b> di halaman ini belum berfungsi (halaman statis). Cukup balas nomornya di chat.</p>
+    <div class="acc">Contoh balasan: “ACC opsi 4” · “opsi 2 tapi tipografi opsi 5” · “opsi 1 untuk terang, opsi 5 untuk gelap”</div>
+  </footer>
+
+</div>
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <symbol id="i-home" viewBox="0 0 24 24"><path d="M4 11l8-7 8 7v8a1 1 0 0 1-1 1h-4v-6H9v6H5a1 1 0 0 1-1-1z"/></symbol>
+  <symbol id="i-user" viewBox="0 0 24 24"><circle cx="12" cy="8.5" r="3.6"/><path d="M4.8 20c.6-3.6 3.4-5.6 7.2-5.6s6.6 2 7.2 5.6"/></symbol>
+  <symbol id="i-mail" viewBox="0 0 24 24"><rect x="3.5" y="5.5" width="17" height="13" rx="2.5"/><path d="M4.5 7.5l7.5 5.5 7.5-5.5"/></symbol>
+  <symbol id="i-play" viewBox="0 0 24 24"><path d="M8 5.5l11 6.5-11 6.5z"/></symbol>
+  <symbol id="i-tool" viewBox="0 0 24 24"><path d="M14.5 6.5a3.5 3.5 0 1 0 4 4L20 12 12 20l-3-3 8-8z"/></symbol>
+  <symbol id="i-gear" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M12 3.5v2.2M12 18.3v2.2M4.9 7.9l1.9 1.1M17.2 15l1.9 1.1M4.9 16.1l1.9-1.1M17.2 9l1.9-1.1"/></symbol>
+</svg>
+</body>
+</html>
