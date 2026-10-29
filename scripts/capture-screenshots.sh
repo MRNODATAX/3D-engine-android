@@ -526,28 +526,21 @@ current_screen_size() {
 # sebelumnya tidak ikut dinilai.
 cek_jendela() {
   local label="$1"
-  # Minta layanan menerapkan ulang tata letak: itu selalu menulis satu baris `jendela siluet`
-  # dengan ukuran layar orientasi saat ini, sehingga pemeriksaan tidak bergantung pada apakah
-  # `body-box` kebetulan datang pada detik itu.
-  adb shell am startservice -n "$PKG/io.github.mrnodatax.mateengine.overlay.OverlayService" \
-    -a io.github.mrnodatax.mateengine.action.APPLY_SETTINGS >/dev/null 2>&1 || true
-  adb logcat -c || true
-  sleep 4
-  local hasil
-  hasil="$(adb logcat -d -s MateEngineRender:I \
-    | grep -o "jendela siluet [0-9]*x[0-9]* di ([0-9-]*, [0-9-]*).*layar [0-9]*x[0-9]*" \
-    | python3 scripts/periksa-jendela-layar.py 2>&1)"
-  local status=$?
+  # Sumber utama: WindowManager. `mAttrs` selalu berisi posisi/ukuran jendela yang benar-benar
+  # dipasang, dan `cur=` adalah ukuran layar orientasi saat ini. Log aplikasi hanya dipakai
+  # sebagai pelengkap, karena layanan tidak selalu menulis log pada detik yang sama dan
+  # `am startservice` ke komponen non-exported ditolak saat dijalankan dari shell.
+  adb shell dumpsys window windows | grep -A 3 "MateEngine avatar" | head -4 > /tmp/jendela-avatar.txt
+  adb shell dumpsys window displays | grep -o "cur=[0-9]*x[0-9]*" | head -1 >> /tmp/jendela-avatar.txt
+  local hasil status
+  hasil="$(python3 scripts/periksa-jendela-layar.py --dumpsys < /tmp/jendela-avatar.txt 2>&1)"
+  status=$?
   echo "--- $label: $hasil" >> "$DIAG"
   if [ "$status" -eq 0 ]; then
     echo "== $label: $hasil"
     return 0
   fi
-  # Tiga baris pertama ikut dilaporkan sebagai anotasi: log mentah Actions tidak dapat diunduh
-  # dari lingkungan ini, jadi bukti angka harus muncul di ringkasan check-run.
   echo "::error::$label gagal: $hasil"
-  adb logcat -d -s MateEngineRender:I | grep -o "jendela siluet [0-9]*x[0-9]* di ([0-9-]*, [0-9-]*).*layar [0-9]*x[0-9]*" | head -3 \
-    | while read -r baris; do echo "::warning::contoh: $baris"; done
   return 1
 }
 

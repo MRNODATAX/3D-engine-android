@@ -17,14 +17,45 @@ import sys
 POLA = re.compile(
     r"jendela siluet (\d+)x(\d+) di \((-?\d+), (-?\d+)\).*?(?:layar (\d+)x(\d+))?$",
 )
+# `dumpsys window windows` menulis: mAttrs={(x,y)(WxH) gr=...}
+POLA_ATTRS = re.compile(r"mAttrs=\{\((-?\d+),(-?\d+)\)\((\d+)x(\d+)\)")
+# `dumpsys window displays` menulis beberapa kali: ... cur=WxH app=WxH ...
+POLA_LAYAR = re.compile(r"cur=(\d+)x(\d+)")
 TOLERANSI = 2
 
 
 def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--layar", nargs=2, type=int, metavar=("LEBAR", "TINGGI"))
+    parser.add_argument(
+        "--dumpsys",
+        action="store_true",
+        help="baca keluaran dumpsys window (mAttrs/cur=) alih-alih logcat",
+    )
     args = parser.parse_args()
     layar_paksa = args.layar
+
+    if args.dumpsys:
+        teks = sys.stdin.read()
+        attrs = POLA_ATTRS.search(teks)
+        layar = POLA_LAYAR.search(teks)
+        if not attrs or not layar:
+            print("dumpsys tidak memuat mAttrs/cur= window avatar")
+            return 2
+        kiri, atas, lebar, tinggi = (int(v) for v in attrs.groups())
+        layar_w, layar_h = (int(v) for v in layar.groups())
+        kanan = kiri + lebar
+        bawah = atas + tinggi
+        if (
+            kiri < -TOLERANSI
+            or atas < -TOLERANSI
+            or kanan > layar_w + TOLERANSI
+            or bawah > layar_h + TOLERANSI
+        ):
+            print(f"jendela ({kiri},{atas}) {lebar}x{tinggi} keluar layar {layar_w}x{layar_h}")
+            return 1
+        print(f"jendela ({kiri},{atas}) {lebar}x{tinggi} di dalam layar {layar_w}x{layar_h}")
+        return 0
 
     diperiksa = 0
     pelanggaran = []
