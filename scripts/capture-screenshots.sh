@@ -505,6 +505,95 @@ adb shell settings put system user_rotation 1
 sleep 4
 shoot 10-beranda-lebar --es screen home
 
+# ---- F9: rotasi overlay (potret -> lanskap -> potret), jendela harus tetap di dalam layar ----
+# Kelas bug yang pernah terjadi: setelah rotasi jendela masih memakai posisi/ukuran orientasi
+# lama, sehingga avatar keluar layar atau terpotong.
+echo "== rotasi overlay"
+
+# Ukuran layar **saat ini** (mengikuti rotasi). `wm size` selalu melaporkan ukuran fisik,
+# jadi dipakai `dumpsys window displays` yang punya baris `cur=LEBARxTINGGI`.
+current_screen_size() {
+  local ukuran
+  ukuran="$(adb shell dumpsys window displays 2>/dev/null \
+    | sed -n 's/.*cur=\([0-9]*\)x\([0-9]*\).*/\1 \2/p' | head -1)"
+  if [ -z "$ukuran" ]; then
+    ukuran="$(screen_size)"
+  fi
+  echo "$ukuran"
+}
+
+# Periksa jendela hanya dari log yang dibuat SESUDAH posisi ini, supaya baris dari orientasi
+# sebelumnya tidak ikut dinilai.
+cek_jendela() {
+  local label="$1" lebar="$2" tinggi="$3"
+  adb logcat -c || true
+  sleep 4
+  if adb logcat -d -s MateEngineRender:I \
+    | grep -o "jendela siluet [0-9]*x[0-9]* di ([0-9-]*, [0-9-]*)" \
+    | python3 scripts/periksa-jendela-layar.py --layar "$lebar" "$tinggi"; then
+    echo "== $label: jendela di dalam layar ${lebar}x${tinggi}"
+    return 0
+  fi
+  echo "::error::$label: ada jendela di luar layar ${lebar}x${tinggi}"
+  return 1
+}
+
+adb shell am force-stop "$PKG" || true
+adb logcat -c || true
+adb shell am start -W -n "$ACTIVITY" --ez seed_sample true --ez start_overlay true \
+  --ei scale 80 --es screen home >/dev/null
+for i in $(seq 1 24); do
+  sleep 5
+  if adb logcat -d | grep -qE "MateEngineRender.*avatar-ready"; then break; fi
+done
+sleep 3
+read -r POTRET_W POTRET_H <<<"$(current_screen_size)" || true
+if [ -z "${POTRET_W:-}" ] || [ -z "${POTRET_H:-}" ]; then
+  read -r POTRET_W POTRET_H <<<"$(screen_size)"
+fi
+adb exec-out screencap -p > "$OUT/25-rotasi-potret.png"
+
+rotasi_ok=1
+adb shell settings put system accelerometer_rotation 0
+for putaran in 1 2; do
+  adb shell settings put system user_rotation 1
+  sleep 5
+  read -r LANSKAP_W LANSKAP_H <<<"$(current_screen_size)" || true
+  if [ -z "${LANSKAP_W:-}" ] || [ -z "${LANSKAP_H:-}" ]; then
+    read -r LANSKAP_W LANSKAP_H <<<"$(screen_size)"
+  fi
+  adb exec-out screencap -p > "$OUT/26-rotasi-lanskap-$putaran.png"
+  cek_jendela "rotasi $putaran (lanskap)" "$LANSKAP_W" "$LANSKAP_H" || rotasi_ok=0
+  adb shell settings put system user_rotation 0
+  sleep 5
+  adb exec-out screencap -p > "$OUT/27-rotasi-kembali-$putaran.png"
+  cek_jendela "rotasi $putaran (kembali potret)" "$POTRET_W" "$POTRET_H" || rotasi_ok=0
+done
+if [ "$rotasi_ok" -eq 1 ]; then
+  echo "== bukti rotasi: 4 perpindahan orientasi, jendela selalu di dalam layar"
+fi
+grep -o 'motion {.*}' <<<"$(adb logcat -d)" | python3 scripts/periksa-celah-tubuh.py --tegas >/dev/null 2>&1 \
+  && echo "== rotasi: tubuh tetap utuh di dalam kanvas" \
+  || echo "::warning::rotasi: angka bodyGap tidak terbaca"
+
+# ---- F2: layar lebar (tablet, smallest width >= 600 dp) ----
+# Android 16 mengabaikan batasan orientasi di layar besar, jadi tata letak lebar wajib diuji:
+# pada lebar ini aplikasi harus memakai rail, bukan bilah bawah.
+echo "== layar lebar (tablet simulasi)"
+adb shell wm size 1600x2560
+adb shell wm density 320
+sleep 5
+adb shell am start -n "$ACTIVITY" --es screen home >/dev/null
+sleep 4
+adb exec-out screencap -p > "$OUT/25-tablet-beranda.png"
+adb shell am start -n "$ACTIVITY" --es screen animation >/dev/null
+sleep 3
+adb exec-out screencap -p > "$OUT/25-tablet-animasi.png"
+adb shell wm size reset
+adb shell wm density reset
+sleep 3
+echo "== tersimpan 25/26/27 rotasi + 25-tablet"
+
 adb shell settings put system user_rotation 0
 adb shell cmd uimode night no || true
 
