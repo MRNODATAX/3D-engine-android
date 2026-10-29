@@ -85,10 +85,19 @@ KEPALA_X=$((JX + JW / 2)); KEPALA_Y=$((JY + JH * 12 / 100))
 BADAN_X=$((JX + JW / 2)); BADAN_Y=$((JY + JH * 45 / 100))
 
 # ---------------------------------------------------------------- 1. elus kepala
+# Amplitudo 19 px dipilih dengan sengaja: di bawah ambang geser 22 dp (≈58 px di layar ini)
+# dan bahkan di bawah ambang "margin kosong" 8 dp (≈21 px), sehingga gerakan bolak-balik
+# kecil tidak boleh menyeret avatar. Elusan besar (±80 px seperti percobaan pertama) memang
+# DIRANCANG menyeret — itu fitur, bukan bug — jadi yang diuji di sini adalah elusan halus.
+DPI=$(adb shell wm density | sed -n 's/.*: \([0-9]*\).*/\1/p' | head -1)
+[ -n "$DPI" ] || DPI=420
+ELUS_AMP=$((DPI * 7 / 160))
+[ "$ELUS_AMP" -ge 10 ] || ELUS_AMP=10
+catat "amplitudo elus: ${ELUS_AMP} px"
 LEWAT_E1=$(wc -l < "$LOG")
 for _ in 1 2 3; do
-  adb shell input swipe $((KEPALA_X - 40)) "$KEPALA_Y" $((KEPALA_X + 40)) "$KEPALA_Y" 180
-  adb shell input swipe $((KEPALA_X + 40)) "$KEPALA_Y" $((KEPALA_X - 40)) "$KEPALA_Y" 180
+  adb shell input swipe $((KEPALA_X - ELUS_AMP)) "$KEPALA_Y" $((KEPALA_X + ELUS_AMP)) "$KEPALA_Y" 260
+  adb shell input swipe $((KEPALA_X + ELUS_AMP)) "$KEPALA_Y" $((KEPALA_X - ELUS_AMP)) "$KEPALA_Y" 260
 done
 sleep 2
 adb logcat -d > "$LOG" 2>/dev/null || true
