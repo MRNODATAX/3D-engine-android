@@ -830,6 +830,7 @@ class OverlayService : Service() {
             "debug-mesh" -> Log.i(TAG, "debug-mesh $payload")
             "debug-wide" -> Log.i(TAG, "debug-wide $payload")
             "debug-skin" -> Log.i(TAG, "debug-skin $payload")
+            "debug-gpu" -> Log.i(TAG, "debug-gpu $payload")
             "motion-state" -> {
                 // Jejak gerak tiap 5 detik: bukti bahwa sendi benar-benar bergerak, sekaligus
                 // sumber angka "motion {...}" yang dibaca uji emulator.

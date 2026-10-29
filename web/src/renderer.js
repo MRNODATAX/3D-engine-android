@@ -264,6 +264,73 @@ function skeletonBounds(vrm) {
 }
 
 /**
+ * Periksa jalur gambar: seberapa besar viewport/scissor yang dipakai renderer, dan seberapa
+ * luas buffer yang benar-benar terisi saat sebuah quad seukuran layar digambar. Kalau quad
+ * penuh pun hanya mengisi sebagian buffer, klipnya ada di tingkat GPU/WebView — bukan di
+ * kamera, model, maupun jendela overlay.
+ */
+function probeGpu() {
+  const renderer = state.renderer;
+  const gl = renderer?.getContext?.();
+  if (!gl) return null;
+  const viewport = new THREE.Vector4();
+  renderer.getViewport(viewport);
+  const size = renderer.getSize(new THREE.Vector2());
+  const buffer = new THREE.Vector2(gl.drawingBufferWidth, gl.drawingBufferHeight);
+
+  // Quad penuh layar (NDC -1..1) pada scene sementara.
+  const scene = new THREE.Scene();
+  const camera = new THREE.OrthographicCamera(-1, 1, 1, -1, 0, 1);
+  const quad = new THREE.Mesh(
+    new THREE.PlaneGeometry(2, 2),
+    new THREE.MeshBasicMaterial({ color: 0xff0000, depthTest: false, depthWrite: false }),
+  );
+  scene.add(quad);
+  const previousClear = new THREE.Color();
+  renderer.getClearColor(previousClear);
+  const previousAlpha = renderer.getClearAlpha();
+  renderer.setRenderTarget(null);
+  renderer.setScissorTest(false);
+  renderer.setClearColor(0x000000, 0);
+  renderer.clear();
+  renderer.render(scene, camera);
+  const w = buffer.x;
+  const h = buffer.y;
+  const pixels = new Uint8Array(w * h * 4);
+  gl.readPixels(0, 0, w, h, gl.RGBA, gl.UNSIGNED_BYTE, pixels);
+  const kotak = (kanal) => {
+    let minY = h; let maxY = -1; let minX = w; let maxX = -1;
+    for (let y = 0; y < h; y += 2) {
+      for (let x = 0; x < w; x += 2) {
+        const i = (y * w + x) * 4 + kanal;
+        if (pixels[i] > 8) {
+          if (y < minY) minY = y;
+          if (y > maxY) maxY = y;
+          if (x < minX) minX = x;
+          if (x > maxX) maxX = x;
+        }
+      }
+    }
+    return maxY < 0 ? null : { minX, maxX, minY, maxY };
+  };
+  const merah = kotak(0);
+  const alfa = kotak(3);
+  // Kembalikan keadaan: gambar ulang frame normal sesudah probe.
+  renderer.setClearColor(previousClear.getHex(), previousAlpha);
+  quad.geometry.dispose();
+  quad.material.dispose();
+  return {
+    viewport: [viewport.x, viewport.y, viewport.z, viewport.w],
+    size: [size.x, size.y],
+    buffer: [w, h],
+    scissorTest: renderer.getScissorTest?.() ?? null,
+    alphaTest: { top: alfa ? Number((1 - (alfa.maxY + 1) / h).toFixed(3)) : null, bottom: alfa ? Number((alfa.minY / h).toFixed(3)) : null },
+    redBox: merah,
+    alfaBox: alfa,
+  };
+}
+
+/**
  * Kotak NDC per mesh dari vertex **setelah skinning** (`SkinnedMesh.getVertexPosition`).
  *
  * Ini satu-satunya sumber kebenaran tentang apa yang benar-benar digambar: `Box3.setFromObject`
@@ -1042,6 +1109,7 @@ function animate(now) {
     if (state.vrm && !state.skinReportedAt && now - state.readyAt > 8000) {
       state.skinReportedAt = now;
       post('debug-skin', { fov: state.camera.fov, meshes: skinnedBoxes(state.vrm) });
+      post('debug-gpu', probeGpu());
     }
   }
   const workMs = performance.now() - workStart;
