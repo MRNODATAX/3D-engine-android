@@ -347,13 +347,23 @@ adb shell am force-stop "$PKG" || true
 
 
 echo "== menunggu renderer memuat model (maks 90 detik)"
+ready=0
 for i in $(seq 1 18); do
   sleep 5
   if adb logcat -d | grep -q "MateEngineRender.*avatar-ready"; then
     echo "== renderer melaporkan avatar-ready setelah $((i * 5)) detik"
+    ready=1
     break
   fi
 done
+if [ "$ready" -eq 0 ]; then
+  # Dulu kegagalan ini hanya menghasilkan tangkapan kosong tanpa penjelasan.
+  echo "::error::Renderer tidak pernah melaporkan avatar-ready; tangkapan 06 akan kosong"
+  {
+    echo "--- logcat saat avatar gagal siap ---"
+    adb logcat -d | grep -E "MateEngineRender|chromium|AndroidRuntime" | tail -30
+  } >> "$DIAG" 2>&1 || true
+fi
 sleep 4
 {
   echo "--- jendela saat tangkapan 06 (tanpa aplikasi di depan) ---"
