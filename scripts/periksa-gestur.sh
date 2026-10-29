@@ -50,6 +50,35 @@ tunggu_log() {
   return 1
 }
 
+# Dialog "Aplikasi tidak merespons" (ANR) menutupi layar dan menelan semua sentuhan, sehingga
+# uji gestur menyimpulkan "tidak ada gestur" padahal penyebabnya dialog sistem. Tutup dengan
+# menekan tombol Tunggu/Wait lewat uiautomator.
+tutup_anr() {
+  local label
+  adb shell dumpsys window 2>/dev/null | grep -qi "Application Not Responding\|isn't responding" || return 0
+  for label in "Tunggu" "Wait" "Tutup aplikasi" "Close app"; do
+    local kordinat
+    kordinat=$(adb shell uiautomator dump /sdcard/anr.xml >/dev/null 2>&1; adb shell cat /sdcard/anr.xml 2>/dev/null | python3 -c '
+import re, sys
+teks = sys.stdin.read()
+for teks_tombol, x1, y1, x2, y2 in re.findall(r"text=\"([^\"]*)\"[^>]*bounds=\"\[(\d+),(\d+)\]\[(\d+),(\d+)\]\"", teks):
+    if sys.argv[1].lower() in teks_tombol.lower():
+        print((int(x1) + int(x2)) // 2, (int(y1) + int(y2)) // 2)
+        break
+' "$label")
+    if [ -n "$kordinat" ]; then
+      read -r TX TY <<< "$kordinat"
+      catat "menutup dialog ANR lewat '$label' di ($TX,$TY)"
+      adb shell input tap "$TX" "$TY"
+      sleep 2
+      return 0
+    fi
+  done
+  adb shell input keyevent KEYCODE_BACK >/dev/null 2>&1 || true
+  sleep 1
+  return 0
+}
+
 sama_bingkai() {
   local ax ay aw ah bx by bw bh
   read -r ax ay aw ah <<< "$1"
@@ -94,6 +123,7 @@ sleep 8
 # Bingkai jendela masih menyempit beberapa detik setelah avatar siap (siluet dihaluskan tiap
 # frame). Geser/ketuk di tengah penyempitan itu bisa tidak terkirim ke jendela mana pun —
 # percobaan sebelumnya mencatat 0 gestur. Tunggu sampai dua pembacaan sama.
+tutup_anr
 AWAL=""
 for _ in $(seq 1 12); do
   BARU=$(bingkai) || gagal "bingkai jendela avatar tidak terbaca"
@@ -127,6 +157,7 @@ LEWAT_E1=$(wc -l < "$LOG")
 # masuk selagi utas UI masih sibuk (SwiftShader ~1 fps) dan sebagian gestur hilang — percobaan
 # sebelumnya hanya mencatat 2 dari 6 usapan.
 for arah in kanan kiri kanan; do
+  tutup_anr
   sejak=$(wc -l < "$LOG")
   for percobaan in 1 2; do
     if [ "$arah" = "kanan" ]; then
@@ -162,6 +193,7 @@ lulus "usapan halus di kepala: ${ELUS_TOTAL} gestur, 0 menyeret, 0 pergeseran"
 
 # ---------------------------------------------------------------- 2. geser badan
 LEWAT_E2=$(wc -l < "$LOG")
+tutup_anr
 adb shell input swipe "$BADAN_X" "$BADAN_Y" $((BADAN_X + 120)) $((BADAN_Y + 60)) 600
 tunggu_log "geser selesai" 40 "$LEWAT_E2" || true
 adb logcat -d > "$LOG" 2>/dev/null || true
