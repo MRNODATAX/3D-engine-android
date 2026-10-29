@@ -22,7 +22,9 @@ BATAS_SIAP="${BATAS_SIAP:-150}"
 catat() { echo "$*" | tee -a "$DIAG"; }
 # Setiap panggilan adb dibatasi waktunya. Tanpa ini, satu perintah yang menggantung membuat
 # seluruh job dibatalkan pada batas waktu dan tidak ada diagnostik yang tersisa.
-adb() { timeout -k 10 "${ADB_TIMEOUT:-90}" /usr/bin/adb "$@"; }
+ADB_BIN="$(command -v adb || true)"
+[ -n "$ADB_BIN" ] || ADB_BIN="${ANDROID_SDK_ROOT:-$ANDROID_HOME}/platform-tools/adb"
+adb() { timeout -k 10 "${ADB_TIMEOUT:-90}" "$ADB_BIN" "$@"; }
 gagal() { catat "GAGAL: $*"; echo "::error::API $API: $*"; exit 1; }
 lewat() { catat "LULUS: $*"; }
 
