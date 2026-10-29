@@ -53,15 +53,31 @@ adb logcat -c || true
 
 catat "membuka aktivitas..."
 t0=$(date +%s)
-keluaran_buka=$(adb shell am start -W -n "$ACTIVITY" --ez start_overlay true --ez seed_sample true 2>&1) || {
-  catat "keluaran am start: $(echo "$keluaran_buka" | tr '\n' '|' | cut -c1-400)"
-  catat "aktivitas yang ada: $(adb shell cmd package resolve-activity --brief "$PKG" 2>&1 | tail -1)"
-  catat "paket terpasang: $(adb shell pm list packages | grep -c mateengine || true) paket"
-  gagal "aktivitas tidak bisa dibuka"
-}
+# `am start -W` di API 26 keluar dengan kode 1 walau aktivitas benar-benar dibuka
+# (tidak ada baris "Status:" pada keluaran `am` versi lama), jadi yang dipakai sebagai bukti
+# adalah jendela yang sedang fokus, bukan kode keluar.
+keluaran_buka=$(adb shell am start -W -n "$ACTIVITY" --ez start_overlay true --ez seed_sample true 2>&1) || true
+fokus=""
+for percobaan in 1 2 3; do
+  sleep 2
+  fokus=$(adb shell dumpsys window 2>/dev/null | grep -m1 -E "mCurrentFocus|mFocusedApp" || true)
+  case "$fokus" in
+    *mateengine*) break ;;
+  esac
+  if [ "$percobaan" -eq 2 ]; then
+    adb shell am start -n "$ACTIVITY" --ez start_overlay true --ez seed_sample true >/dev/null 2>&1 || true
+  fi
+done
+case "$fokus" in
+  *mateengine*) lewat "aktivitas di depan setelah $(( $(date +%s) - t0 )) dtk" ;;
+  *)
+    catat "keluaran am start: $(echo "$keluaran_buka" | tr '\n' '|' | cut -c1-400)"
+    catat "fokus jendela: $(echo "$fokus" | tr -s ' ' | cut -c1-200)"
+    adb logcat -d 2>/dev/null | grep -E "AndroidRuntime|FATAL|mateengine" | tail -15 | sed 's/^/  /' | tee -a "$DIAG" || true
+    gagal "aktivitas tidak bisa dibuka"
+    ;;
+esac
 
-# 1. renderer siap: tunggu salah satu dari dua sinyal (siap / galat) supaya kegagalan
-#    dilaporkan dengan sebabnya, bukan sebagai timeout tanpa keterangan.
 catat "menunggu avatar-ready (maks ${BATAS_SIAP} dtk)..."
 siap=0
 galat=""
