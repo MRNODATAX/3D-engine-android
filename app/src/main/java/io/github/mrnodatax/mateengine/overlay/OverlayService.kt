@@ -1355,6 +1355,7 @@ class OverlayService : Service() {
         private var lastMoveAt = 0L
         private var lastVelocitySentAt = 0L
         private var dragging = false
+        private var moveEvents = 0
         private var downTime = 0L
         /** Diisi dari JS (`touch-zone`): sentuhan mendarat di badan atau di margin kosong. */
         private var touchOnBody = false
@@ -1431,6 +1432,7 @@ class OverlayService : Service() {
                         }
                         return true
                     }
+                    moveEvents += 1
                     if (!dragging && !pinching) onPointer?.invoke("move", event.x, event.y)
                     val dx = (event.rawX - downRawX).toInt()
                     val dy = (event.rawY - downRawY).toInt()
@@ -1491,6 +1493,16 @@ class OverlayService : Service() {
                     return true
                 }
                 MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> {
+                    // Diagnostik gestur: geseran yang berhenti jauh dari jari hampir selalu karena
+                    // gestur dibatalkan sistem (ACTION_CANCEL) saat jendela dipindahkan.
+                    Log.i(
+                        TAG,
+                        "gestur ${if (event.actionMasked == MotionEvent.ACTION_CANCEL) "CANCEL" else "UP"}: " +
+                            "$moveEvents gerakan, jari bergeser " +
+                            "(${(event.rawX - downRawX).toInt()}, ${(event.rawY - downRawY).toInt()}), " +
+                            "menyeret=$dragging",
+                    )
+                    moveEvents = 0
                     onPointer?.invoke("up", event.x, event.y)
                     when {
                         dragging -> {

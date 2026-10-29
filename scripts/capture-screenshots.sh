@@ -288,7 +288,7 @@ sleep 8
 {
   echo "--- jendela saat mode duduk ---"
   adb shell dumpsys window windows | grep -A 3 "MateEngine avatar" | head -6
-  adb logcat -d -s MateEngineRender:I | grep -E "debug-skin|debug-gpu|debug-view|debug-mesh|potongan jendela|jendela siluet|kotak tubuh" | tail -20
+  adb logcat -d -s MateEngineRender:I | grep -E "gestur |debug-skin|debug-gpu|debug-view|debug-mesh|potongan jendela|jendela siluet|kotak tubuh" | tail -22
 } >> "$DIAG" 2>&1 || true
 adb exec-out screencap -p > "$OUT/19-overlay-duduk.png"
 echo "== tersimpan $OUT/19-overlay-duduk.png (mode duduk)"
@@ -312,7 +312,9 @@ adb shell input swipe $((DRAG_W / 2)) $((DRAG_H / 2)) 20 20 700
 sleep 3
 # Geser kedua menuju tepi kanan-bawah: membuktikan avatar benar-benar sampai pinggir layar,
 # bukan berhenti beberapa puluh piksel sebelumnya.
-adb shell input swipe 120 600 $((DRAG_W - 8)) $((DRAG_H - 8)) 600
+# Durasi 1,5 detik: meniru geseran tangan, bukan lemparan cepat. Lemparan cepat membuat
+# gestur dibatalkan setelah beberapa frame sehingga jarak tempuh tidak bisa dinilai.
+adb shell input swipe 120 600 $((DRAG_W - 8)) $((DRAG_H - 8)) 1500
 sleep 3
 adb exec-out screencap -p > "$OUT/20-overlay-geser-pojok.png"
 echo "== tersimpan $OUT/20-overlay-geser-pojok.png (avatar digeser ke pojok)"
