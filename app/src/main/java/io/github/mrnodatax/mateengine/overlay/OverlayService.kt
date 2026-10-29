@@ -378,7 +378,11 @@ class OverlayService : Service() {
 
         return WebView(this).apply {
             setBackgroundColor(Color.TRANSPARENT)
-            setLayerType(View.LAYER_TYPE_HARDWARE, null)
+            // JANGAN paksa `LAYER_TYPE_HARDWARE`. Jendela sudah dipercepat perangkat keras;
+            // memaksa layer membuat WebView merender ke permukaan berukuran tetap, dan setelah
+            // jendela siluet diperbesar/mengecil, area gambar yang benar-benar terasterisasi
+            // tertinggal di ukuran lama (terukur: quad penuh layar hanya terisi 494x370 dari
+            // 577x1098 piksel). Akibatnya hanya sebagian badan avatar yang terlihat.
             isVerticalScrollBarEnabled = false
             isHorizontalScrollBarEnabled = false
             overScrollMode = View.OVER_SCROLL_NEVER
