@@ -775,6 +775,10 @@ function setSeated(seated) {
     playBuiltin('sitting_exit', { manual: false, reason: 'berdiri', loop: false, chain: 'idle' });
   }
   frameModel(state.vrm);
+  // Bingkai dipaksa diperbarui setelah klip transisi selesai. Tanpa ini kamera baru menyesuaikan
+  // pada pemeriksaan berkala (kini 2,5 detik sekali), sehingga setelah berdiri avatar sempat
+  // terlihat lebih kecil dari seharusnya.
+  state.reframeAt = performance.now() + 900;
   post('seated', { seated: state.seated });
   return state.seated;
 }
