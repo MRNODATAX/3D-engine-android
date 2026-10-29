@@ -600,6 +600,37 @@ adb shell wm density reset
 sleep 3
 echo "== tersimpan 25/26/27 rotasi + 25-tablet"
 
+# ---- F5: blokir area kosong (bukti visual) ----
+# Aplikasi Setelan dibuka di belakang, lalu satu ketukan dijatuhkan pada piksel kosong di
+# dalam jendela avatar (sudut kiri-atas bingkai, di luar siluet). Aplikasi di belakang harus
+# tetap persis sama: tidak ada halaman yang terbuka, tidak ada fokus yang berpindah.
+echo "== blokir area kosong"
+adb shell am start -a android.settings.SETTINGS >/dev/null 2>&1 || true
+sleep 3
+adb shell dumpsys window windows > /tmp/layar-dump.txt
+if read -r JX JY JW JH < <(python3 scripts/baca-jendela.py < /tmp/layar-dump.txt); then
+  KOSONG_X=$((JX + 3))
+  KOSONG_Y=$((JY + 3))
+  adb shell uiautomator dump /sdcard/ui-sebelum.xml >/dev/null 2>&1 || true
+  HASH_SEBELUM=$(adb shell cat /sdcard/ui-sebelum.xml 2>/dev/null | sha256sum | cut -d' ' -f1)
+  adb shell input tap "$KOSONG_X" "$KOSONG_Y"
+  sleep 2
+  adb shell uiautomator dump /sdcard/ui-sesudah.xml >/dev/null 2>&1 || true
+  HASH_SESUDAH=$(adb shell cat /sdcard/ui-sesudah.xml 2>/dev/null | sha256sum | cut -d' ' -f1)
+  echo "--- blokir area kosong: ketuk ($KOSONG_X, $KOSONG_Y), hash ${HASH_SEBELUM:0:12} -> ${HASH_SESUDAH:0:12}" >> "$DIAG"
+  adb exec-out screencap -p > "$OUT/27-blokir-area-kosong.png"
+  if [ -n "$HASH_SEBELUM" ] && [ "$HASH_SEBELUM" != "$HASH_SESUDAH" ]; then
+    echo "::error::ketukan area kosong menembus ke aplikasi di belakang"
+  else
+    echo "== blokir area kosong: aplikasi di belakang tidak berubah"
+  fi
+else
+  echo "::warning::bingkai jendela avatar tidak terbaca; tangkapan blokir area kosong dilewati"
+fi
+adb shell am force-stop com.android.settings || true
+adb shell am start -n "$ACTIVITY" --es screen home >/dev/null 2>&1 || true
+sleep 2
+
 adb shell settings put system user_rotation 0
 adb shell cmd uimode night no || true
 
