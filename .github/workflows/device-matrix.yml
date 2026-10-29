@@ -122,7 +122,9 @@ jobs:
           LOG="/tmp/matriks-api${{ matrix.api }}-logcat.txt"
           if [ -f "$LOG" ]; then
             potong=$(awk '/FATAL EXCEPTION/{t=1} t{print} t&&/^$/{exit}' "$LOG" | head -14 | tr '\n' '|' | cut -c1-4000)
-            [ -n "$potong" ] && echo "::warning::API ${{ matrix.api }} log: $potong"
+            if [ -n "$potong" ]; then
+              echo "::warning::API ${{ matrix.api }} log: $potong"
+            fi
           fi
 
       - uses: actions/upload-artifact@v4

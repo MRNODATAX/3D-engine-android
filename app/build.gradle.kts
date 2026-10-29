@@ -86,7 +86,11 @@ android {
 
     lint {
         warningsAsErrors = false
+        // `abortOnError` sengaja false agar temuan lama tidak memblokir build, tetapi
+        // panggilan API di atas minSdk diperiksa terpisah di CI (langkah "Lint NewApi").
         abortOnError = false
+        xmlReport = true
+        textReport = true
     }
 }
 

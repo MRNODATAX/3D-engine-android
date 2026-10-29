@@ -87,6 +87,27 @@ jobs:
         run: bash scripts/ci-gradle.sh :app:assembleDebug
       - name: Bangun APK release (unsigned bila secret signing belum diisi)
         run: bash scripts/ci-gradle.sh :app:assembleRelease
+      - name: Lint panggilan API di atas minSdk (NewApi)
+        # Sumber bug nyata: `ActivityManager.isBackgroundRestricted` (API 28) dipanggil tanpa
+        # penjaga sehingga Diagnosa crash di Android 8.x. Ditemukan oleh matriks API 26,
+        # bukan oleh build; langkah ini menutup kelas bug yang sama untuk seterusnya.
+        run: |
+          set -uo pipefail
+          bash scripts/ci-gradle.sh :app:lintDebug || true
+          LAPORAN="app/build/reports/lint-results-debug.txt"
+          if [ ! -f "$LAPORAN" ]; then
+            echo "::error::laporan lint tidak dihasilkan ($LAPORAN)"
+            exit 1
+          fi
+          JUMLAH="$(grep -c "\[NewApi\]" "$LAPORAN" || true)"
+          echo "temuan NewApi: $JUMLAH"
+          if [ "$JUMLAH" != "0" ]; then
+            grep -n -A 2 "\[NewApi\]" "$LAPORAN" | head -40
+            echo "::error::ada panggilan API di atas minSdk 26"
+            exit 1
+          fi
+          echo "== tidak ada panggilan API di atas minSdk 26"
+
       - name: Periksa target SDK dan pustaka native di APK
         # Syarat Play sejak 31 Agustus 2026: targetSdk 36. Diperiksa dari APK hasil build, bukan
         # dari berkas Gradle, supaya yang dibuktikan adalah artefak yang benar-benar dikirim.

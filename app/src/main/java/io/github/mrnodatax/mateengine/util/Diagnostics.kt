@@ -51,7 +51,11 @@ object Diagnostics {
         val powerManager = context.getSystemService(PowerManager::class.java)
         val ignoringBattery = powerManager?.isIgnoringBatteryOptimizations(context.packageName) == true
         val activityManager = context.getSystemService(ActivityManager::class.java)
-        val backgroundRestricted = activityManager?.isBackgroundRestricted == true
+        // `ActivityManager.isBackgroundRestricted` baru ada di API 28. Memanggilnya tanpa
+        // penjaga membuat aplikasi crash saat membuka Diagnosa di Android 8.x — ditemukan
+        // oleh job matriks API 26, bukan oleh build lokal.
+        val canCheckRestriction = Build.VERSION.SDK_INT >= 28
+        val backgroundRestricted = canCheckRestriction && activityManager?.isBackgroundRestricted == true
         val webViewPackage = runCatching { WebViewCompat.getCurrentWebViewPackage(context) }.getOrNull()
         val runtime = OverlayRuntime.state.value
 
@@ -87,12 +91,16 @@ object Diagnostics {
                 DiagnosticItem(
                     id = "restriction",
                     title = "Pembatasan latar belakang",
-                    detail = if (backgroundRestricted) {
-                        "Aktif · sistem membatasi pekerjaan latar aplikasi ini"
-                    } else {
-                        "Tidak aktif · sistem tidak melaporkan pembatasan"
+                    detail = when {
+                        !canCheckRestriction -> "Tidak tersedia · Android ${Build.VERSION.RELEASE} belum melaporkan pembatasan latar"
+                        backgroundRestricted -> "Aktif · sistem membatasi pekerjaan latar aplikasi ini"
+                        else -> "Tidak aktif · sistem tidak melaporkan pembatasan"
                     },
-                    status = if (backgroundRestricted) DiagnosticStatus.WARN else DiagnosticStatus.OK,
+                    status = when {
+                        !canCheckRestriction -> DiagnosticStatus.UNKNOWN
+                        backgroundRestricted -> DiagnosticStatus.WARN
+                        else -> DiagnosticStatus.OK
+                    },
                     action = DiagnosticAction.APP_DETAILS,
                 ),
             )
