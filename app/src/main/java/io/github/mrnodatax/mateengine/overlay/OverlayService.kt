@@ -554,19 +554,23 @@ class OverlayService : Service() {
         layoutParams.y = visible.top
         runCatching { windowManager.updateViewLayout(container, layoutParams) }
             .onFailure { Log.w(TAG, "gagal menerapkan jendela siluet: ${it.message}") }
-        // Kanvas penuh, digeser negatif: avatar tidak mengecil, hanya jendelanya yang memotong.
+        // Kanvas **seukuran jendela**, bukan kanvas desain yang digeser dengan margin negatif.
+        //
+        // Versi lama memasang kanvas 1010x1919 dengan margin negatif di dalam jendela 512x1919.
+        // Permukaan GL WebView tidak pernah ikut membesar (terukur di emulator: quad penuh layar
+        // hanya terasterisasi 494x370 dari 577x1098 piksel), sehingga hanya pita bawah avatar
+        // yang terlihat. Sekarang kanvas sama dengan jendela, dan bagian bingkai yang terpotong
+        // diambil alih kamera lewat `camera.setViewOffset` (lihat `setWindowSlice` di renderer).
         canvasOffsetX = visible.left - designX
         canvasOffsetY = visible.top - designY
-        webView?.let { view ->
-            val paramsChild = view.layoutParams as? FrameLayout.LayoutParams
-            if (paramsChild != null) {
-                paramsChild.width = designWidth
-                paramsChild.height = designHeight
-                paramsChild.leftMargin = -canvasOffsetX
-                paramsChild.topMargin = -canvasOffsetY
-                view.layoutParams = paramsChild
-            }
-        }
+        val offsetX = canvasOffsetX.toFloat() / designWidth
+        val offsetY = canvasOffsetY.toFloat() / designHeight
+        val sliceWidth = visible.width.toFloat() / designWidth
+        val sliceHeight = visible.height.toFloat() / designHeight
+        evaluate(
+            "window.MateEngine && window.MateEngine.setWindowSlice(" +
+                "{offsetX: $offsetX, offsetY: $offsetY, width: $sliceWidth, height: $sliceHeight})",
+        )
     }
 
     /**
@@ -835,6 +839,7 @@ class OverlayService : Service() {
             "debug-wide" -> Log.i(TAG, "debug-wide $payload")
             "debug-skin" -> Log.i(TAG, "debug-skin $payload")
             "debug-gpu" -> Log.i(TAG, "debug-gpu $payload")
+            "window-slice" -> Log.i(TAG, "potongan jendela $payload")
             "motion-state" -> {
                 // Jejak gerak tiap 5 detik: bukti bahwa sendi benar-benar bergerak, sekaligus
                 // sumber angka "motion {...}" yang dibaca uji emulator.

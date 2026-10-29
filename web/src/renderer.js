@@ -45,6 +45,9 @@ const state = {
   avatarInfo: null,
   ready: false,
   paused: false,
+  // Bagian bingkai desain yang sedang ditampilkan jendela overlay. Kanvas selalu seukuran
+  // jendela; sisa bingkai diambil alih kamera lewat `setViewOffset`. Nilai 0..1 (fraksi desain).
+  slice: { offsetX: 0, offsetY: 0, width: 1, height: 1 },
   scale: 100,
   targetFps: 30,
   quality: 'medium',
@@ -1182,13 +1185,21 @@ function animate(now) {
         // CSS px atau piksel fisik tergantung perangkat, dan Kotlin tidak perlu menebak
         // density-nya. Ini menghilangkan seluruh kelas bug skala.
         const { width, height } = canvasSize();
+        // `frameGaps` mengukur kanvas yang terlihat; Android memakai ruang desain penuh.
+        const design = toDesignFractions({
+          left: gaps.left / width,
+          top: gaps.top / height,
+          right: gaps.right / width,
+          bottom: gaps.bottom / height,
+        });
         post('body-box', {
-          left: Number((gaps.left / width).toFixed(4)),
-          top: Number((gaps.top / height).toFixed(4)),
-          right: Number((gaps.right / width).toFixed(4)),
-          bottom: Number((gaps.bottom / height).toFixed(4)),
+          left: Number(design.left.toFixed(4)),
+          top: Number(design.top.toFixed(4)),
+          right: Number(design.right.toFixed(4)),
+          bottom: Number(design.bottom.toFixed(4)),
           cssWidth: width,
           cssHeight: height,
+          slice: state.slice,
         });
       }
     }
@@ -1271,8 +1282,50 @@ function resize() {
   const { width, height } = canvasSize();
   applyPixelRatio();
   state.renderer.setSize(width, height, false);
-  state.camera.aspect = width / height;
-  state.camera.updateProjectionMatrix();
+  applyViewSlice();
+}
+
+/**
+ * Potongan bingkai desain → kamera.
+ *
+ * Kanvas hanya sebesar jendela siluet (mis. 512x1919), sedangkan avatar dibingkai untuk desain
+ * penuh (1010x1919). `setViewOffset` membuat kamera memproyeksikan bagian tengah bingkai itu
+ * seolah-olah seluruh bingkai masih ada: avatar tidak mengecil dan tidak bergeser, sementara
+ * piksel di luar jendela memang tidak perlu digambar. Dulu ini dilakukan dengan kanvas besar +
+ * margin negatif, tetapi permukaan GL WebView tidak ikut membesar sehingga hanya pita bawah
+ * avatar yang tampil di emulator.
+ */
+function applyViewSlice() {
+  const camera = state.camera;
+  if (!camera) return;
+  const { width, height } = canvasSize();
+  const slice = state.slice || { offsetX: 0, offsetY: 0, width: 1, height: 1 };
+  const fullWidth = width / Math.max(0.05, slice.width);
+  const fullHeight = height / Math.max(0.05, slice.height);
+  camera.aspect = fullWidth / fullHeight;
+  camera.setViewOffset(
+    fullWidth,
+    fullHeight,
+    slice.offsetX * fullWidth,
+    slice.offsetY * fullHeight,
+    width,
+    height,
+  );
+  camera.updateProjectionMatrix();
+}
+
+/**
+ * Fraksi kanvas (yang sedang terlihat) → fraksi bingkai desain penuh.
+ * Dipakai untuk semua laporan ke Android: `body-box` dan `pointer` memakai ruang desain.
+ */
+function toDesignFractions(gaps) {
+  const slice = state.slice || { offsetX: 0, offsetY: 0, width: 1, height: 1 };
+  return {
+    left: slice.offsetX + gaps.left * slice.width,
+    top: slice.offsetY + gaps.top * slice.height,
+    right: slice.offsetX + gaps.right * slice.width,
+    bottom: slice.offsetY + gaps.bottom * slice.height,
+  };
 }
 
 function setQuality(quality) {
@@ -1477,6 +1530,22 @@ function pipeTouch(phase, x, y) {
 
 /** API yang dipanggil lapisan Android. Semua argumen primitif/string. */
 window.MateEngine = {
+  /**
+   * Bagian bingkai desain yang ditampilkan jendela overlay (fraksi 0..1).
+   * Dipanggil `OverlayService.applyWindowRect` setiap kali jendela siluet berubah.
+   */
+  setWindowSlice: (slice) => {
+    if (!slice) return;
+    const clamp = (value) => Math.max(0, Math.min(1, Number(value) || 0));
+    state.slice = {
+      offsetX: clamp(slice.offsetX),
+      offsetY: clamp(slice.offsetY),
+      width: Math.max(0.05, clamp(slice.width)),
+      height: Math.max(0.05, clamp(slice.height)),
+    };
+    applyViewSlice();
+    post('window-slice', state.slice);
+  },
   loadAvatar,
   loadAnimation,
   stopAnimation,
