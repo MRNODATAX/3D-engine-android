@@ -1106,10 +1106,20 @@ function animate(now) {
     }
     // Sekali saja, 8 detik setelah model siap: kotak NDC per mesh hasil skinning. Biayanya
     // ~1.600 pembacaan vertex, jadi aman dijalankan sekali dan tidak tiap frame.
-    if (state.vrm && !state.skinReportedAt && now - state.readyAt > 8000) {
+    if (state.vrm && !state.skinReportedAt && now - state.readyAt > 5000) {
       state.skinReportedAt = now;
-      post('debug-skin', { fov: state.camera.fov, meshes: skinnedBoxes(state.vrm) });
-      post('debug-gpu', probeGpu());
+      // Dibungkus: `getVertexPosition` bisa melempar pada model dengan ikatan skin tak lengkap,
+      // dan error di sini akan mematikan loop render (avatar membeku) kalau tidak ditangkap.
+      try {
+        post('debug-skin', { fov: state.camera.fov, meshes: skinnedBoxes(state.vrm) });
+      } catch (error) {
+        post('debug-skin', { error: String(error && error.message ? error.message : error) });
+      }
+      try {
+        post('debug-gpu', probeGpu());
+      } catch (error) {
+        post('debug-gpu', { error: String(error && error.message ? error.message : error) });
+      }
     }
   }
   const workMs = performance.now() - workStart;
