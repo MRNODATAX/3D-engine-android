@@ -638,6 +638,17 @@ async function loadAvatar(url) {
     // Mesin keadaan akan memutar klip idle sendiri pada frame berikutnya.
     state.clipName = null;
     state.clipOverride = null;
+    // Perintah duduk bisa datang **sebelum** model siap (di emulator lambat, `setSeated` dari
+    // aplikasi dikirim ±6 detik setelah start, sedangkan model baru siap ±13 detik). Dulu
+    // `setSeated` hanya menyimpan flag lalu berhenti karena mixer belum ada, sehingga avatar
+    // tetap berdiri sementara kamera sudah dibingkai untuk pose duduk — kakinya terpotong.
+    // Sekarang niat itu diterapkan begitu model siap.
+    if (state.seated) {
+      state.pendingSeated = false;
+      playBuiltin('sitting_idle', { manual: false, reason: 'duduk', loop: true });
+      state.reframeAt = performance.now() + 400;
+      post('seated', { seated: true });
+    }
   } catch (error) {
     fail('load-failed', `Gagal memuat avatar: ${error?.message || error}`, true);
   }
@@ -767,7 +778,11 @@ function setSeated(seated) {
   state.clipOverride = null;
   state.behavior.reset(performance.now());
   markInteraction();
-  if (!state.vrm || !state.mixer) return state.seated;
+  if (!state.vrm || !state.mixer) {
+    // Model belum siap: klip duduk diterapkan setelah `avatar-ready` (lihat loadAvatar).
+    state.pendingSeated = target;
+    return state.seated;
+  }
   if (target) {
     if (state.motion) state.motion.setLocomotion('idle');
     playBuiltin('sitting_enter', { manual: false, reason: 'duduk', loop: false, chain: 'sitting_idle' });

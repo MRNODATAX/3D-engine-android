@@ -526,6 +526,11 @@ current_screen_size() {
 # sebelumnya tidak ikut dinilai.
 cek_jendela() {
   local label="$1"
+  # Minta layanan menerapkan ulang tata letak: itu selalu menulis satu baris `jendela siluet`
+  # dengan ukuran layar orientasi saat ini, sehingga pemeriksaan tidak bergantung pada apakah
+  # `body-box` kebetulan datang pada detik itu.
+  adb shell am startservice -n "$PKG/io.github.mrnodatax.mateengine.overlay.OverlayService" \
+    -a io.github.mrnodatax.mateengine.action.APPLY_SETTINGS >/dev/null 2>&1 || true
   adb logcat -c || true
   sleep 4
   local hasil

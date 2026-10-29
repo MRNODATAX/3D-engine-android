@@ -134,7 +134,12 @@ private fun MateEngineApp() {
             OverlayService.start(context)
             // Tangkapan layar CI: paksa mode duduk supaya bukti "kaki tidak terpotong" nyata.
             if ((context as? android.app.Activity)?.intent?.getBooleanExtra("seated", false) == true) {
+                // Dikirim dua kali: pada emulator GL perangkat lunak, model baru siap ±13 detik
+                // sehingga perintah pertama bisa tiba sebelum renderer punya mixer. Perintah
+                // kedua memastikan bukti tangkapan benar-benar berpose duduk.
                 kotlinx.coroutines.delay(6000)
+                OverlayService.setSeated(context, true)
+                kotlinx.coroutines.delay(14000)
                 OverlayService.setSeated(context, true)
             }
             // Tangkapan layar CI: buka menu cepat tanpa perlu mengetuk avatar tiga kali.
