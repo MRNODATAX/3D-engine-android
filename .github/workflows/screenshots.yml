@@ -1,0 +1,119 @@
+name: Screenshots
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - ".github/workflows/screenshots.yml"
+      - "scripts/capture-screenshots.sh"
+      # Renderer yang berubah bisa mengubah hasil overlay; jalankan ulang otomatis.
+      - "web/src/**"
+      - "app/src/main/assets/renderer/**"
+      # Perubahan UI juga mengubah hasil tangkapan layar.
+      - "app/src/main/java/**"
+      - "app/src/main/res/**"
+
+permissions:
+  contents: write
+
+jobs:
+  screenshots:
+    name: Tangkapan layar dari emulator
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: "8.7"
+
+      - name: Aktifkan KVM untuk emulator
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+          ls -l /dev/kvm
+
+      - name: Ambil model uji berlisensi
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: bash scripts/fetch-test-vrm.sh app/src/main/assets/testmodels
+
+      - name: Bangun APK debug
+        run: bash scripts/ci-gradle.sh :app:assembleDebug
+
+      - name: Jalankan emulator dan ambil tangkapan layar
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 34
+          target: google_apis
+          arch: x86_64
+          profile: pixel_6
+          disable-animations: true
+          emulator-options: >-
+            -no-window -no-audio -no-boot-anim -no-snapshot
+            -gpu swiftshader_indirect -camera-back none -camera-front none
+          script: bash scripts/capture-screenshots.sh
+
+      - name: Teruskan pesan error perangkat sebagai anotasi
+        if: always()
+        run: |
+          if [ -f /tmp/mate-log-tail.txt ]; then
+            grep -iE "MateEngineRender" /tmp/mate-log-tail.txt | head -25 | while IFS= read -r line; do
+              echo "::warning::${line:0:600}"
+            done
+            echo "---- crash & service ----"
+            if [ -f /tmp/mate-diag.txt ]; then
+              sed -n '/--- crash log ---/,$p' /tmp/mate-diag.txt | head -30 | while IFS= read -r line; do
+                echo "::warning::${line:0:600}"
+              done
+            fi
+          else
+            echo "::warning::Log perangkat tidak tersedia"
+          fi
+
+      - name: Simpan tangkapan layar ke repositori
+        # Hanya pada branch: commit tidak bisa didorong ke ref tag.
+        if: always() && github.ref_type == 'branch' 
+        run: |
+          set -uo pipefail
+          BRANCH="${GITHUB_REF_NAME}"
+          git config user.name "Arena Agent"
+          git config user.email "agent@arena.ai"
+          git add docs/screenshots
+          if git diff --cached --quiet; then
+            echo "tidak ada perubahan tangkapan layar"
+            exit 0
+          fi
+          git commit -m "docs: tangkapan layar APK dari emulator [skip ci]"
+          # Cabang bisa sudah bergerak selama emulator berjalan; ulangi dengan rebase
+          # dan utamakan gambar yang baru diambil bila ada bentrok biner.
+          for attempt in 1 2 3 4; do
+            if git pull --rebase -X theirs origin "$BRANCH" && git push origin "HEAD:$BRANCH"; then
+              echo "tangkap layar tersimpan di commit $(git rev-parse --short HEAD)"
+              exit 0
+            fi
+            git rebase --abort 2>/dev/null || true
+            echo "percobaan $attempt gagal, mengulang..."
+            sleep 8
+          done
+          echo "::error::Gagal menyimpan tangkapan layar setelah 4 percobaan"
+          exit 1
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: screenshots-${{ github.sha }}
+          path: |
+            docs/screenshots
+            /tmp/mate-log-tail.txt
+            /tmp/mate-diag.txt
+          if-no-files-found: warn

@@ -1,0 +1,24 @@
+# Android / Gradle
+.gradle/
+build/
+local.properties
+*.iml
+.idea/
+captures/
+.externalNativeBuild/
+.cxx/
+
+# Web renderer build products that are downloaded or generated
+web/node_modules/
+web/test-fixtures/
+app/src/main/assets/testmodels/
+web/test-results/
+
+# Signing material must never be committed
+*.jks
+*.keystore
+keystore.properties
+
+# Artefak bantu tangkapan layar (bukti sementara, bukan dokumentasi)
+docs/screenshots/_sebelum-tap.png
+docs/screenshots/ui-dump.xml

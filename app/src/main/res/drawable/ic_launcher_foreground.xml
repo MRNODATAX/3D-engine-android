@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Ikon peluncur "Monogram M" (kandidat D, dipilih 28 Okt 2026).
+
+  Huruf M dari pita tebal + percikan mint. Bentuk digambar pada kanvas 512 lalu diperkecil ke
+  area aman ikon adaptif: 108dp kanvas, safe zone berupa lingkaran 66dp di tengah. Skala 0,15
+  membuat seni berukuran ±43×46dp dengan diagonal 63dp, jadi masih di dalam lingkaran aman dan
+  tidak terpotong mask bulat, squircle, maupun kotak membulat peluncur mana pun.
+
+  Warna: krem #EAFFFD di atas latar cyan #006A66 (ic_launcher_background), percikan mint #9FF2EA.
+-->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <group
+        android:scaleX="0.15"
+        android:scaleY="0.15"
+        android:translateX="15.6"
+        android:translateY="16.5">
+
+        <!-- Pita M -->
+        <path
+            android:fillColor="#EAFFFD"
+            android:pathData="M112,404 L112,150 L170,150 L256,272 L342,150 L400,150 L400,404 L344,404 L344,254 L268,362 L244,362 L168,254 L168,404 Z" />
+
+        <!-- Percikan -->
+        <path
+            android:fillColor="#9FF2EA"
+            android:pathData="M380,96 L396,132 L432,148 L396,164 L380,200 L364,164 L328,148 L364,132 Z" />
+    </group>
+</vector>

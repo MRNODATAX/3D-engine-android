@@ -1,0 +1,673 @@
+<!doctype html>
+<html lang="id" data-theme="light" data-mode="app" data-width="compact">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Mate Engine Android — acuan desain</title>
+<style>
+  :root {
+    --bg: #fafafa; --surface: #ffffff; --surface-2: #f2f4f5; --line: #dde1e3;
+    --text: #14181b; --muted: #5b666d;
+    --accent: #0e7490; --accent-ink: #ffffff; --accent-soft: #e3f4f8;
+    --ok: #1f7a4d; --ok-soft: #e6f4ec;
+    --warn: #8a5a00; --warn-soft: #fbf1dc;
+    --danger: #a5352b; --danger-soft: #fbeae8;
+    --radius: 16px; --gap: 16px;
+    --shadow: 0 1px 2px rgba(0,0,0,.06), 0 8px 24px -12px rgba(0,0,0,.18);
+  }
+  [data-theme="dark"] {
+    --bg: #0e1113; --surface: #171c1f; --surface-2: #1f262a; --line: #2b3338;
+    --text: #e8edef; --muted: #9aa7ad;
+    --accent: #4dd6f0; --accent-ink: #04191d; --accent-soft: #10333a;
+    --ok: #6cd39c; --ok-soft: #12301f;
+    --warn: #e4b25c; --warn-soft: #33290f;
+    --danger: #f09086; --danger-soft: #3a1c18;
+    --shadow: 0 1px 2px rgba(0,0,0,.4), 0 10px 30px -18px #000;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; height: 100%; }
+  body {
+    background: #e9edee; color: var(--text);
+    font: 15px/1.45 "Roboto", "Noto Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+    -webkit-font-smoothing: antialiased;
+  }
+  [data-theme="dark"] body { background: #050708; }
+
+  /* ---------- Review chrome (bukan bagian aplikasi) ---------- */
+  .review {
+    display: flex; flex-wrap: wrap; gap: 10px 18px; align-items: center;
+    padding: 10px 16px; background: #101416; color: #dfe7ea;
+    font-size: 12.5px; border-bottom: 1px solid #263034; position: sticky; top: 0; z-index: 50;
+  }
+  .review strong { font-weight: 600; letter-spacing: .02em; color: #fff; }
+  .review .group { display: flex; gap: 4px; align-items: center; }
+  .review .group > span { color: #8b9aa0; margin-right: 2px; }
+  .review button {
+    font: inherit; color: #cfdade; background: #1d262a; border: 1px solid #2c383d;
+    padding: 4px 9px; border-radius: 7px; cursor: pointer;
+  }
+  .review button[aria-pressed="true"] { background: #4dd6f0; border-color: #4dd6f0; color: #04191d; font-weight: 600; }
+  .review .hint { color: #7f8f95; margin-left: auto; }
+
+  /* ---------- Panggung perangkat ---------- */
+  .stage { padding: 26px 16px 56px; display: flex; justify-content: center; }
+  .device {
+    width: 392px; height: 806px; flex: 0 0 auto;
+    border: 10px solid #0b0f11; border-radius: 40px; background: var(--bg);
+    box-shadow: 0 30px 60px -30px rgba(0,0,0,.55); overflow: hidden; position: relative;
+    transition: width .18s ease;
+  }
+  [data-width="wide"] .device { width: 860px; height: 640px; border-radius: 22px; }
+
+  /* ---------- Aplikasi ---------- */
+  .app { height: 100%; display: flex; flex-direction: column; background: var(--bg); }
+  .appbar {
+    display: flex; align-items: center; gap: 12px; padding: 18px 20px 12px;
+    border-bottom: 1px solid transparent;
+  }
+  .appbar .titles { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+  .appbar h1 { font-size: 21px; line-height: 1.2; margin: 0; font-weight: 650; letter-spacing: -.01em; }
+  .appbar .sub { font-size: 12.5px; color: var(--muted); }
+  .avatar-dot {
+    width: 38px; height: 38px; border-radius: 50%; background: var(--surface-2);
+    border: 1px solid var(--line); display: grid; place-items: center; flex: 0 0 auto;
+  }
+  .avatar-dot svg { width: 20px; height: 20px; color: var(--muted); }
+  .appbar .actions { margin-left: auto; display: flex; gap: 6px; }
+
+  .screen { flex: 1; overflow-y: auto; padding: 6px 20px 96px; scrollbar-width: thin; }
+  .screen[hidden] { display: none; }
+
+  .stack { display: flex; flex-direction: column; gap: var(--gap); }
+  .section-title { font-size: 12px; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); margin: 22px 0 -4px; font-weight: 600; }
+
+  .card {
+    background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius);
+    padding: 16px; box-shadow: var(--shadow);
+  }
+  .card h2 { font-size: 15.5px; margin: 0 0 6px; font-weight: 620; }
+  .card p { margin: 0; color: var(--muted); font-size: 13.5px; }
+  .row { display: flex; align-items: center; gap: 12px; }
+  .row.between { justify-content: space-between; }
+  .spread { display: flex; align-items: flex-start; justify-content: space-between; gap: 14px; }
+  .icon-tile {
+    width: 40px; height: 40px; border-radius: 12px; background: var(--surface-2);
+    display: grid; place-items: center; flex: 0 0 auto; color: var(--muted);
+  }
+  .icon-tile.accent { background: var(--accent-soft); color: var(--accent); }
+  .icon-tile svg { width: 21px; height: 21px; }
+
+  .chips { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
+  .chip {
+    display: inline-flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 550;
+    padding: 4px 10px; border-radius: 999px; border: 1px solid var(--line); color: var(--muted);
+    background: var(--surface-2); white-space: nowrap;
+  }
+  .chip .dot { width: 7px; height: 7px; border-radius: 50%; background: currentColor; }
+  .chip.ok { color: var(--ok); background: var(--ok-soft); border-color: transparent; }
+  .chip.warn { color: var(--warn); background: var(--warn-soft); border-color: transparent; }
+  .chip.bad { color: var(--danger); background: var(--danger-soft); border-color: transparent; }
+  .chip.accent { color: var(--accent); background: var(--accent-soft); border-color: transparent; }
+
+  .btn {
+    font: inherit; font-weight: 600; font-size: 14px; border-radius: 999px;
+    padding: 11px 20px; border: 1px solid var(--line); background: var(--surface);
+    color: var(--text); cursor: pointer; display: inline-flex; align-items: center;
+    justify-content: center; gap: 8px;
+  }
+  .btn svg { width: 18px; height: 18px; }
+  .btn.primary { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); }
+  .btn.tonal { background: var(--accent-soft); border-color: transparent; color: var(--accent); }
+  .btn.danger { background: transparent; border-color: var(--danger); color: var(--danger); }
+  .btn.block { width: 100%; }
+  .btn.small { padding: 7px 14px; font-size: 13px; }
+  .btn:focus-visible, .review button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+  .field { display: flex; flex-direction: column; gap: 6px; margin-top: 14px; }
+  .field label { font-size: 13px; font-weight: 550; display: flex; justify-content: space-between; gap: 10px; }
+  .field label .val { color: var(--muted); font-variant-numeric: tabular-nums; font-weight: 500; }
+  input[type="range"] { width: 100%; accent-color: var(--accent); margin: 2px 0 0; }
+  .switch { position: relative; width: 46px; height: 26px; flex: 0 0 auto; }
+  .switch input { position: absolute; opacity: 0; width: 100%; height: 100%; margin: 0; cursor: pointer; }
+  .switch .track { position: absolute; inset: 0; border-radius: 999px; background: var(--surface-2); border: 1px solid var(--line); transition: background .15s; }
+  .switch .knob { position: absolute; top: 4px; left: 4px; width: 18px; height: 18px; border-radius: 50%; background: var(--muted); transition: transform .15s, background .15s; }
+  .switch input:checked + .track { background: var(--accent); border-color: var(--accent); }
+  .switch input:checked ~ .knob { transform: translateX(20px); background: var(--accent-ink); }
+
+  .list { display: flex; flex-direction: column; }
+  .item { display: flex; gap: 12px; align-items: center; padding: 13px 0; border-bottom: 1px solid var(--line); }
+  .item:last-child { border-bottom: 0; }
+  .item .grow { min-width: 0; flex: 1; }
+  .item .title { font-size: 14px; font-weight: 570; }
+  .item .meta { font-size: 12px; color: var(--muted); }
+  .item.selected { background: var(--accent-soft); border-radius: 12px; padding-inline: 10px; border-bottom-color: transparent; }
+  .item.selected .title { color: var(--accent); }
+
+  .nav {
+    display: flex; border-top: 1px solid var(--line); background: var(--surface);
+    padding: 8px 12px 14px; gap: 4px;
+  }
+  .nav button {
+    flex: 1; font: inherit; background: none; border: 0; color: var(--muted); cursor: pointer;
+    display: flex; flex-direction: column; align-items: center; gap: 3px; font-size: 11.5px;
+    padding: 6px 4px; border-radius: 12px; font-weight: 550;
+  }
+  .nav button svg { width: 22px; height: 22px; }
+  .nav button[aria-current="page"] { color: var(--accent); background: var(--accent-soft); }
+
+  /* Layar lebar: rail kiri */
+  [data-width="wide"] .app { flex-direction: row; }
+  [data-width="wide"] .nav { flex-direction: column; width: 104px; border-top: 0; border-right: 1px solid var(--line); padding: 16px 10px; }
+  [data-width="wide"] .nav button { flex: 0 0 auto; width: 100%; padding: 12px 4px; }
+  [data-width="wide"] .appbody { flex: 1; display: flex; flex-direction: column; min-width: 0; }
+  [data-width="wide"] .screen { padding-bottom: 32px; }
+  [data-width="wide"] .columns { display: grid; grid-template-columns: 1.15fr .85fr; gap: 20px; align-items: start; }
+  body:not([data-width="wide"]) .columns { display: flex; flex-direction: column; gap: var(--gap); }
+  [data-width="wide"] .appbar { padding: 20px 26px 10px; }
+  [data-width="wide"] .screen { padding-inline: 26px; }
+  .appbody { display: flex; flex-direction: column; flex: 1; min-height: 0; }
+
+  /* ---------- Mode overlay ---------- */
+  .overlay-stage {
+    position: absolute; inset: 0; padding: 20px;
+    display: flex; flex-direction: column; gap: 14px;
+  }
+  .desktop {
+    flex: 1; border-radius: 20px; overflow: hidden; position: relative;
+    background:
+      radial-gradient(120% 90% at 15% 10%, #22404b 0%, #14232a 45%, #0b1418 100%);
+    border: 1px solid #263238;
+  }
+  .desktop .docs {
+    position: absolute; inset: 34px 22px auto 22px; display: grid; gap: 10px;
+  }
+  .desktop .docline { height: 9px; border-radius: 4px; background: rgba(255,255,255,.08); }
+  .desktop .docline.w70 { width: 70%; } .desktop .docline.w52 { width: 52%; } .desktop .docline.w84 { width: 84%; }
+  .overlay-frame {
+    position: absolute; right: 18px; bottom: 26px; width: 210px; height: 300px;
+    border: 1px dashed rgba(77,214,240,.42); border-radius: 14px;
+    display: grid; place-items: end center; padding-bottom: 4px;
+  }
+  .overlay-frame .tag {
+    position: absolute; top: -10px; left: 10px; background: #0b1418; color: #4dd6f0;
+    font-size: 10.5px; padding: 2px 8px; border-radius: 999px; border: 1px solid rgba(77,214,240,.4);
+    letter-spacing: .04em;
+  }
+  .silhouette { width: 120px; height: 236px; opacity: .92; }
+  .overlay-hud {
+    display: flex; align-items: center; gap: 8px; padding: 8px 10px; border-radius: 999px;
+    background: rgba(10,16,19,.82); border: 1px solid rgba(255,255,255,.12);
+    color: #dfe7ea; font-size: 12px; align-self: flex-start;
+  }
+  .overlay-hud .grip { width: 14px; height: 14px; color: #8b9aa0; }
+  .overlay-hud .sep { width: 1px; height: 16px; background: rgba(255,255,255,.16); }
+  .overlay-note {
+    color: #93a3a9; font-size: 12px; line-height: 1.4; padding: 0 4px;
+  }
+  [data-mode="overlay"] .review .app-only { display: none; }
+
+  /* ---------- State simulasi ---------- */
+  .state-note {
+    display: flex; gap: 10px; align-items: flex-start; font-size: 13px; padding: 12px 14px;
+    border-radius: 12px; border: 1px solid var(--line); background: var(--surface-2); color: var(--muted);
+  }
+  .state-note svg { width: 18px; height: 18px; flex: 0 0 auto; margin-top: 1px; }
+  .state-note.warn { background: var(--warn-soft); border-color: transparent; color: var(--warn); }
+  .state-note.bad { background: var(--danger-soft); border-color: transparent; color: var(--danger); }
+  [data-state="ready"] .only-ready, [data-state="running"] .only-ready { display: initial; }
+  .only-ready, .only-missing, .only-blocked { display: none; }
+  [data-state="missing"] .only-missing { display: initial; }
+  [data-state="blocked"] .only-blocked { display: initial; }
+  [data-state="running"] .when-idle { display: none; }
+  [data-state="missing"] .when-model, [data-state="blocked"] .when-model { display: none; }
+  .visually-hidden { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
+</style>
+</head>
+<body>
+
+<!-- Panel review: bukan bagian dari aplikasi Android -->
+<div class="review" role="group" aria-label="Kontrol review desain">
+  <strong>Acuan desain</strong>
+  <div class="group" role="group" aria-label="Mode">
+    <span>Mode</span>
+    <button data-set="mode" data-value="app" aria-pressed="true">Aplikasi</button>
+    <button data-set="mode" data-value="overlay" aria-pressed="false">Overlay</button>
+  </div>
+  <div class="group" role="group" aria-label="Lebar">
+    <span>Lebar</span>
+    <button data-set="width" data-value="compact" aria-pressed="true">Ringkas</button>
+    <button data-set="width" data-value="wide" aria-pressed="false">Lebar</button>
+  </div>
+  <div class="group" role="group" aria-label="Tema">
+    <span>Tema</span>
+    <button data-set="theme" data-value="light" aria-pressed="true">Terang</button>
+    <button data-set="theme" data-value="dark" aria-pressed="false">Gelap</button>
+  </div>
+  <div class="group" role="group" aria-label="State simulasi">
+    <span>State</span>
+    <button data-set="state" data-value="blocked" aria-pressed="false">Izin ditolak</button>
+    <button data-set="state" data-value="missing" aria-pressed="false">Tanpa model</button>
+    <button data-set="state" data-value="ready" aria-pressed="true">Siap</button>
+    <button data-set="state" data-value="running" aria-pressed="false">Berjalan</button>
+  </div>
+  <span class="hint">Kontrol ini hanya untuk review, tidak ikut ke APK.</span>
+</div>
+
+<div class="stage">
+  <div class="device" id="device">
+
+    <!-- ===== APLIKASI ===== -->
+    <div class="app" id="appScreen">
+      <nav class="nav" aria-label="Navigasi utama">
+        <button data-screen="home" aria-current="page">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 10.5 12 4l8 6.5V20a1 1 0 0 1-1 1h-4v-6H9v6H5a1 1 0 0 1-1-1z"/></svg>
+          Beranda</button>
+        <button data-screen="avatar">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="3.4"/><path d="M5 20c.6-3.6 3.4-5.4 7-5.4s6.4 1.8 7 5.4"/></svg>
+          Avatar</button>
+        <button data-screen="anim">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 4.5 18 12 6 19.5z"/></svg>
+          Animasi</button>
+        <button data-screen="diag">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12h3.6l2.2-5 3.4 11 2.4-6H21"/></svg>
+          Diagnosa</button>
+        <button data-screen="settings">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M12 3v2.4M12 18.6V21M4.2 4.2l1.7 1.7M18.1 18.1l1.7 1.7M3 12h2.4M18.6 12H21M4.2 19.8l1.7-1.7M18.1 5.9l1.7-1.7"/></svg>
+          Pengaturan</button>
+      </nav>
+
+      <div class="appbody">
+        <header class="appbar">
+          <div class="avatar-dot">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><circle cx="12" cy="8.5" r="3.2"/><path d="M5.5 19.5c.8-3.2 3.4-4.9 6.5-4.9s5.7 1.7 6.5 4.9"/></svg>
+          </div>
+          <div class="titles">
+            <h1 id="pageTitle">Beranda</h1>
+            <span class="sub" id="pageSub">Avatar desktop untuk Android</span>
+          </div>
+          <div class="actions">
+            <button class="btn small tonal" type="button" title="Buka setelan overlay">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M4 7h10M18 7h2M4 17h4M12 17h8"/><circle cx="16" cy="7" r="2.2"/><circle cx="10" cy="17" r="2.2"/></svg>
+              Overlay
+            </button>
+          </div>
+        </header>
+
+        <!-- BERANDA -->
+        <main class="screen" id="screen-home">
+          <div class="columns">
+            <div class="stack">
+              <section class="card" aria-labelledby="statusHeading">
+                <div class="spread">
+                  <div>
+                    <h2 id="statusHeading" class="only-ready">Siap dijalankan</h2>
+                    <h2 class="only-missing">Belum ada model</h2>
+                    <h2 class="only-blocked">Izin overlay belum aktif</h2>
+                    <p class="only-ready">Avatarmu akan tampil di atas aplikasi lain. Sentuh dan geser untuk memindahkan.</p>
+                    <p class="only-missing">Impor berkas <code>.vrm</code> milikmu dulu. Aplikasi tidak menyertakan avatar bawaan.</p>
+                    <p class="only-blocked">Android memblokir jendela di atas aplikasi lain sampai izin diberikan.</p>
+                  </div>
+                  <div class="avatar-dot" style="width:44px;height:44px">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><path d="M12 3.5 19 6v6.2c0 4-3 7-7 8.3-4-1.3-7-4.3-7-8.3V6z"/><path d="m9 12 2.2 2.2L15.4 10"/></svg>
+                  </div>
+                </div>
+                <div class="chips">
+                  <span class="chip ok only-ready"><span class="dot"></span>Izin overlay aktif</span>
+                  <span class="chip bad only-blocked"><span class="dot"></span>Izin overlay ditolak</span>
+                  <span class="chip warn only-missing"><span class="dot"></span>Model belum dipilih</span>
+                  <span class="chip when-model"><span class="dot"></span><span id="chipModel">VRM1_Constraint_Twist_Sample</span></span>
+                  <span class="chip accent">VRM 1.0</span>
+                </div>
+                <div style="display:flex;gap:10px;margin-top:16px;flex-wrap:wrap">
+                  <button class="btn primary when-idle" type="button">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M6 4.5 18 12 6 19.5z"/></svg>
+                    Jalankan avatar
+                  </button>
+                  <button class="btn danger when-idle only-ready" type="button">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"><rect x="6.5" y="6.5" width="11" height="11" rx="1.6"/></svg>
+                    Hentikan
+                  </button>
+                  <button class="btn primary only-blocked" type="button">Buka izin overlay</button>
+                  <button class="btn primary only-missing" type="button">Impor model VRM</button>
+                </div>
+              </section>
+
+              <div class="state-note only-blocked warn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M12 4.5 21 20H3z"/><path d="M12 10v4.5M12 17.4v.2"/></svg>
+                Beberapa perangkat (mis. HyperOS/ColorOS) juga mematikan izin setelah pembaruan sistem. Cek di Diagnosa.
+              </div>
+
+              <div class="state-note only-ready">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="12" r="8.5"/><path d="M12 8v4.4l3 1.8"/></svg>
+                Service latar berjalan sebagai notifikasi ringan agar avatar tidak dibunuh sistem.
+              </div>
+            </div>
+
+            <div class="stack">
+              <h3 class="section-title" style="margin-top:0">Kontrol cepat</h3>
+              <section class="card">
+                <div class="field" style="margin-top:0">
+                  <label for="s-size">Ukuran avatar <span class="val" id="v-size">62%</span></label>
+                  <input id="s-size" type="range" min="25" max="100" value="62" oninput="document.getElementById('v-size').textContent=this.value+'%'">
+                </div>
+                <div class="field">
+                  <label for="s-alpha">Opasitas <span class="val" id="v-alpha">100%</span></label>
+                  <input id="s-alpha" type="range" min="30" max="100" value="100" oninput="document.getElementById('v-alpha').textContent=this.value+'%'">
+                </div>
+                <div class="row between" style="margin-top:16px">
+                  <div>
+                    <div class="item-title" style="font-weight:560">Kunci posisi</div>
+                    <div class="meta" style="font-size:12px;color:var(--muted)">Sentuhan diteruskan ke aplikasi di bawah</div>
+                  </div>
+                  <label class="switch"><input type="checkbox"><span class="track"></span><span class="knob"></span></label>
+                </div>
+              </section>
+
+              <h3 class="section-title">Terakhir dipakai</h3>
+              <section class="card list">
+                <div class="item selected">
+                  <div class="icon-tile accent"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><circle cx="12" cy="8.5" r="3.2"/><path d="M5.5 19.5c.8-3.2 3.4-4.9 6.5-4.9s5.7 1.7 6.5 4.9"/></svg></div>
+                  <div class="grow">
+                    <div class="title" id="recentModel">VRM1_Constraint_Twist_Sample</div>
+                    <div class="meta">10,3 MB · dipakai 2 jam lalu</div>
+                  </div>
+                  <span class="chip accent">Aktif</span>
+                </div>
+                <div class="item">
+                  <div class="icon-tile accent"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><path d="M6 4.5 18 12 6 19.5z"/></svg></div>
+                  <div class="grow">
+                    <div class="title">idle-loop.vrma</div>
+                    <div class="meta">Loop · 12 detik</div>
+                  </div>
+                  <button class="btn small" type="button">Putar</button>
+                </div>
+              </section>
+            </div>
+          </div>
+        </main>
+
+        <!-- AVATAR -->
+        <main class="screen" id="screen-avatar" hidden>
+          <div class="columns">
+            <div class="stack">
+              <section class="card">
+                <h2>Model avatar</h2>
+                <p>Berkas dibaca lewat pemilih sistem. Model disalin ke penyimpanan aplikasi agar tetap bisa dipakai setelah izin sesi berakhir.</p>
+                <div style="display:flex;gap:10px;margin-top:14px;flex-wrap:wrap">
+                  <button class="btn primary" type="button">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"><path d="M12 16.5V5M8 9l4-4 4 4M5 19h14"/></svg>
+                    Impor .vrm
+                  </button>
+                  <button class="btn" type="button">Hapus model</button>
+                </div>
+              </section>
+
+              <section class="card list" aria-label="Daftar model">
+                <div class="item selected">
+                  <div class="icon-tile accent"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><circle cx="12" cy="8.5" r="3.2"/><path d="M5.5 19.5c.8-3.2 3.4-4.9 6.5-4.9s5.7 1.7 6.5 4.9"/></svg></div>
+                  <div class="grow">
+                    <div class="title">VRM1_Constraint_Twist_Sample</div>
+                    <div class="meta">VRM 1.0 · 10,3 MB · MToon · spring bone</div>
+                  </div>
+                  <button class="btn small tonal" type="button">Pakai</button>
+                </div>
+                <div class="item">
+                  <div class="icon-tile"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><circle cx="12" cy="8.5" r="3.2"/><path d="M5.5 19.5c.8-3.2 3.4-4.9 6.5-4.9s5.7 1.7 6.5 4.9"/></svg></div>
+                  <div class="grow">
+                    <div class="title">avatar-kerja.vrm</div>
+                    <div class="meta">VRM 0.x · 24,1 MB · perlu konversi orientasi</div>
+                  </div>
+                  <button class="btn small" type="button">Pakai</button>
+                </div>
+              </section>
+            </div>
+
+            <div class="stack">
+              <h3 class="section-title" style="margin-top:0">Detail model terpilih</h3>
+              <section class="card">
+                <div class="list">
+                  <div class="item"><div class="grow"><div class="title">Format</div><div class="meta">VRM 1.0 (VRMC_vrm)</div></div></div>
+                  <div class="item"><div class="grow"><div class="title">Lisensi model</div><div class="meta">vrm.dev/licenses/1.0 · redistribusi diizinkan</div></div></div>
+                  <div class="item"><div class="grow"><div class="title">Ekspresi</div><div class="meta">Blink, happy, angry, sad tersedia</div></div></div>
+                  <div class="item" style="border-bottom:0"><div class="grow"><div class="title">Bone</div><div class="meta">54 humanoid · 12 spring bone</div></div></div>
+                </div>
+              </section>
+              <div class="state-note">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M12 3.5 19 6v6.2c0 4-3 7-7 8.3-4-1.3-7-4.3-7-8.3V6z"/></svg>
+                Metadata di atas dibaca dari berkas model, bukan diisi manual.
+              </div>
+            </div>
+          </div>
+        </main>
+
+        <!-- ANIMASI -->
+        <main class="screen" id="screen-anim" hidden>
+          <div class="columns">
+            <div class="stack">
+              <section class="card">
+                <h2>Pemutar animasi</h2>
+                <p>Impor berkas <code>.vrma</code> (VRM Animation). Animasi diputar pada avatar aktif di overlay.</p>
+                <div class="chips">
+                  <span class="chip ok"><span class="dot"></span>Avatar aktif</span>
+                  <span class="chip">Loop aktif</span>
+                  <span class="chip accent">Shuffle</span>
+                </div>
+                <div style="display:flex;gap:10px;margin-top:16px;flex-wrap:wrap">
+                  <button class="btn primary" type="button">Putar</button>
+                  <button class="btn" type="button">Berhenti</button>
+                  <button class="btn" type="button">Impor .vrma</button>
+                </div>
+              </section>
+
+              <section class="card list" aria-label="Daftar animasi">
+                <div class="item selected">
+                  <div class="icon-tile accent"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><path d="M6 4.5 18 12 6 19.5z"/></svg></div>
+                  <div class="grow"><div class="title">dance-pop.vrma</div><div class="meta">18,4 detik · diputar 3 kali</div></div>
+                  <button class="btn small tonal" type="button">Putar</button>
+                </div>
+                <div class="item">
+                  <div class="icon-tile"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><path d="M6 4.5 18 12 6 19.5z"/></svg></div>
+                  <div class="grow"><div class="title">idle-loop.vrma</div><div class="meta">12 detik · loop</div></div>
+                  <button class="btn small" type="button">Putar</button>
+                </div>
+              </section>
+            </div>
+
+            <div class="stack">
+              <h3 class="section-title" style="margin-top:0">Opsi pemutaran</h3>
+              <section class="card">
+                <div class="row between"><div><div class="title" style="font-weight:560">Loop</div><div class="meta" style="font-size:12px;color:var(--muted)">Ulangi animasi tanpa henti</div></div>
+                  <label class="switch"><input type="checkbox" checked><span class="track"></span><span class="knob"></span></label></div>
+                <div class="row between" style="margin-top:16px"><div><div class="title" style="font-weight:560">Shuffle</div><div class="meta" style="font-size:12px;color:var(--muted)">Acak urutan animasi</div></div>
+                  <label class="switch"><input type="checkbox"><span class="track"></span><span class="knob"></span></label></div>
+                <div class="field">
+                  <label for="s-speed">Kecepatan <span class="val" id="v-speed">1.0×</span></label>
+                  <input id="s-speed" type="range" min="50" max="200" value="100" oninput="document.getElementById('v-speed').textContent=(this.value/100).toFixed(1)+'×'">
+                </div>
+              </section>
+              <div class="state-note">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="12" r="8.5"/><path d="M12 8v4.4l3 1.8"/></svg>
+                Tanpa animasi, avatar tetap bernapas dan berkedip lewat idle prosedural ringan.
+              </div>
+            </div>
+          </div>
+        </main>
+
+        <!-- DIAGNOSA -->
+        <main class="screen" id="screen-diag" hidden>
+          <div class="columns">
+            <div class="stack">
+              <section class="card">
+                <h2>Diagnosa perangkat</h2>
+                <p>Status di bawah dibaca langsung dari sistem saat halaman dibuka. Tidak ada tombol yang berpura-pura memperbaiki.</p>
+                <div class="chips">
+                  <span class="chip ok"><span class="dot"></span>Overlay aktif</span>
+                  <span class="chip warn"><span class="dot"></span>Optimasi baterai aktif</span>
+                  <span class="chip ok"><span class="dot"></span>WebView 141</span>
+                </div>
+              </section>
+
+              <section class="card list">
+                <div class="item">
+                  <div class="icon-tile accent"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><rect x="4" y="5" width="16" height="14" rx="2"/><path d="M4 9h16"/></svg></div>
+                  <div class="grow"><div class="title">Izin tampil di atas aplikasi</div><div class="meta">Diizinkan · terverifikasi saat halaman dibuka</div></div>
+                  <button class="btn small tonal" type="button">Buka setelan</button>
+                </div>
+                <div class="item">
+                  <div class="icon-tile"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><rect x="3" y="7" width="15" height="10" rx="2"/><path d="M21 10.5v3"/></svg></div>
+                  <div class="grow"><div class="title">Optimasi baterai</div><div class="meta">Dibatasi sistem · service bisa dihentikan saat layar mati</div></div>
+                  <button class="btn small tonal" type="button">Buka setelan</button>
+                </div>
+                <div class="item">
+                  <div class="icon-tile"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="12" r="8.5"/><path d="M12 8v8M8 12h8"/></svg></div>
+                  <div class="grow"><div class="title">Pembatasan latar otomatis</div><div class="meta">Xiaomi HyperOS · tidak terdeteksi; cek manual bila avatar berhenti</div></div>
+                </div>
+                <div class="item" style="border-bottom:0">
+                  <div class="icon-tile"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M12 3v3M12 18v3M3 12h3M18 12h3M5.6 5.6l2.1 2.1M16.3 16.3l2.1 2.1M5.6 18.4l2.1-2.1M16.3 7.7l2.1-2.1"/></svg></div>
+                  <div class="grow"><div class="title">Render WebView</div><div class="meta">WebGL 2 tersedia · 60 Hz · perangkat ini tidak diuji resmi</div></div>
+                </div>
+              </section>
+            </div>
+
+            <div class="stack">
+              <h3 class="section-title" style="margin-top:0">Artefak diagnosa</h3>
+              <section class="card">
+                <h2 style="font-size:14px">Salin ringkasan</h2>
+                <p>Teks ini yang perlu dilampirkan saat melaporkan masalah. Tidak memuat isi model atau data pribadi.</p>
+                <pre style="margin:12px 0 0;font-size:11.5px;line-height:1.5;white-space:pre-wrap;background:var(--surface-2);padding:12px;border-radius:10px;color:var(--muted)">perangkat: Redmi Note 12
+android: 14 (API 34)
+rom: HyperOS 1.0.4
+overlay: granted
+service: foreground, not restricted
+webview: 141.0.7390.99
+app: 0.1.0 (1) debug</pre>
+                <button class="btn small" type="button" style="margin-top:12px">Salin</button>
+              </section>
+              <div class="state-note warn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M12 4.5 21 20H3z"/><path d="M12 10v4.5M12 17.4v.2"/></svg>
+                Pemblokiran izin oleh produsen tidak bisa dilewati aplikasi. Diagnosa hanya menunjukkan lokasinya.
+              </div>
+            </div>
+          </div>
+        </main>
+
+        <!-- PENGATURAN -->
+        <main class="screen" id="screen-settings" hidden>
+          <div class="columns">
+            <div class="stack">
+              <section class="card">
+                <h2>Overlay</h2>
+                <div class="row between" style="margin-top:14px"><div><div class="title" style="font-weight:560">Selalu di atas</div><div class="meta" style="font-size:12px;color:var(--muted)">Wajib untuk overlay; tidak bisa dimatikan</div></div>
+                  <label class="switch"><input type="checkbox" checked disabled><span class="track"></span><span class="knob"></span></label></div>
+                <div class="field">
+                  <label for="s-fps">Batas FPS <span class="val" id="v-fps">30</span></label>
+                  <input id="s-fps" type="range" min="15" max="60" step="15" value="30" oninput="document.getElementById('v-fps').textContent=this.value">
+                </div>
+                <div class="field">
+                  <label for="s-quality">Kualitas render <span class="val">Sedang</span></label>
+                  <input id="s-quality" type="range" min="0" max="2" value="1">
+                </div>
+              </section>
+
+              <section class="card list">
+                <div class="item"><div class="grow"><div class="title">Tema</div><div class="meta">Mengikuti sistem</div></div><span class="chip">Sistem</span></div>
+                <div class="item"><div class="grow"><div class="title">Bahasa</div><div class="meta">Indonesia</div></div><span class="chip">id</span></div>
+                <div class="item" style="border-bottom:0"><div class="grow"><div class="title">Tentang</div><div class="meta">Versi 0.1.0 · berbasis Mate Engine (AGPL v3)</div></div><button class="btn small" type="button">Detail</button></div>
+              </section>
+            </div>
+
+            <div class="stack">
+              <h3 class="section-title" style="margin-top:0">Penyimpanan</h3>
+              <section class="card">
+                <h2 style="font-size:14px">Data aplikasi</h2>
+                <p>Model dan animasi hasil impor disalin ke penyimpanan aplikasi. Menghapus data akan menghapus salinan tersebut, bukan berkas asli di penyimpananmu.</p>
+                <div style="display:flex;gap:10px;margin-top:14px;flex-wrap:wrap">
+                  <button class="btn" type="button">Bersihkan cache render</button>
+                  <button class="btn danger" type="button">Hapus semua data</button>
+                </div>
+              </section>
+              <div class="state-note">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M12 3.5 19 6v6.2c0 4-3 7-7 8.3-4-1.3-7-4.3-7-8.3V6z"/></svg>
+                Berkas asli di penyimpanan pengguna tidak pernah diubah atau dihapus.
+              </div>
+            </div>
+          </div>
+        </main>
+      </div>
+    </div>
+
+    <!-- ===== PRATINJAU OVERLAY ===== -->
+    <div class="overlay-stage" id="overlayScreen" hidden>
+      <div class="overlay-hud">
+        <svg class="grip" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"><path d="M9 6h.01M15 6h.01M9 12h.01M15 12h.01M9 18h.01M15 18h.01"/></svg>
+        Avatar aktif
+        <span class="sep"></span>
+        <span style="font-variant-numeric:tabular-nums">30 fps · 62%</span>
+      </div>
+      <div class="desktop">
+        <div class="docs">
+          <div class="docline w84"></div><div class="docline w70"></div><div class="docline w52"></div>
+          <div class="docline w84" style="margin-top:14px"></div><div class="docline w70"></div>
+        </div>
+        <div class="overlay-frame">
+          <span class="tag">window overlay · transparan</span>
+          <svg class="silhouette" viewBox="0 0 120 236" fill="none" aria-hidden="true">
+            <ellipse cx="60" cy="225" rx="34" ry="6" fill="rgba(0,0,0,.35)"/>
+            <path d="M60 26c13 0 22 9 22 22 0 8-3 14-8 18 10 6 17 16 19 30l4 40c1 9-5 13-10 6l-8-27-3 44c0 6-4 9-8 9h-16c-4 0-8-3-8-9l-3-44-8 27c-5 7-11 3-10-6l4-40c2-14 9-24 19-30-5-4-8-10-8-18 0-13 9-22 22-22z" fill="rgba(232,240,242,.92)"/>
+            <circle cx="52" cy="46" r="2.6" fill="#0b1418"/><circle cx="68" cy="46" r="2.6" fill="#0b1418"/>
+            <path d="M54 56c4 3 8 3 12 0" stroke="#0b1418" stroke-width="2" stroke-linecap="round"/>
+          </svg>
+        </div>
+      </div>
+      <p class="overlay-note">Pratinjau komposisi: piksel kosong di sekitar avatar transparan, sehingga dokumen atau wallpaper di belakangnya tetap terlihat. Tidak ada panel atau kartu di belakang avatar.</p>
+      <button class="btn small app-only" type="button" style="align-self:flex-start">Kembali</button>
+    </div>
+
+  </div>
+</div>
+
+<script>
+  const root = document.documentElement;
+  const groups = { mode: 'app', width: 'compact', theme: 'light', state: 'ready' };
+
+  function apply(key, value) {
+    groups[key] = value;
+    if (key === 'mode') {
+      root.dataset.mode = value;
+      document.getElementById('appScreen').hidden = value !== 'app';
+      document.getElementById('overlayScreen').hidden = value !== 'overlay';
+    } else {
+      root.dataset[key] = value;
+    }
+    document.querySelectorAll(`[data-set="${key}"]`).forEach(btn => {
+      btn.setAttribute('aria-pressed', String(btn.dataset.value === value));
+    });
+  }
+
+  document.querySelectorAll('[data-set]').forEach(btn => {
+    btn.addEventListener('click', () => apply(btn.dataset.set, btn.dataset.value));
+  });
+
+  // Navigasi layar aplikasi
+  const titles = {
+    home: ['Beranda', 'Avatar desktop untuk Android'],
+    avatar: ['Avatar', 'Model VRM milikmu'],
+    anim: ['Animasi', 'Pemutar .vrma'],
+    diag: ['Diagnosa', 'Status izin dan service'],
+    settings: ['Pengaturan', 'Overlay, tema, data']
+  };
+  document.querySelectorAll('.nav button').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const id = btn.dataset.screen;
+      document.querySelectorAll('.nav button').forEach(b => {
+        if (b === btn) b.setAttribute('aria-current', 'page'); else b.removeAttribute('aria-current');
+      });
+      document.querySelectorAll('.screen').forEach(s => { s.hidden = s.id !== 'screen-' + id; });
+      const [t, s] = titles[id];
+      document.getElementById('pageTitle').textContent = t;
+      document.getElementById('pageSub').textContent = s;
+    });
+  });
+</script>
+</body>
+</html>
