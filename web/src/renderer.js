@@ -263,6 +263,43 @@ function skeletonBounds(vrm) {
   return box;
 }
 
+/**
+ * Kotak NDC per mesh dari vertex **setelah skinning** (`SkinnedMesh.getVertexPosition`).
+ *
+ * Ini satu-satunya sumber kebenaran tentang apa yang benar-benar digambar: `Box3.setFromObject`
+ * memakai kotak geometri rest-pose (tidak sadar skinning) dan pengukuran tulang hanya tahu
+ * posisi tulang. Kalau satu mesh dilaporkan di NDC yang wajar sedangkan mesh lain jauh di luar,
+ * masalahnya ada di rig/klip — bukan di kamera atau jendela overlay.
+ */
+function skinnedBoxes(vrm) {
+  const hasil = {};
+  const point = new THREE.Vector3();
+  const project = new THREE.Vector3();
+  vrm.scene.traverse((object) => {
+    if (!object.isMesh || !object.geometry?.attributes?.position) return;
+    const total = object.geometry.attributes.position.count;
+    const langkah = Math.max(1, Math.floor(total / 120));
+    let minY = Infinity; let maxY = -Infinity;
+    let ndcMin = Infinity; let ndcMax = -Infinity;
+    for (let i = 0; i < total; i += langkah) {
+      if (object.isSkinnedMesh && object.getVertexPosition) {
+        object.getVertexPosition(i, point);
+      } else {
+        point.fromBufferAttribute(object.geometry.attributes.position, i);
+      }
+      point.applyMatrix4(object.matrixWorld);
+      minY = Math.min(minY, point.y); maxY = Math.max(maxY, point.y);
+      project.copy(point).project(state.camera);
+      ndcMin = Math.min(ndcMin, project.y); ndcMax = Math.max(ndcMax, project.y);
+    }
+    hasil[(object.name || 'mesh').slice(0, 12)] = {
+      duniaY: [Number(minY.toFixed(2)), Number(maxY.toFixed(2))],
+      ndcY: [Number(ndcMin.toFixed(2)), Number(ndcMax.toFixed(2))],
+    };
+  });
+  return hasil;
+}
+
 /** Proyeksikan kotak dunia ke fraksi kanvas (celah dari tiap tepi), sama seperti frameGaps. */
 function projectBox(box) {
   if (!box || box.isEmpty() || !state.camera) return null;
@@ -513,6 +550,7 @@ async function loadAvatar(url) {
     state.mixer.addEventListener('finished', onActionFinished);
     frameModel(vrm);
     state.ready = true;
+    state.readyAt = performance.now();
     state.idleTime = 0;
     state.baseHeight = null;
     state.restPose = captureRestPose(vrm);
@@ -998,6 +1036,12 @@ function animate(now) {
     if (window.__MATE_PAINT_DEBUG__ === true) {
       const painted = paintedBox();
       if (painted) post('debug-paint', painted);
+    }
+    // Sekali saja, 8 detik setelah model siap: kotak NDC per mesh hasil skinning. Biayanya
+    // ~1.600 pembacaan vertex, jadi aman dijalankan sekali dan tidak tiap frame.
+    if (state.vrm && !state.skinReportedAt && now - state.readyAt > 8000) {
+      state.skinReportedAt = now;
+      post('debug-skin', { fov: state.camera.fov, meshes: skinnedBoxes(state.vrm) });
     }
   }
   const workMs = performance.now() - workStart;
