@@ -245,7 +245,8 @@ sleep 3
 
 hash_ui() {
   adb shell uiautomator dump /sdcard/ui.xml >/dev/null 2>&1 || true
-  adb shell cat /sdcard/ui.xml 2>/dev/null | sha256sum | cut -d' ' -f1
+  adb shell cat /sdcard/ui.xml > /tmp/gestur-ui.xml 2>/dev/null || true
+  sha256sum /tmp/gestur-ui.xml 2>/dev/null | cut -d' ' -f1
 }
 
 # Dasar pembanding harus STABIL lebih dulu: di emulator ber-SwiftShader, Setelan masih
@@ -253,12 +254,21 @@ hash_ui() {
 # "belum selesai memuat", bukan "ketukan menembus".
 SEBELUM=$(hash_ui)
 STABIL=0
-for _ in $(seq 1 20); do
+SAMA=0
+for _ in $(seq 1 30); do
   sleep 1
   BARU=$(hash_ui)
-  if [ -n "$BARU" ] && [ "$BARU" = "$SEBELUM" ]; then STABIL=1; break; fi
+  if [ -n "$BARU" ] && [ "$BARU" = "$SEBELUM" ]; then
+    # Dua pembacaan sama berturut-turut; tiga lebih aman karena Setelan kadang memuat
+    # baris tambahan belakangan.
+    SAMA=$((SAMA + 1))
+    if [ "$SAMA" -ge 2 ]; then STABIL=1; break; fi
+  else
+    SAMA=0
+  fi
   SEBELUM=$BARU
 done
+cp /tmp/gestur-ui.xml /tmp/gestur-ui-sebelum.xml 2>/dev/null || true
 FOKUS_SEBELUM=$(adb shell dumpsys window | grep -m1 "mCurrentFocus" || true)
 catat "dasar UI stabil=${STABIL} (hash ${SEBELUM:0:12}), fokus: $(echo "$FOKUS_SEBELUM" | tr -s ' ' | cut -c1-90)"
 
@@ -270,7 +280,14 @@ FOKUS_SESUDAH=$(adb shell dumpsys window | grep -m1 "mCurrentFocus" || true)
 adb exec-out screencap -p > "$OUT/27-blokir-area-kosong.png" || true
 catat "ketuk area kosong (${KOSONG_X},${KOSONG_Y}): hash UI ${SEBELUM:0:12} -> ${SESUDAH:0:12}"
 [ "$STABIL" -eq 1 ] || gagal "UI Setelan tidak pernah stabil; hasil ketukan tidak bisa dinilai"
-[ -n "$SESUDAH" ] && [ "$SEBELUM" = "$SESUDAH" ] || gagal "ketukan menembus ke aplikasi di belakang (UI berubah)"
+if [ -z "$SESUDAH" ] || [ "$SEBELUM" != "$SESUDAH" ]; then
+  # Tampilkan APA yang berubah, bukan hanya "berubah": tanpa ini tidak bisa dibedakan
+  # antara ketukan menembus dan Setelan yang memuat baris baru sendiri.
+  tr '>' '\n' < /tmp/gestur-ui-sebelum.xml | grep -o 'text="[^"]*"' | head -20 > /tmp/gestur-teks-sebelum.txt || true
+  tr '>' '\n' < /tmp/gestur-ui.xml | grep -o 'text="[^"]*"' | head -20 > /tmp/gestur-teks-sesudah.txt || true
+  diff /tmp/gestur-teks-sebelum.txt /tmp/gestur-teks-sesudah.txt | head -12 | sed 's/^/  /' | tee -a "$DIAG" || true
+  gagal "ketukan menembus ke aplikasi di belakang (UI berubah)"
+fi
 case "$FOKUS_SESUDAH" in
   *settings*) : ;;
   *) gagal "fokus jendela berpindah setelah ketukan area kosong: $(echo "$FOKUS_SESUDAH" | tr -s ' ' | cut -c1-120)" ;;
