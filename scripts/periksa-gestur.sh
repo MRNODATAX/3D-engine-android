@@ -171,23 +171,40 @@ lulus "geser sampai tepi: jarak terdekat ${TERDEKAT} px (≤ 48 px)"
 # ---------------------------------------------------------------- 4. ketuk area kosong
 adb shell am start -a android.settings.SETTINGS >/dev/null 2>&1 || true
 sleep 3
-adb shell uiautomator dump /sdcard/sebelum.xml >/dev/null 2>&1 || true
-SEBELUM=$(adb shell cat /sdcard/sebelum.xml 2>/dev/null | sha256sum | cut -d' ' -f1)
+
+hash_ui() {
+  adb shell uiautomator dump /sdcard/ui.xml >/dev/null 2>&1 || true
+  adb shell cat /sdcard/ui.xml 2>/dev/null | sha256sum | cut -d' ' -f1
+}
+
+# Dasar pembanding harus STABIL lebih dulu: di emulator ber-SwiftShader, Setelan masih
+# memuat daftar beberapa detik setelah dibuka, sehingga dua hash berbeda bisa berarti
+# "belum selesai memuat", bukan "ketukan menembus".
+SEBELUM=$(hash_ui)
+STABIL=0
+for _ in $(seq 1 20); do
+  sleep 1
+  BARU=$(hash_ui)
+  if [ -n "$BARU" ] && [ "$BARU" = "$SEBELUM" ]; then STABIL=1; break; fi
+  SEBELUM=$BARU
+done
 FOKUS_SEBELUM=$(adb shell dumpsys window | grep -m1 "mCurrentFocus" || true)
+catat "dasar UI stabil=${STABIL} (hash ${SEBELUM:0:12}), fokus: $(echo "$FOKUS_SEBELUM" | tr -s ' ' | cut -c1-90)"
+
 KOSONG_X=$((KIRI + 3)); KOSONG_Y=$((ATAS + 3))
 adb shell input tap "$KOSONG_X" "$KOSONG_Y"
-sleep 2
-adb shell uiautomator dump /sdcard/sesudah.xml >/dev/null 2>&1 || true
-SESUDAH=$(adb shell cat /sdcard/sesudah.xml 2>/dev/null | sha256sum | cut -d' ' -f1)
+sleep 3
+SESUDAH=$(hash_ui)
 FOKUS_SESUDAH=$(adb shell dumpsys window | grep -m1 "mCurrentFocus" || true)
 adb exec-out screencap -p > "$OUT/27-blokir-area-kosong.png" || true
 catat "ketuk area kosong (${KOSONG_X},${KOSONG_Y}): hash UI ${SEBELUM:0:12} -> ${SESUDAH:0:12}"
-[ -n "$SEBELUM" ] && [ "$SEBELUM" = "$SESUDAH" ] || gagal "ketukan menembus ke aplikasi di belakang (UI berubah)"
+[ "$STABIL" -eq 1 ] || gagal "UI Setelan tidak pernah stabil; hasil ketukan tidak bisa dinilai"
+[ -n "$SESUDAH" ] && [ "$SEBELUM" = "$SESUDAH" ] || gagal "ketukan menembus ke aplikasi di belakang (UI berubah)"
 case "$FOKUS_SESUDAH" in
   *settings*) : ;;
   *) gagal "fokus jendela berpindah setelah ketukan area kosong: $(echo "$FOKUS_SESUDAH" | tr -s ' ' | cut -c1-120)" ;;
 esac
-lulus "ketuk area kosong ditahan overlay; aplikasi di belakang tidak berubah"
+lulus "ketuk area kosong ditahan overlay; Setelan di belakang tidak berubah"
 
 # ---------------------------------------------------------------- 5. tiga ketuk
 LEWAT_E5=$(wc -l < "$LOG")
