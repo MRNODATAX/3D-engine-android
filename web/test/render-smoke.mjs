@@ -493,10 +493,13 @@ try {
     return null;
   });
   assert(gapSample, 'jejak bodyGap tidak diterima dalam 8 detik');
+  // Celah bawah harus cukup untuk sepatu: ujung sepatu berada di bawah tulang kaki, jadi celah
+  // 0 px berarti alas kaki terpotong tepi kanvas (terjadi pada tangkapan 06 sebelum margin
+  // bawah dinaikkan).
   assert(
-    gapSample.top >= -4 && gapSample.bottom >= -4,
-    `kotak tubuh keluar kanvas (atas ${gapSample.top}, bawah ${gapSample.bottom}) — ` +
-      'pengukuran z tengah akan memotong kaki',
+    gapSample.top >= -4 && gapSample.bottom >= 12,
+    `kotak tubuh terlalu mepet tepi kanvas (atas ${gapSample.top}, bawah ${gapSample.bottom}) — ` +
+      'sepatu/kaki akan terpotong',
   );
   console.log(`✓ kotak tubuh di dalam kanvas (atas ${gapSample.top} px, bawah ${gapSample.bottom} px)`);
 

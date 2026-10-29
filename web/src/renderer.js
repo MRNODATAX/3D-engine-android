@@ -259,8 +259,10 @@ function skeletonBounds(vrm) {
   // (model masih dimuat / ganti pose). Kotak seperti itu jangan dilaporkan: jendela siluet
   // akan menyempit jadi garis tipis dan hanya separuh badan yang terlihat.
   if (size.y < 0.4 || size.x < 0.05) return null;
+  // Margin bawah lebih besar: sepatu menjulur di bawah tulang kaki, dan dengan margin 8 %
+  // ujung sepatu terpotong tepi kanvas (terlihat di tangkapan 06: kaki berhenti tanpa alas kaki).
   const topMargin = Math.max(size.y * 0.12, 0.05);
-  const bottomMargin = Math.max(size.y * 0.08, 0.04);
+  const bottomMargin = Math.max(size.y * 0.17, 0.09);
   box.min.y -= bottomMargin;
   box.max.y += topMargin;
   return box;
