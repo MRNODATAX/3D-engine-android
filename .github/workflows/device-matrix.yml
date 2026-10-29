@@ -78,10 +78,19 @@ jobs:
           arch: x86_64
           profile: pixel_2
           disable-animations: true
+          emulator-boot-timeout: 900
           emulator-options: >-
             -no-window -no-audio -no-boot-anim -no-snapshot
             -gpu swiftshader_indirect -camera-back none -camera-front none
-          script: bash scripts/periksa-perangkat.sh ${{ matrix.api }}
+          # Batas waktu internal (15 mnt) supaya langkah ini berakhir sebelum job dibatalkan;
+          # kalau dibatalkan, langkah diagnostik di bawah tidak pernah berjalan sehingga
+          # penyebabnya tidak terbaca sama sekali.
+          script: |
+            set +e
+            timeout -k 30 900 bash scripts/periksa-perangkat.sh ${{ matrix.api }}
+            kode=$?
+            echo "kode keluar skrip: $kode" >> /tmp/matriks-api${{ matrix.api }}.txt
+            exit $kode
 
       - name: Tulis hasil ke ringkasan job
         if: always()
@@ -93,9 +102,17 @@ jobs:
             echo '```'
           } >> "$GITHUB_STEP_SUMMARY"
 
-      - name: Anotasi galat perangkat
+      - name: Anotasi diagnostik dan galat perangkat
         if: always()
         run: |
+          # Anotasi adalah satu-satunya cara membaca hasil dari sandbox pengembangan
+          # (unduhan log & artefak Actions diblokir di sana).
+          if [ -f "/tmp/matriks-api${{ matrix.api }}.txt" ]; then
+            while IFS= read -r line; do echo "::warning::API ${{ matrix.api }}: ${line:0:600}"; done \
+              < "/tmp/matriks-api${{ matrix.api }}.txt"
+          else
+            echo "::warning::API ${{ matrix.api }}: tidak ada diagnostik (langkah emulator tidak sampai menulis berkas)"
+          fi
           LOG=/tmp/matriks-api${{ matrix.api }}-logcat.txt
           if [ -f "$LOG" ]; then
             grep -E "MateEngineRender|chromium|WebView|AndroidRuntime|FATAL" "$LOG" | tail -25 \

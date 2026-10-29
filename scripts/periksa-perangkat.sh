@@ -20,10 +20,16 @@ BATAS_SIAP="${BATAS_SIAP:-150}"
 : > "$DIAG"
 
 catat() { echo "$*" | tee -a "$DIAG"; }
+# Setiap panggilan adb dibatasi waktunya. Tanpa ini, satu perintah yang menggantung membuat
+# seluruh job dibatalkan pada batas waktu dan tidak ada diagnostik yang tersisa.
+adb() { timeout -k 10 "${ADB_TIMEOUT:-90}" /usr/bin/adb "$@"; }
 gagal() { catat "GAGAL: $*"; echo "::error::API $API: $*"; exit 1; }
 lewat() { catat "LULUS: $*"; }
 
+catat "mulai pemeriksaan API $API pada $(date -u +%H:%M:%SZ)"
+adb start-server >/dev/null 2>&1 || true
 adb wait-for-device
+catat "perangkat terdeteksi: $(adb devices | sed -n '2p')"
 adb shell settings put global window_animation_scale 0
 adb shell settings put global transition_animation_scale 0
 adb shell settings put global animator_duration_scale 0
@@ -33,6 +39,7 @@ SDK=$(adb shell getprop ro.build.version.sdk | tr -d '\r')
 catat "sdk dilaporkan perangkat: $SDK (diminta: $API)"
 [ "$SDK" = "$API" ] || gagal "emulator bukan API $API (melaporkan $SDK)"
 
+catat "memasang APK..."
 t0=$(date +%s)
 adb install -r "$APK" >/dev/null || gagal "APK tidak bisa dipasang di API $API"
 lewat "APK terpasang ($(( $(date +%s) - t0 )) dtk)"
@@ -42,12 +49,14 @@ adb shell pm grant "$PKG" android.permission.POST_NOTIFICATIONS >/dev/null 2>&1 
 adb shell cmd uimode night no >/dev/null 2>&1 || true
 adb logcat -c || true
 
+catat "membuka aktivitas..."
 t0=$(date +%s)
 adb shell am start -W -n "$ACTIVITY" --ez start_overlay true --ez seed_sample true >/dev/null \
   || gagal "aktivitas tidak bisa dibuka"
 
 # 1. renderer siap: tunggu salah satu dari dua sinyal (siap / galat) supaya kegagalan
 #    dilaporkan dengan sebabnya, bukan sebagai timeout tanpa keterangan.
+catat "menunggu avatar-ready (maks ${BATAS_SIAP} dtk)..."
 siap=0
 galat=""
 for _ in $(seq 1 "$BATAS_SIAP"); do
@@ -72,12 +81,24 @@ else
 fi
 adb shell dumpsys activity services "$PKG" | grep -m1 "isForeground=" | sed 's/^ */  /' | tee -a "$DIAG" || true
 
+catat "memeriksa jumlah jendela..."
 # 3-4. tepat satu jendela avatar, di dalam layar.
-grep -A 3 "MateEngine avatar" <<< "$(adb shell dumpsys window windows)" | head -4 > /tmp/matriks-jendela.txt
+# Judul jendela muncul di beberapa bagian `dumpsys window` (fokus, target input, dsb.),
+# jadi yang dihitung hanya baris deklarasi jendela: `Window{<hash> u<id> MateEngine avatar}`.
+DUMP=/tmp/matriks-dump-window.txt
+adb shell dumpsys window windows > "$DUMP"
+grep -E "^[[:space:]]*Window\{[^}]*MateEngine avatar" "$DUMP" > /tmp/matriks-jendela-baris.txt || true
+jumlah=$(wc -l < /tmp/matriks-jendela-baris.txt)
+catat "jumlah jendela avatar (baris Window{...}): $jumlah"
+if [ "$jumlah" -ne 1 ]; then
+  catat "baris 'Window{' yang cocok (maks 6):"
+  head -6 /tmp/matriks-jendela-baris.txt | sed 's/^/  /' | tee -a "$DIAG"
+  catat "semua baris yang memuat judul jendela: $(grep -c "MateEngine avatar" "$DUMP" || true)"
+  grep -m6 "MateEngine avatar" "$DUMP" | cut -c1-160 | sed 's/^/  /' | tee -a "$DIAG"
+  gagal "jendela avatar berjumlah $jumlah (seharusnya 1)"
+fi
+grep -A 3 -m1 "MateEngine avatar" "$DUMP" | head -4 > /tmp/matriks-jendela.txt
 adb shell dumpsys window displays | grep -o "cur=[0-9]*x[0-9]*" | head -1 >> /tmp/matriks-jendela.txt
-jumlah=$(adb shell dumpsys window windows | grep -c "MateEngine avatar" || true)
-catat "jumlah jendela avatar: $jumlah"
-[ "$jumlah" -eq 1 ] || gagal "jendela avatar berjumlah $jumlah (seharusnya 1)"
 
 hasil_jendela=$(python3 scripts/periksa-jendela-layar.py --dumpsys < /tmp/matriks-jendela.txt 2>&1) || {
   catat "$hasil_jendela"
@@ -85,6 +106,7 @@ hasil_jendela=$(python3 scripts/periksa-jendela-layar.py --dumpsys < /tmp/matrik
 }
 lewat "$hasil_jendela"
 
+catat "memantau crash/ANR 10 dtk..."
 # 5. tidak ada crash/ANR. Beri waktu 10 detik: crash pada WebView/FGS biasanya muncul cepat.
 sleep 10
 adb logcat -d > "$LOG" 2>/dev/null || true
