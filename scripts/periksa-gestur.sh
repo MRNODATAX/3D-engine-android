@@ -214,7 +214,8 @@ LEWAT_E3=$(wc -l < "$LOG")
 # Emulator ini hanya ~1 fps (workMs terukur 5256 ms), sehingga sebagian besar ACTION_MOVE
 # hilang dan satu swipe 700 ms sering hanya memindahkan jendela sebagian. Geseran diulang
 # sampai jendela benar-benar menempel tepi (atau 6 percobaan), lalu diukur.
-for percobaan in 1 2 3 4 5 6; do
+for percobaan in $(seq 1 12); do
+  tutup_anr
   POS=$(bingkai) || gagal "bingkai jendela hilang saat menggeser ke tepi"
   read -r PX PY PW PH <<< "$POS"
   BADAN_X=$((PX + PW / 2)); BADAN_Y=$((PY + PH * 45 / 100))
